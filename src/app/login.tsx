@@ -1,15 +1,15 @@
+// app/login.tsx
+import { useState } from 'react';
+import Constants from 'expo-constants';
+import { StyleSheet, TouchableOpacity, Alert, Linking } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { TextInput, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { Alert, Linking, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-//phuc
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API base URL
 const host = Constants.expoConfig?.hostUri?.split(':')[0];
@@ -20,8 +20,15 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isTermsAccepted, setIsTermsAccepted] = useState(false); // Thêm state cho checkbox
 
   const handleLogin = async () => {
+    // Kiểm tra checkbox trước khi đăng nhập
+    if (!isTermsAccepted) {
+      Alert.alert('Thông báo', 'Vui lòng đồng ý với Điều khoản dịch vụ và Chính sách quyền riêng tư');
+      return;
+    }
+
     if (!email || !password) {
       Alert.alert('Lỗi', 'Vui lòng nhập email và mật khẩu');
       return;
@@ -87,15 +94,25 @@ export default function LoginScreen() {
     Linking.openURL('https://www.termsfeed.com/live/a3b5b4ca-4410-4599-9a25-b502d4e494a4');
   };
 
+  // Toggle checkbox
+  const toggleTerms = () => {
+    setIsTermsAccepted(!isTermsAccepted);
+  };
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ThemedView style={styles.header}>
+          <Ionicons 
+            name='person-circle-outline'
+            size={80}
+            color="blue"
+          />
           <ThemedText type="title" style={styles.title}>
-            Đăng nhập
+            Login
           </ThemedText>
           <ThemedText type="subtitle" style={styles.subtitle}>
-            Sử dụng tài khoản được cấp bởi quản trị viên
+            STUDENT-MANAGEMENT
           </ThemedText>
         </ThemedView>
 
@@ -117,11 +134,11 @@ export default function LoginScreen() {
 
           {/* Input Password với icon eye */}
           <ThemedView style={styles.inputGroup}>
-            <ThemedText style={styles.label}>Mật khẩu</ThemedText>
+            <ThemedText style={styles.label}>Password</ThemedText>
             <View style={styles.passwordContainer}>
               <TextInput
                 style={styles.passwordInput}
-                placeholder="Nhập mật khẩu"
+                placeholder="Password"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -141,21 +158,21 @@ export default function LoginScreen() {
             </View>
           </ThemedView>
 
-          {/* Nút Đăng nhập */}
-          <TouchableOpacity
-            style={[styles.button, isLoading && styles.buttonDisabled]}
-            onPress={handleLogin}
-            disabled={isLoading}
+          {/* Checkbox Điều khoản & Chính sách */}
+          <TouchableOpacity 
+            style={styles.termsContainer} 
+            onPress={toggleTerms}
+            activeOpacity={0.7}
           >
-            <ThemedText style={styles.buttonText}>
-              {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
-            </ThemedText>
-          </TouchableOpacity>
-
-          {/* Điều khoản & Chính sách */}
-          <ThemedView style={styles.footer}>
-            <Text style={styles.footerText}>
-              Bằng cách đăng nhập, bạn đồng ý với{' '}
+            <View style={styles.checkboxWrapper}>
+              {isTermsAccepted ? (
+                <Ionicons name="checkbox" size={24} color="#007AFF" />
+              ) : (
+                <Ionicons name="square-outline" size={24} color="#666" />
+              )}
+            </View>
+            <Text style={styles.termsText}>
+              Tôi đồng ý với{' '}
               <Text style={styles.link} onPress={openTerms}>
                 Điều khoản dịch vụ
               </Text>
@@ -163,7 +180,31 @@ export default function LoginScreen() {
               <Text style={styles.link} onPress={openPrivacy}>
                 Chính sách quyền riêng tư
               </Text>
-              {' của chúng tôi.'}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Nút Đăng nhập - Disabled khi chưa tick checkbox */}
+          <TouchableOpacity
+            style={[
+              styles.button, 
+              (!isTermsAccepted || isLoading) && styles.buttonDisabled
+            ]}
+            onPress={handleLogin}
+            disabled={!isTermsAccepted || isLoading}
+          >
+            <ThemedText style={styles.buttonText}>
+              {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+            </ThemedText>
+          </TouchableOpacity>
+
+          {/* Footer thông báo */}
+          <ThemedView style={styles.footer}>
+            <Text style={styles.footerText}>
+              {!isTermsAccepted && (
+                <Text style={styles.warningText}>
+                  ⚠️ Vui lòng đồng ý với điều khoản để đăng nhập
+                </Text>
+              )}
             </Text>
           </ThemedView>
         </ThemedView>
@@ -236,6 +277,25 @@ const styles = StyleSheet.create({
   eyeIcon: {
     paddingHorizontal: Spacing.two,
   },
+  // Checkbox styles
+  termsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Spacing.one,
+    paddingVertical: Spacing.one,
+  },
+  checkboxWrapper: {
+    marginRight: Spacing.two,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  termsText: {
+    fontSize: 13,
+    color: '#333',
+    flex: 1,
+    lineHeight: 20,
+  },
+  // Button styles
   button: {
     backgroundColor: '#007AFF',
     paddingVertical: Spacing.three,
@@ -244,7 +304,8 @@ const styles = StyleSheet.create({
     marginTop: Spacing.two,
   },
   buttonDisabled: {
-    opacity: 0.6,
+    backgroundColor: '#ccc',
+    opacity: 0.7,
   },
   buttonText: {
     color: '#fff',
@@ -252,9 +313,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   footer: {
-    marginTop: Spacing.six,
+    marginTop: Spacing.two,
     alignItems: 'center',
     paddingHorizontal: Spacing.two,
+    minHeight: 30,
   },
   footerText: {
     fontSize: 12,
@@ -266,7 +328,8 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     textDecorationLine: 'underline',
   },
+  warningText: {
+    color: '#ff6b35',
+    fontWeight: '500',
+  },
 });
-
-
-//npm run web ==> để chạy web

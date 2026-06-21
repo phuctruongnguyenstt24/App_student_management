@@ -2,6 +2,10 @@
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
+    safeContainer: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
@@ -13,7 +17,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 50,
+    paddingTop: 10,
     paddingBottom: 15,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
