@@ -1,14 +1,13 @@
-import { useState } from 'react';
-import Constants from 'expo-constants';
-import { StyleSheet, TouchableOpacity, Alert, Linking } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { TextInput, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { Alert, Linking, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 //phuc
 
@@ -268,3 +267,6 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
 });
+
+
+//npm run web ==> để chạy web
