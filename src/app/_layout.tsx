@@ -26,12 +26,7 @@ function RootLayoutNav() {
         }}
       >
         <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen name="dashboard" options={{ title: 'Trang chủ' }} />
-        <Stack.Screen name="profile" options={{ title: 'Hồ sơ' }} />
-        <Stack.Screen name="course-management" options={{ title: 'Quản lý môn học' }} />
-        <Stack.Screen name="edit-profile" options={{ title: 'Chỉnh sửa hồ sơ' }} />
-        <Stack.Screen name="add-course" options={{ title: 'Thêm môn học' }} />
-        <Stack.Screen name="edit-course" options={{ title: 'Sửa môn học' }} />
+       
       </Stack>
     </PaperProvider>
   );

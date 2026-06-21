@@ -1,7 +1,7 @@
 // app/admin/create-student.tsx
 import { useState, useEffect } from 'react';
 import Constants from 'expo-constants';
-import { styles } from './style_create_std';
+import { styles } from '../../a_styles/style_create_std';
 import {
     View,
     StyleSheet,

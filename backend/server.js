@@ -8,6 +8,7 @@ dotenv.config();
 const authRoutes = require('./routes/authRoutes');
 const facultyRoutes = require('./routes/facultyRoutes');
 const departmentRoutes = require('./routes/departmentRoutes');
+const courseRoutes = require('./routes/courses');
 
 const app = express();
 
@@ -15,6 +16,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 
 // Kết nối MongoDB - ĐÃ SỬA (bỏ useNewUrlParser và useUnifiedTopology)
 mongoose.connect(process.env.MONGODB_URI)
@@ -24,6 +26,7 @@ mongoose.connect(process.env.MONGODB_URI)
 // Routes
 app.use('/api/faculties', facultyRoutes);
 app.use('/api/departments', departmentRoutes);
+app.use('/api/courses', courseRoutes);
 app.use('/api/auth', authRoutes);
 
 // Error handling middleware
