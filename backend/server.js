@@ -71,7 +71,6 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
-<<<<<<< HEAD
   console.log(`📡 Local: http://localhost:${PORT}`);
   console.log(`📡 Network: http://${getLocalIP()}:${PORT}`);
 });
@@ -89,7 +88,3 @@ function getLocalIP() {
   }
   return 'localhost';
 }
-=======
-  console.log(`📱 Accessible at: http://0.0.0.0:${PORT}`);
-});
->>>>>>> 5301074aecb4956a2b612bbba4eade01fe4079aa
