@@ -1,6 +1,5 @@
 // app/login.tsx
 import { useState } from 'react';
-import Constants from 'expo-constants';
 import { StyleSheet, TouchableOpacity, Alert, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TextInput, Text, View } from 'react-native';
@@ -10,10 +9,7 @@ import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// API base URL
-const host = Constants.expoConfig?.hostUri?.split(':')[0];
-const API_URL = `http://${host}:5000/api`;
+import { API_URL, apiCall } from '@/utils/api';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -37,18 +33,10 @@ export default function LoginScreen() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          password: password,
-        }),
+      const data = await apiCall('/auth/login', 'POST', {
+        email: email.trim(),
+        password: password,
       });
-
-      const data = await response.json();
 
       if (data.success) {
         // Lưu token và thông tin user
@@ -71,7 +59,7 @@ export default function LoginScreen() {
           Alert.alert('Thành công', 'Đăng nhập thành công!', [
             {
               text: 'OK',
-              onPress: () => router.replace('/tabs'),
+              onPress: () => router.replace('/tabs/HomeScreen'),
             },
           ]);
         }
@@ -333,3 +321,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
+
+//nhớ cd App_student_management
+//npm run web ==> để chạy web
+//npm run android ==> để chạy android
+//chạy expo (để test trên điện thoại): npx expo start
+//crtl+c ==> tắt expo
