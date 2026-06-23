@@ -1,22 +1,21 @@
+// routes/auth.js
 const express = require('express');
 const router = express.Router();
-const { 
-  register, 
-  login, 
-  getMe, 
+const { protect, isAdmin } = require('../middleware/authMiddleware');
+const {
+  register,
+  login,
+  getMe,
   createStudentAccount,
   getAllStudents,
   deleteStudent
 } = require('../controllers/authController');
-const { protect, isAdmin } = require('../middleware/authMiddleware');
 
-// Public routes (chỉ login)
+// Public routes
+router.post('/register', register);
 router.post('/login', login);
 
-// ĐÃ VÔ HIỆU HÓA - không cho đăng ký công khai
-router.post('/register', register);
-
-// Private routes (cần đăng nhập)
+// Protected routes
 router.get('/me', protect, getMe);
 
 // Admin only routes

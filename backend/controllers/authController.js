@@ -1,30 +1,35 @@
+// controllers/authController.js
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
-const { validateRegister } = require('../utils/validation');
 
-// Tạo JWT token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE
+    expiresIn: process.env.JWT_EXPIRE || '7d'
   });
 };
 
-// @desc    Đăng ký tài khoản mới - ĐÃ VÔ HIỆU HÓA
-// @route   POST /api/auth/register
-// @access  Public (DISABLED)
-const register = async (req, res) => {
-  return res.status(403).json({
-    success: false,
-    message: 'Đăng ký công khai đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên để được cấp tài khoản.'
-  });
-};
-
-// @desc    Admin tạo tài khoản sinh viên
-// @route   POST /api/auth/create-student
-// @access  Private (Admin only)
+// Admin tạo tài khoản sinh viên
 const createStudentAccount = async (req, res) => {
   try {
-    const { fullName, studentId, email, password } = req.body;
+    const { 
+      fullName, 
+      studentId, 
+      email, 
+      password,
+      facultyId,
+      departmentId,
+      class: className,
+      phone,
+      address
+    } = req.body;
+
+    console.log('📝 Creating student with data:', { 
+      fullName, 
+      studentId, 
+      email, 
+      facultyId, 
+      departmentId 
+    });
 
     // Kiểm tra quyền admin
     if (req.user.role !== 'admin') {
@@ -42,10 +47,10 @@ const createStudentAccount = async (req, res) => {
       });
     }
 
-    if (password.length < 6) {
+    if (password.length < 5) {
       return res.status(400).json({
         success: false,
-        message: 'Mật khẩu phải có ít nhất 6 ký tự'
+        message: 'Mật khẩu phải có ít nhất 5 ký tự'
       });
     }
 
@@ -56,7 +61,7 @@ const createStudentAccount = async (req, res) => {
       });
     }
 
-    // Kiểm tra email đã tồn tại chưa
+    // Kiểm tra email đã tồn tại
     const existingEmail = await User.findOne({ email });
     if (existingEmail) {
       return res.status(400).json({
@@ -65,7 +70,7 @@ const createStudentAccount = async (req, res) => {
       });
     }
 
-    // Kiểm tra mã số sinh viên đã tồn tại chưa
+    // Kiểm tra studentId đã tồn tại
     const existingStudentId = await User.findOne({ studentId: studentId.toUpperCase() });
     if (existingStudentId) {
       return res.status(400).json({
@@ -74,24 +79,51 @@ const createStudentAccount = async (req, res) => {
       });
     }
 
-    // Tạo user mới với role student
-    const user = await User.create({
+    // Tạo username từ studentId
+    const username = studentId.toUpperCase();
+    
+    // Kiểm tra username đã tồn tại
+    const existingUsername = await User.findOne({ username });
+    if (existingUsername) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username đã tồn tại'
+      });
+    }
+
+    // Tạo user mới với đầy đủ thông tin
+    const userData = {
+      username: username, // Bắt buộc phải có
       fullName: fullName.trim(),
       studentId: studentId.toUpperCase().trim(),
       email: email.toLowerCase().trim(),
-      password,
-      role: 'student'
-    });
+      password: password,
+      role: 'student',
+      facultyId: facultyId || null,
+      departmentId: departmentId || null,
+      class: className || '',
+      phone: phone || '',
+      address: address || '',
+      isFirstLogin: true,
+      isActive: true,
+    };
+
+    console.log('📦 User data to save:', { ...userData, password: '***' });
+
+    const user = await User.create(userData);
 
     res.status(201).json({
       success: true,
       message: 'Tạo tài khoản sinh viên thành công',
       user: {
         id: user._id,
+        username: user.username,
         fullName: user.fullName,
         studentId: user.studentId,
         email: user.email,
         role: user.role,
+        class: user.class,
+        phone: user.phone,
         createdAt: user.createdAt
       }
     });
@@ -99,25 +131,37 @@ const createStudentAccount = async (req, res) => {
   } catch (error) {
     console.error('Create student error:', error);
     
-    // Xử lý duplicate key error
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];
       return res.status(400).json({
         success: false,
-        message: `${field === 'email' ? 'Email' : 'Mã số sinh viên'} đã tồn tại`
+        message: `${field} đã tồn tại trong hệ thống`
+      });
+    }
+
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: messages.join(', ')
       });
     }
 
     res.status(500).json({
       success: false,
-      message: 'Lỗi server, vui lòng thử lại sau'
+      message: 'Lỗi server: ' + error.message
     });
   }
 };
 
-// @desc    Đăng nhập
-// @route   POST /api/auth/login
-// @access  Public
+// Các hàm khác giữ nguyên...
+const register = async (req, res) => {
+  return res.status(403).json({
+    success: false,
+    message: 'Đăng ký công khai đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên để được cấp tài khoản.'
+  });
+};
+
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -129,7 +173,6 @@ const login = async (req, res) => {
       });
     }
 
-    // Tìm user và lấy password
     const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
 
     if (!user) {
@@ -139,7 +182,6 @@ const login = async (req, res) => {
       });
     }
 
-    // Kiểm tra mật khẩu
     const isPasswordMatch = await user.comparePassword(password);
     if (!isPasswordMatch) {
       return res.status(401).json({
@@ -148,11 +190,9 @@ const login = async (req, res) => {
       });
     }
 
-    // Cập nhật lastLogin
     user.lastLogin = new Date();
     await user.save();
 
-    // Tạo token
     const token = generateToken(user._id);
 
     res.json({
@@ -161,11 +201,13 @@ const login = async (req, res) => {
       token,
       user: {
         id: user._id,
+        username: user.username,
         fullName: user.fullName,
         studentId: user.studentId,
         email: user.email,
         role: user.role,
-        avatar: user.avatar
+        avatar: user.avatar,
+        isFirstLogin: user.isFirstLogin
       }
     });
 
@@ -178,9 +220,6 @@ const login = async (req, res) => {
   }
 };
 
-// @desc    Lấy thông tin user hiện tại
-// @route   GET /api/auth/me
-// @access  Private
 const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
@@ -189,6 +228,7 @@ const getMe = async (req, res) => {
       success: true,
       user: {
         id: user._id,
+        username: user.username,
         fullName: user.fullName,
         studentId: user.studentId,
         email: user.email,
@@ -207,9 +247,6 @@ const getMe = async (req, res) => {
   }
 };
 
-// @desc    Lấy danh sách tất cả sinh viên (chỉ admin)
-// @route   GET /api/auth/students
-// @access  Private (Admin only)
 const getAllStudents = async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -219,7 +256,11 @@ const getAllStudents = async (req, res) => {
       });
     }
 
-    const students = await User.find({ role: 'student' }).select('-password');
+    const students = await User.find({ role: 'student' })
+      .select('-password')
+      .populate('facultyId', 'name code')
+      .populate('departmentId', 'name code')
+      .sort({ createdAt: -1 });
     
     res.json({
       success: true,
@@ -230,14 +271,11 @@ const getAllStudents = async (req, res) => {
     console.error('Get students error:', error);
     res.status(500).json({
       success: false,
-      message: 'Lỗi server'
+      message: 'Lỗi server: ' + error.message
     });
   }
 };
 
-// @desc    Xóa tài khoản sinh viên (chỉ admin)
-// @route   DELETE /api/auth/students/:id
-// @access  Private (Admin only)
 const deleteStudent = async (req, res) => {
   try {
     if (req.user.role !== 'admin') {

@@ -282,6 +282,7 @@ export default function CreateStudentScreen() {
     }, [formData.fullName, formData.departmentId, formData.year, formData.sequenceNumber]);
 
     // Tạo sinh viên
+    // app/admin/create-student.tsx - Sửa hàm handleCreateStudent
     const handleCreateStudent = async () => {
         if (!formData.fullName || !formData.studentId || !formData.facultyId || !formData.departmentId) {
             Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin bắt buộc');
@@ -305,6 +306,7 @@ export default function CreateStudentScreen() {
             Alert.alert('Lỗi', 'Không tìm thấy ngành học. Vui lòng chọn lại.');
             return;
         }
+
         if (selectedDept) {
             const exists = checkSequenceExists(formData.year, selectedDept.code, formData.sequenceNumber);
             if (exists) {
@@ -312,7 +314,6 @@ export default function CreateStudentScreen() {
                     'Lỗi trùng STT',
                     `STT ${formData.sequenceNumber} đã tồn tại. Vui lòng tải lại trang để lấy STT tự động mới.`
                 );
-                // Tự động load lại STT mới
                 const newSeq = findNextSequenceNumber(formData.year, selectedDept.code);
                 setFormData(prev => ({ ...prev, sequenceNumber: newSeq }));
                 return;
@@ -322,12 +323,26 @@ export default function CreateStudentScreen() {
         setIsLoading(true);
         const token = await AsyncStorage.getItem('token');
 
+        if (!token) {
+            Alert.alert('Lỗi', 'Không tìm thấy token. Vui lòng đăng nhập lại.');
+            setIsLoading(false);
+            return;
+        }
+
         try {
+            console.log('📝 Creating student with data:', {
+                fullName: formData.fullName.trim(),
+                studentId: formData.studentId.trim().toUpperCase(),
+                email: formData.email.trim(),
+                facultyId: formData.facultyId,
+                departmentId: formData.departmentId,
+            });
+
             const response = await fetch(`${API_URL}/auth/create-student`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
+                    'Authorization': `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                     fullName: formData.fullName.trim(),
@@ -343,6 +358,7 @@ export default function CreateStudentScreen() {
             });
 
             const data = await response.json();
+            console.log('📦 Response:', data);
 
             if (data.success) {
                 // Cập nhật lại danh sách MSSV
@@ -355,8 +371,6 @@ export default function CreateStudentScreen() {
                         {
                             text: 'OK',
                             onPress: () => {
-                                // Reset form và tự động tìm STT mới
-
                                 const newSeq = findNextSequenceNumber(formData.year, selectedDept.code);
                                 setFormData({
                                     fullName: '',
@@ -371,23 +385,21 @@ export default function CreateStudentScreen() {
                                     year: formData.year,
                                     sequenceNumber: newSeq,
                                 });
-                                // Load lại danh sách sinh viên
                                 loadExistingStudents();
                             },
                         },
                     ]
                 );
             } else {
-                Alert.alert('Thất bại', data.message);
+                Alert.alert('Thất bại', data.message || 'Không thể tạo tài khoản');
             }
         } catch (error) {
             console.error('Create student error:', error);
-            Alert.alert('Lỗi', 'Không thể kết nối đến server');
+            Alert.alert('Lỗi', 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.');
         } finally {
             setIsLoading(false);
         }
     };
-
     // Modal quản lý Khoa/Ngành
     const handleSaveModal = async () => {
         if (!modalName.trim() || !modalCode.trim()) {
@@ -877,4 +889,3 @@ export default function CreateStudentScreen() {
     );
 }
 
- 

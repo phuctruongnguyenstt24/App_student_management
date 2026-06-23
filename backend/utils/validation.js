@@ -13,8 +13,8 @@ const validateRegister = (data) => {
     return 'Email không hợp lệ';
   }
 
-  if (!password || password.length < 6) {
-    return 'Mật khẩu phải có ít nhất 6 ký tự';
+  if (!password || password.length < 5) {
+    return 'Mật khẩu phải có ít nhất 5 ký tự';
   }
 
   return null; // Không có lỗi

@@ -34,7 +34,8 @@ yarn-error.*
 .env*.local
 backend/.env
 .env
-
+backend/check-user.js
+backend/seed-admin.js
 # typescript
 *.tsbuildinfo
 

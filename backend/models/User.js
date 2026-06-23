@@ -2,6 +2,15 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    required: [true, 'Vui lòng nhập tên đăng nhập'],
+    unique: true,
+    sparse:true,
+    trim: true,
+    minlength: [3, 'Tên đăng nhập phải có ít nhất 3 ký tự'],
+    maxlength: [30, 'Tên đăng nhập không quá 30 ký tự']
+  },
   fullName: {
     type: String,
     required: [true, 'Vui lòng nhập họ tên'],
@@ -11,11 +20,12 @@ const userSchema = new mongoose.Schema({
   },
   studentId: {
     type: String,
-    required: [true, 'Vui lòng nhập mã số sinh viên'],
     unique: true,
+    sparse: true,
     trim: true,
     uppercase: true,
-    match: [/^[A-Z0-9]{5,20}$/, 'Mã số sinh viên không hợp lệ']
+    match: [/^[A-Z0-9]{5,20}$/, 'Mã số sinh viên không hợp lệ'],
+    default: null
   },
   facultyId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -38,7 +48,7 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: [true, 'Vui lòng nhập mật khẩu'],
-    minlength: [6, 'Mật khẩu phải có ít nhất 6 ký tự'],
+    minlength: [5, 'Mật khẩu phải có ít nhất 5 ký tự'],
     select: false
   },
   role: {
@@ -61,31 +71,30 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  // Thêm field để biết tài khoản được tạo bởi ai
+  isFirstLogin: {
+    type: Boolean,
+    default: true
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     default: null
   },
-  // Thêm field để lưu thông tin lớp
   class: {
     type: String,
     trim: true,
     default: ''
   },
-  // Thêm field để lưu khóa học
   course: {
     type: String,
     trim: true,
     default: ''
   },
-  // Thêm field để lưu số điện thoại
   phone: {
     type: String,
     trim: true,
     default: ''
   },
-  // Thêm field để lưu địa chỉ
   address: {
     type: String,
     trim: true,
@@ -95,19 +104,34 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Mã hóa mật khẩu trước khi lưu
+// Mã hóa mật khẩu trước khi lưu - KHÔNG DÙNG next
 userSchema.pre('save', async function () {
   if (!this.isModified('password')) {
     return;
   }
 
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
+  try {
+    console.log('🔐 Hashing password...');
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    console.log('✅ Password hashed successfully');
+  } catch (error) {
+    console.error('❌ Hash error:', error);
+    throw error;
+  }
 });
 
 // So sánh mật khẩu
 userSchema.methods.comparePassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
+  try {
+    console.log('🔍 Comparing password...');
+    const result = await bcrypt.compare(enteredPassword, this.password);
+    console.log('   Result:', result ? '✅ Match' : '❌ No match');
+    return result;
+  } catch (error) {
+    console.error('❌ Compare error:', error);
+    return false;
+  }
 };
 
 // Method kiểm tra xem có phải admin không
