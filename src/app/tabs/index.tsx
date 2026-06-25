@@ -78,12 +78,12 @@ const styles = StyleSheet.create({
    
   },
   safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
+   paddingHorizontal: Spacing.four,
     alignItems: 'center',
     gap: Spacing.three,
     paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+    maxWidth: MaxContentWidth,    flex: 1,
+ 
   },
   heroSection: {
     alignItems: 'center',
