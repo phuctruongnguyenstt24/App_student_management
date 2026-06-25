@@ -60,17 +60,18 @@ Join our community of developers creating universal apps.
 a. Chạy backend
 cd backend
 npm start
+
 b. Chạy React Native (Frontend)
 Lưu ý: Nhớ di chuyển vào đúng thư mục dự án trước khi chạy lệnh (cd "App_student_management")
 npx expo start
-2. Test trên điện thoại thật bằng Expo Go
+3. Test trên điện thoại thật bằng Expo Go
 
     Bước 1: Cài đặt ứng dụng Expo Go trên điện thoại.
 
         ⚠️ Lưu ý: Phải cài đúng phiên bản. Bạn có thể tải file APK trực tiếp tại trang web: https://expo.dev/go.
 
     Bước 2: Quét mã QR xuất hiện trên terminal sau khi chạy lệnh: npx expo start
-3. Test trên trình duyệt web
+4. Test trên trình duyệt web
 npm run web
-4. Test trên máy ảo Android (Android Studio Emulator)
+5. Test trên máy ảo Android (Android Studio Emulator)
 npm run android
