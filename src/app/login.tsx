@@ -1,19 +1,13 @@
 // app/login.tsx
-import { useState } from 'react';
-import Constants from 'expo-constants';
-import { StyleSheet, TouchableOpacity, Alert, Linking } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { TextInput, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useAuth } from '@/contexts/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// API base URL
-const host = Constants.expoConfig?.hostUri?.split(':')[0];
-const API_URL = `http://${host}:5000/api`;
+import { useState } from 'react';
+import { Alert, Linking, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -21,6 +15,7 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isTermsAccepted, setIsTermsAccepted] = useState(false); // Thêm state cho checkbox
+  const { login } = useAuth();
 
   const handleLogin = async () => {
     // Kiểm tra checkbox trước khi đăng nhập
@@ -37,50 +32,27 @@ export default function LoginScreen() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          password: password,
-        }),
-      });
+      const loggedUser = await login(email, password);
+      const userRole = loggedUser.role;
 
-      const data = await response.json();
-
-      if (data.success) {
-        // Lưu token và thông tin user
-        await AsyncStorage.setItem('token', data.token);
-        await AsyncStorage.setItem('user', JSON.stringify(data.user));
-
-        // Phân quyền điều hướng dựa trên role
-        const userRole = data.user.role;
-
-        if (userRole === 'admin') {
-          // Admin -> vào trang quản trị
-          Alert.alert('Thành công', 'Đăng nhập với quyền Quản trị viên!', [
-            {
-              text: 'OK',
-              onPress: () => router.replace('/admin/dashboard'),
-            },
-          ]);
-        } else {
-          // Student -> vào trang sinh viên
-          Alert.alert('Thành công', 'Đăng nhập thành công!', [
-            {
-              text: 'OK',
-              onPress: () => router.replace('/tabs'),
-            },
-          ]);
-        }
+      if (userRole === 'admin') {
+        Alert.alert('Thành công', 'Đăng nhập với quyền Quản trị viên!', [
+          {
+            text: 'OK',
+            onPress: () => router.replace('/admin/dashboard'),
+          },
+        ]);
       } else {
-        Alert.alert('Đăng nhập thất bại', data.message);
+        Alert.alert('Thành công', 'Đăng nhập thành công!', [
+          {
+            text: 'OK',
+            onPress: () => router.replace('/tabs/HomeScreen'),
+          },
+        ]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      Alert.alert('Lỗi', 'Không thể kết nối đến server. Vui lòng thử lại sau.');
+      Alert.alert('Lỗi', error?.message || 'Không thể kết nối đến server. Vui lòng thử lại sau.');
     } finally {
       setIsLoading(false);
     }
