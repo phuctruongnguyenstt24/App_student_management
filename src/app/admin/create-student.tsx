@@ -160,18 +160,13 @@ export default function CreateStudentScreen() {
     const findNextSequenceNumber = (year: string, departmentCode: string) => {
         if (!year || !departmentCode) return '001';
 
-        // Định dạng mới: [Mã ngành][Năm học][STT]
-        // Ví dụ: KTPM2311047 -> KTPM + 23 + 11047
         const prefix = `${departmentCode.toUpperCase()}${year.slice(-2)}`;
-
-        // Lọc tất cả MSSV có cùng prefix
         const matchingIds = existingStudentIds.filter(id => id.startsWith(prefix));
 
         if (matchingIds.length === 0) {
             return '001';
         }
 
-        // Tìm số thứ tự lớn nhất (lấy 3 số cuối)
         let maxSequence = 0;
         matchingIds.forEach(id => {
             const sequenceStr = id.slice(-3);
@@ -181,7 +176,6 @@ export default function CreateStudentScreen() {
             }
         });
 
-        // Trả về số tiếp theo, padding 3 số
         const nextSequence = maxSequence + 1;
         return nextSequence.toString().padStart(3, '0');
     };
@@ -200,34 +194,43 @@ export default function CreateStudentScreen() {
         }
     }, [formData.year, formData.departmentId, departments, existingStudentIds]);
 
-    // Hàm tạo MSSV tự động - ĐỊNH DẠNG MỚI: [Mã ngành][Năm học][STT]
-    // Ví dụ: KTPM + 23 + 11047 = KTPM2311047
+    // Hàm tạo MSSV tự động
     const generateMSSV = (year: string, departmentCode: string, sequenceNumber: string) => {
         if (!year || !departmentCode || !sequenceNumber) return '';
-
         const yearShort = year.slice(-2);
-        // Định dạng mới: Mã ngành + 2 số năm + STT (3 số)
-        // Ví dụ: KTPM + 23 + 047 = KTPM23047
         const mssv = `${departmentCode.toUpperCase()}${yearShort}${sequenceNumber.padStart(3, '0')}`;
         return mssv;
     };
+
+    // Xóa tiếng việt trong tên
+    const removeVietnameseTones = (str: string) => {
+        return str
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/đ/g, 'd')
+            .replace(/Đ/g, 'D');
+    }
 
     // Xử lý tạo email tự động
     const generateEmail = (fullName: string, departmentCode: string, studentId: string) => {
         if (!fullName || !departmentCode || !studentId) return '';
 
-        const nameParts = fullName.trim().split(' ');
-        const lastName = nameParts[nameParts.length - 1] || '';
-        const firstName = nameParts[0] || '';
+        const cleanName = removeVietnameseTones(fullName).trim().toLowerCase();
+        const parts = cleanName.split(/\s+/);
+        if (parts.length < 2) {
+            return `${cleanName}${departmentCode.toLowerCase()}${studentId}@student.ctuet.edu.vn`
+        }
 
-        const username = `${lastName.toLowerCase()}${firstName.toLowerCase()}${departmentCode.toLowerCase()}${studentId}`;
+        const lastName = parts[parts.length - 1] || '';
+        const initial = parts.slice(0, parts.length - 1).map(word => word[0]).join('');
+        const username = `${initial}${lastName}${departmentCode}${studentId}`.toLowerCase();
+
         return `${username}@student.ctuet.edu.vn`;
     };
 
     // Xử lý tạo password tự động (7 số cuối của MSSV)
     const generatePassword = (studentId: string) => {
         if (!studentId) return '';
-        // Lấy 7 số cuối của MSSV
         const numbers = studentId.replace(/[^0-9]/g, '');
         return numbers.slice(-7);
     };
@@ -246,14 +249,12 @@ export default function CreateStudentScreen() {
         if (numericText.length <= 3) {
             setFormData(prev => ({ ...prev, sequenceNumber: numericText }));
 
-            // Kiểm tra nếu STT đã tồn tại
             if (numericText.length === 3 && formData.year && formData.departmentId) {
                 const selectedDept = departments.find(d => d._id === formData.departmentId);
                 if (selectedDept) {
                     const exists = checkSequenceExists(formData.year, selectedDept.code, numericText);
                     if (exists) {
                         Alert.alert('Lưu ý', `STT ${numericText} đã tồn tại. Vui lòng chọn STT khác.`);
-                        // Tự động tìm STT tiếp theo
                         const nextSeq = findNextSequenceNumber(formData.year, selectedDept.code);
                         setFormData(prev => ({ ...prev, sequenceNumber: nextSeq }));
                     }
@@ -282,7 +283,6 @@ export default function CreateStudentScreen() {
     }, [formData.fullName, formData.departmentId, formData.year, formData.sequenceNumber]);
 
     // Tạo sinh viên
-    // app/admin/create-student.tsx - Sửa hàm handleCreateStudent
     const handleCreateStudent = async () => {
         if (!formData.fullName || !formData.studentId || !formData.facultyId || !formData.departmentId) {
             Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin bắt buộc');
@@ -299,7 +299,6 @@ export default function CreateStudentScreen() {
             return;
         }
 
-        // Kiểm tra lại STT trùng trước khi tạo
         const selectedDept = departments.find(d => d._id === formData.departmentId);
 
         if (!selectedDept) {
@@ -361,7 +360,6 @@ export default function CreateStudentScreen() {
             console.log('📦 Response:', data);
 
             if (data.success) {
-                // Cập nhật lại danh sách MSSV
                 setExistingStudentIds(prev => [...prev, formData.studentId.toUpperCase()]);
 
                 Alert.alert(
@@ -400,6 +398,7 @@ export default function CreateStudentScreen() {
             setIsLoading(false);
         }
     };
+
     // Modal quản lý Khoa/Ngành
     const handleSaveModal = async () => {
         if (!modalName.trim() || !modalCode.trim()) {
@@ -408,10 +407,9 @@ export default function CreateStudentScreen() {
         }
 
         const token = await AsyncStorage.getItem('token');
-        const url =
-            modalType === 'faculty'
-                ? `${API_URL}/faculties${editingItem ? `/${editingItem._id}` : ''}`
-                : `${API_URL}/departments${editingItem ? `/${editingItem._id}` : ''}`;
+        const url = modalType === 'faculty'
+            ? `${API_URL}/faculties${editingItem ? `/${editingItem._id}` : ''}`
+            : `${API_URL}/departments${editingItem ? `/${editingItem._id}` : ''}`;
 
         const method = editingItem ? 'PUT' : 'POST';
         const body: any = {
@@ -462,10 +460,9 @@ export default function CreateStudentScreen() {
                     style: 'destructive',
                     onPress: async () => {
                         const token = await AsyncStorage.getItem('token');
-                        const url =
-                            type === 'faculty'
-                                ? `${API_URL}/faculties/${id}`
-                                : `${API_URL}/departments/${id}`;
+                        const url = type === 'faculty'
+                            ? `${API_URL}/faculties/${id}`
+                            : `${API_URL}/departments/${id}`;
 
                         try {
                             const response = await fetch(url, {
@@ -518,8 +515,17 @@ export default function CreateStudentScreen() {
 
     return (
         <ScrollView style={styles.container}>
+            {/* Header */}
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                    <Ionicons name="arrow-back" size={28} color="#333" />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Tạo tài khoản sinh viên</Text>
+                <View style={styles.headerRight} />
+            </View>
+
+            {/* Form tạo sinh viên */}
             <Card style={styles.card}>
-                <Card.Title title="Tạo tài khoản sinh viên" />
                 <Card.Content>
                     {/* Họ tên */}
                     <TextInput
@@ -674,7 +680,7 @@ export default function CreateStudentScreen() {
                         </View>
                     </View>
 
-                    {/* MSSV tự động - Hiển thị định dạng mới */}
+                    {/* MSSV tự động */}
                     <TextInput
                         label="MSSV (tự động)"
                         value={formData.studentId.toUpperCase()}
@@ -744,75 +750,6 @@ export default function CreateStudentScreen() {
                     >
                         Tạo tài khoản
                     </Button>
-                </Card.Content>
-            </Card>
-
-            {/* Phần còn lại giữ nguyên (Danh sách Khoa & Ngành, Modal) */}
-            <Card style={styles.card}>
-                <Card.Title title="Danh sách Khoa & Ngành" />
-                <Card.Content>
-                    {faculties.map(faculty => (
-                        <View key={faculty._id} style={styles.facultyItem}>
-                            <View style={styles.facultyHeader}>
-                                <View style={styles.facultyInfo}>
-                                    <Text style={styles.facultyName}>{faculty.name}</Text>
-                                    <Chip style={styles.codeChip}>{faculty.code}</Chip>
-                                </View>
-                                <View style={styles.actionButtons}>
-                                    <IconButton
-                                        icon="pencil"
-                                        size={20}
-                                        onPress={() => {
-                                            setModalType('faculty');
-                                            setModalName(faculty.name);
-                                            setModalCode(faculty.code);
-                                            setEditingItem(faculty);
-                                            setModalVisible(true);
-                                        }}
-                                    />
-                                    <IconButton
-                                        icon="delete"
-                                        size={20}
-                                        iconColor="#dc3545"
-                                        onPress={() => handleDeleteItem(faculty._id, 'faculty')}
-                                    />
-                                </View>
-                            </View>
-                            <View style={styles.departmentList}>
-                                {departments
-                                    .filter(d => d.facultyId === faculty._id)
-                                    .map(dept => (
-                                        <View key={dept._id} style={styles.departmentItem}>
-                                            <View style={styles.departmentInfo}>
-                                                <Text style={styles.departmentName}>• {dept.name}</Text>
-                                                <Chip style={styles.smallChip}>{dept.code}</Chip>
-                                            </View>
-                                            <View style={styles.actionButtons}>
-                                                <IconButton
-                                                    icon="pencil"
-                                                    size={16}
-                                                    onPress={() => {
-                                                        setModalType('department');
-                                                        setModalName(dept.name);
-                                                        setModalCode(dept.code);
-                                                        setEditingItem(dept);
-                                                        setSelectedFacultyId(dept.facultyId);
-                                                        setModalVisible(true);
-                                                    }}
-                                                />
-                                                <IconButton
-                                                    icon="delete"
-                                                    size={16}
-                                                    iconColor="#dc3545"
-                                                    onPress={() => handleDeleteItem(dept._id, 'department')}
-                                                />
-                                            </View>
-                                        </View>
-                                    ))}
-                            </View>
-                            <Divider style={styles.divider} />
-                        </View>
-                    ))}
                 </Card.Content>
             </Card>
 
@@ -888,4 +825,3 @@ export default function CreateStudentScreen() {
         </ScrollView>
     );
 }
-
