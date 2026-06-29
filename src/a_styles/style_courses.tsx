@@ -11,7 +11,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingTop: 50,
     paddingBottom: 16,
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,

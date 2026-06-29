@@ -316,11 +316,238 @@ const deleteStudent = async (req, res) => {
   }
 };
 
+// Tìm kiếm sinh viên
+const searchStudents = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền truy cập'
+      });
+    }
+
+    const { keyword } = req.query;
+    
+    if (!keyword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng nhập từ khóa tìm kiếm'
+      });
+    }
+
+    const searchRegex = new RegExp(keyword, 'i');
+    
+    const students = await User.find({
+      role: 'student',
+      $or: [
+        { fullName: searchRegex },
+        { studentId: searchRegex },
+        { email: searchRegex },
+        { phone: searchRegex }
+      ]
+    })
+    .select('-password')
+    .populate('facultyId', 'name code')
+    .populate('departmentId', 'name code')
+    .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: students.length,
+      students
+    });
+
+  } catch (error) {
+    console.error('Search students error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server: ' + error.message
+    });
+  }
+};
+// Lấy chi tiết sinh viên theo ID
+const getStudentById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Kiểm tra id hợp lệ
+    if (!id || id === 'undefined' || id === 'null') {
+      return res.status(400).json({
+        success: false,
+        message: 'ID sinh viên không hợp lệ'
+      });
+    }
+
+    // Chỉ admin mới có quyền xem chi tiết
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền xem thông tin này'
+      });
+    }
+
+    const student = await User.findById(id)
+      .select('-password')
+      .populate('facultyId', 'name code')
+      .populate('departmentId', 'name code');
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy sinh viên'
+      });
+    }
+
+    // Kiểm tra role student
+    if (student.role !== 'student') {
+      return res.status(403).json({
+        success: false,
+        message: 'Tài khoản này không phải là sinh viên'
+      });
+    }
+
+    res.json({
+      success: true,
+      student
+    });
+
+  } catch (error) {
+    console.error('Get student by id error:', error);
+    
+    // Xử lý lỗi CastError (ID không hợp lệ)
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: 'ID sinh viên không hợp lệ'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server: ' + error.message
+    });
+  }
+};
+
+// Cập nhật thông tin sinh viên (Admin)
+const updateStudent = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    console.log('📝 Updating student:', id);
+    console.log('📝 Update data:', updateData);
+
+    // Kiểm tra id hợp lệ
+    if (!id || id === 'undefined' || id === 'null') {
+      return res.status(400).json({
+        success: false,
+        message: 'ID sinh viên không hợp lệ'
+      });
+    }
+
+    // Kiểm tra quyền admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền thực hiện hành động này'
+      });
+    }
+
+    // Tìm sinh viên
+    const student = await User.findById(id);
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy sinh viên'
+      });
+    }
+
+    if (student.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Không thể cập nhật tài khoản admin'
+      });
+    }
+
+    // Các trường được phép cập nhật
+    const allowedFields = [
+      'fullName',
+      'phone',
+      'address',
+      'dateOfBirth',
+      'placeOfBirth',
+      'class',
+      'status',
+      'facultyId',
+      'departmentId',
+      'academicInfo',
+      'personalInfo',
+      'familyInfo'
+    ];
+
+    // Lọc chỉ lấy các trường được phép
+    const filteredData = {};
+    allowedFields.forEach(field => {
+      if (updateData[field] !== undefined) {
+        filteredData[field] = updateData[field];
+      }
+    });
+
+    // Nếu không có dữ liệu để cập nhật
+    if (Object.keys(filteredData).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Không có dữ liệu để cập nhật'
+      });
+    }
+
+    // Cập nhật
+    const updatedStudent = await User.findByIdAndUpdate(
+      id,
+      { $set: filteredData },
+      { 
+        new: true, 
+        runValidators: true 
+      }
+    ).select('-password')
+     .populate('facultyId', 'name code')
+     .populate('departmentId', 'name code');
+
+    console.log('✅ Student updated successfully:', updatedStudent._id);
+
+    res.json({
+      success: true,
+      message: 'Cập nhật thông tin sinh viên thành công',
+      student: updatedStudent
+    });
+
+  } catch (error) {
+    console.error('Update student error:', error);
+    
+    // Xử lý lỗi CastError (ID không hợp lệ)
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: 'ID sinh viên không hợp lệ'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server: ' + error.message
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
   getMe,
   createStudentAccount,
   getAllStudents,
-  deleteStudent
+  deleteStudent,
+  searchStudents,
+  getStudentById,
+   updateStudent
 };

@@ -99,8 +99,78 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true,
     default: ''
+  },
+dateOfBirth: {
+    type: String,
+    default: ''
+  },
+  placeOfBirth: {
+    type: String,
+    default: ''
+  },
+  status: {
+    type: String,
+    enum: ['active', 'inactive'],
+    default: 'active'
+  },
+   // Thông tin học vấn
+  academicInfo: {
+    enrollmentDate: { type: String, default: '' },
+    trainingLevel: { type: String, default: 'Đại học chính quy' },
+    trainingType: { type: String, default: 'Chính quy' },
+    courseYear: { type: String, default: '' },
+    base: { type: String, default: 'Trường Đại học Kỹ thuật - Công nghệ Cần Thơ' },
+    profileCode: { type: String, default: '' }
+  },
+   // Thông tin cá nhân
+  personalInfo: {
+    ethnicity: { type: String, default: 'Kinh' },
+    religion: { type: String, default: 'Không' },
+    nationality: { type: String, default: 'Việt Nam' },
+    region: { type: String, default: '' },
+    cccd: { type: String, default: '' },
+    cccdIssueDate: { type: String, default: '' },
+    cccdIssuePlace: { type: String, default: '' },
+    object: { type: String, default: '' },
+    policyType: { type: String, default: 'Không' },
+    unionJoinDate: { type: String, default: '' },
+    partyJoinDate: { type: String, default: '' },
+    permanentResidence: { type: String, default: '' },
+    bankName: { type: String, default: '' },
+    bankBranch: { type: String, default: '' },
+    accountHolder: { type: String, default: '' },
+    accountNumber: { type: String, default: '' }
+  },
+    familyInfo: {
+    father: {
+      name: { type: String, default: '' },
+      birthYear: { type: String, default: '' },
+      occupation: { type: String, default: '' },
+      nationality: { type: String, default: 'Việt Nam' },
+      ethnicity: { type: String, default: 'Kinh' },
+      religion: { type: String, default: 'Không' },
+      workplace: { type: String, default: '' },
+      position: { type: String, default: '' },
+      phone: { type: String, default: '' },
+      permanentResidence: { type: String, default: '' },
+      currentResidence: { type: String, default: '' }
+    },
+       mother: {
+      name: { type: String, default: '' },
+      birthYear: { type: String, default: '' },
+      occupation: { type: String, default: '' },
+      nationality: { type: String, default: 'Việt Nam' },
+      ethnicity: { type: String, default: 'Kinh' },
+      religion: { type: String, default: 'Không' },
+      workplace: { type: String, default: '' },
+      position: { type: String, default: '' },
+      phone: { type: String, default: '' },
+      permanentResidence: { type: String, default: '' },
+      currentResidence: { type: String, default: '' }
+    }
   }
-}, {
+}, 
+{
   timestamps: true
 });
 

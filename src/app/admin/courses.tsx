@@ -1,16 +1,14 @@
 // app/admin/courses.tsx
-import { View, Text, TouchableOpacity, ScrollView, TextInput, Modal, Alert, RefreshControl } from 'react-native';
-import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useState, useEffect, useCallback } from 'react';
-import { styles } from '../../a_styles/style_courses';
 import { Ionicons } from '@expo/vector-icons';
-import Constants from 'expo-constants';
-import { Chip, Divider, ActivityIndicator } from 'react-native-paper';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import { Alert, Modal, RefreshControl, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Chip } from 'react-native-paper';
+import { styles } from '../../a_styles/style_courses';
+import { API_URL } from '../../config/api';  
 
-const host = Constants.expoConfig?.hostUri?.split(':')[0];
-const API_URL = `http://${host}:5000/api`;
-
+ 
 interface Course {
   _id: string;
   courseCode: string;
@@ -125,7 +123,7 @@ export default function CoursesScreen() {
 
     try {
       const token = await AsyncStorage.getItem('token');
-      const courseData = editingCourse ? {} : { courseCode, courseName, credits: Number(credits), department, description, semester };
+      const courseData: any = editingCourse ? {} : { courseCode, courseName, credits: Number(credits), department, description, semester };
       if (editingCourse) {
         if (courseCode.trim()) courseData.courseCode = courseCode;
         if (courseName.trim()) courseData.courseName = courseName;
@@ -312,7 +310,6 @@ export default function CoursesScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={28} color="#333" />
@@ -343,9 +340,7 @@ export default function CoursesScreen() {
           {faculties.map((faculty) => (
             <View key={faculty._id} style={styles.facultyCard}>
               <View style={styles.facultyHeader}>
-
                 <View style={styles.facultyInfo}>
-
                   {/* Dòng trên */}
                   <View style={styles.facultyTop}>
                     <Chip style={styles.codeChip}>
@@ -398,9 +393,7 @@ export default function CoursesScreen() {
                   <Text style={styles.facultyName}>
                     {faculty.name}
                   </Text>
-
                 </View>
-
               </View>
 
               <View style={styles.departmentList}>

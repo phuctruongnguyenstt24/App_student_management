@@ -11,7 +11,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="HomeScreen"
         options={{
           title: 'Trang chủ',
           tabBarIcon: ({ color, size }) => (
@@ -19,24 +19,50 @@ export default function TabLayout() {
           ),
         }}
       />
+
       <Tabs.Screen
-        name="courses"
+        name="ScheduleScreen"
         options={{
-          title: 'Môn học',
+          title: 'Lịch học',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="book-outline" size={size} color={color} />
+            <Ionicons name="calendar-outline" size={size} color={color} />
           ),
         }}
       />
+
       <Tabs.Screen
-        name="profile"
+        name="AttendanceScreen"
         options={{
-          title: 'Hồ sơ',
+          title: 'Điểm danh',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="checkmark-circle-outline" size={size} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="ProfileScreen"
+        options={{
+          title: 'Cá nhân',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-outline" size={size} color={color} />
           ),
         }}
       />
+<Tabs.Screen
+  name="settings"
+  options={{
+    href: null,
+  }}
+/>
+
+<Tabs.Screen
+  name="screens-for-profile/StudentInfoScreen"
+  options={{
+    href: null,
+  }}
+/>
+
     </Tabs>
   );
 }

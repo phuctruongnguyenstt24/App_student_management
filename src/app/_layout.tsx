@@ -1,18 +1,40 @@
-// app/_layout.tsx - Simplified version (no NavigationThemeProvider)
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Stack } from 'expo-router';
-import { Provider as PaperProvider, DefaultTheme, MD3DarkTheme } from 'react-native-paper';
+import {
+  Provider as PaperProvider,
+  MD3LightTheme,
+  MD3DarkTheme,
+} from 'react-native-paper';
+
 import { AuthProvider } from '../contexts/AuthContext';
 import { ThemeProvider, useTheme } from '../contexts/ThemeContext';
 
 function RootLayoutNav() {
   const { theme } = useTheme();
-  const paperTheme = theme === 'dark' ? MD3DarkTheme : DefaultTheme;
+
+  const paperTheme = useMemo(() => {
+    return theme === 'dark'
+      ? {
+          ...MD3DarkTheme,
+          colors: {
+            ...MD3DarkTheme.colors,
+            primary: '#4a90e2',
+          },
+        }
+      : {
+          ...MD3LightTheme,
+          colors: {
+            ...MD3LightTheme.colors,
+            primary: '#4a90e2',
+          },
+        };
+  }, [theme]);
 
   return (
     <PaperProvider theme={paperTheme}>
       <Stack
         screenOptions={{
+          headerShown:false,
           headerStyle: {
             backgroundColor: paperTheme.colors.surface,
           },
@@ -25,8 +47,10 @@ function RootLayoutNav() {
           },
         }}
       >
-        <Stack.Screen name="login" options={{ headerShown: false }} />
-       
+        <Stack.Screen
+          name="login"
+          options={{ headerShown: false }}
+        />
       </Stack>
     </PaperProvider>
   );

@@ -9,6 +9,10 @@ const authRoutes = require('./routes/authRoutes');
 const facultyRoutes = require('./routes/facultyRoutes');
 const departmentRoutes = require('./routes/departmentRoutes');
 const courseRoutes = require('./routes/courses');
+const updateRequestRoutes = require('./routes/updateRequestRoutes');
+const studentRoutes = require('./routes/studentRoutes');
+const scheduleRoutes = require('./routes/scheduleRoutes');
+ 
 
 const app = express();
 
@@ -32,6 +36,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/faculties', facultyRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/courses', courseRoutes);
+app.use('/api', updateRequestRoutes);
+app.use('/api', studentRoutes);
+app.use('/api/schedules', scheduleRoutes);
+ 
 
 // Test
 app.get('/api/test', (req, res) => {

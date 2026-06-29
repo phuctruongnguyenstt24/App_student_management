@@ -1,19 +1,22 @@
+// routes/facultyRoutes.js
 const express = require('express');
 const router = express.Router();
 const { protect, isAdmin } = require('../middleware/authMiddleware');
 const {
   getFaculties,
+  getFacultyById,
   createFaculty,
   updateFaculty,
-  deleteFaculty,
+  deleteFaculty
 } = require('../controllers/facultyController');
 
-router.route('/')
-  .get(protect, getFaculties)
-  .post(protect, isAdmin, createFaculty);
+// Public routes (có thể cho phép xem)
+router.get('/', getFaculties);
+router.get('/:id', getFacultyById);
 
-router.route('/:id')
-  .put(protect, isAdmin, updateFaculty)
-  .delete(protect, isAdmin, deleteFaculty);
+// Admin only routes
+router.post('/', protect, isAdmin, createFaculty);
+router.put('/:id', protect, isAdmin, updateFaculty);
+router.delete('/:id', protect, isAdmin, deleteFaculty);
 
 module.exports = router;
