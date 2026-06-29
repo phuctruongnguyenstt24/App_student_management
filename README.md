@@ -58,13 +58,11 @@ Join our community of developers creating universal apps.
 ## Hướng dẫn chạy dự án React Native (Expo) - Nhân's Document
 1. Chạy dự án
 
-a. Chạy backend
-cd backend
-npm start
+a. Chạy backend ==> cd backend ==> npm start
 
 b. Chạy React Native (Frontend)
-Lưu ý: Nhớ di chuyển vào đúng thư mục dự án trước khi chạy lệnh (cd "App_student_management")
-npx expo start
+Lưu ý: Nhớ di chuyển vào đúng thư mục dự án trước khi chạy lệnh
+==> cd "App_student_management" ==> npx expo start
 
 2. Test trên điện thoại thật bằng Expo Go
 
