@@ -1,21 +1,19 @@
-import React from "react";
-import {
-    View,
-    Text,
-    StyleSheet,
-    TouchableOpacity,
-    ScrollView,
-    Image,
-    Switch,
-    Alert
-} from "react-native";
-import * as ImagePicker from 'expo-image-picker';
-import { useState, useEffect } from 'react';
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
-import { useAuth } from "../../contexts/AuthContext";
-import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from "expo-router";
+import { useEffect, useState } from 'react';
+import {
+    Alert,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function ProfileScreen() {
     const router = useRouter();
@@ -32,7 +30,7 @@ export default function ProfileScreen() {
             id: 1,
             icon: "person-outline",
             title: "Thông tin sinh viên",
-            onPress: () => router.push("../screens-for-profile/StudentInfoScreen"),
+            onPress: () => router.push("/tabs/screens-for-profile/StudentInfoScreen"),
         },
         // {
         //     id: 2,
