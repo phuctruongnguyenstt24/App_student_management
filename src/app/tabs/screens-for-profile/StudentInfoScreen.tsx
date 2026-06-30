@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import {
+  Button,
   Image,
   SafeAreaView,
   ScrollView,
@@ -81,6 +82,10 @@ export default function StudentInfoScreen() {
     { label: 'Niên khóa', value: student?.academicInfo?.courseYear ?? '' },
   ];
 
+  const onPressUpdateStudent = () => {
+    console.log('Button pressed!');
+    //Gui yeu cau cap nhat thong tin len admin
+  };
 
   if (loading) {
     return (
@@ -141,6 +146,14 @@ export default function StudentInfoScreen() {
               </View>
             ))}
           </View>
+
+          <Button
+          onPress={onPressUpdateStudent}
+          title="Cap Nhat Sinh Vien"
+          color="#6d7c99"
+          accessibilityLabel="Cap Nhat Sinh Vien"
+          />
+
         </View>
       </ScrollView>
     </SafeAreaView>
