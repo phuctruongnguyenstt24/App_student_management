@@ -12,8 +12,8 @@ import {
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { styles } from '../../../a_styles/style_student_info';
+import { API_URL } from '../../../config/api'; //Sữa đường dẫn api
 import { useAuth } from '../../../contexts/AuthContext';
-import { API_URL } from '../../../utils/api';
 
 export default function StudentInfoScreen() {
   const { user } = useAuth();
@@ -61,6 +61,7 @@ export default function StudentInfoScreen() {
   };
 
 
+  // Lẩy các thông tin trong database rồi hiện ra đây
   const studentInfo = [
     { label: 'Trạng thái', value: student?.status === 'active' ? 'Đang học' : 'Nghỉ học' },
     { label: 'Họ và tên', value: student?.fullName ?? '' },
@@ -114,10 +115,12 @@ export default function StudentInfoScreen() {
         <View style={styles.card}>
           <View style={styles.avatarContainer}>
             <Image
-              source={{
-                uri: student?.avatar || 'https://i.pravatar.cc/300',
-              }}
-              style={styles.avatar}
+              source={
+                  student?.avatar
+                    ? { uri: student.avatar }
+                    : require('../../../../assets/images/Nhan_imported_image/account_circle_withbackground.png')
+                }
+                style={styles.avatar}
             />
 
             <TouchableOpacity style={styles.cameraButton}>
