@@ -1,5 +1,5 @@
 // src/contexts/AuthContext.tsx
-import { API_URL } from '@/utils/api'; //Import hàm gọi API tới backend.
+import { API_URL } from '@/config/api'; //Import hàm gọi API tới backend. 
 import AsyncStorage from '@react-native-async-storage/async-storage'; //AsyncStorage: Dùng để lưu dữ liệu vào bộ nhớ điện thoại. ==> Khi tắt app mở lại vẫn còn.
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
