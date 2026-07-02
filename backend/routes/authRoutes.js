@@ -13,7 +13,9 @@ const {
   searchStudents,
   getStudentById,
   uploadAvatar,
-  updateStudent
+  updateStudent,
+  changePassword
+
 } = require('../controllers/authController');
 
 const {
@@ -29,6 +31,8 @@ router.get('/me', protect, getMe);
 
 // ✅ Thêm upload.single('avatar') vào route
 router.post('/upload-avatar', protect, upload.single('avatar'), uploadAvatar);
+// ✅ Route đổi mật khẩu (chỉ cần đăng nhập, không cần admin)
+router.put('/change-password', protect, changePassword);
 
 // Admin only routes
 router.post('/create-student', protect, isAdmin, createStudentAccount);

@@ -3,7 +3,7 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
-
+const bcrypt = require('bcryptjs');
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE || '7d'
@@ -626,6 +626,56 @@ const updateStudent = async (req, res) => {
     });
   }
 };
+const changePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    
+    // 1. Lấy ID người dùng từ token (giả định authMiddleware đã gắn vào req.user)
+    const userId = req.user.id; 
+
+    // 2. Kiểm tra input
+    if (!oldPassword || !newPassword) {
+       return res.status(400).json({
+         success: false,
+         message: 'Vui lòng cung cấp mật khẩu cũ và mật khẩu mới'
+       });
+    }
+
+    if (newPassword.length < 5) {
+       return res.status(400).json({
+         success: false,
+         message: 'Mật khẩu mới phải có ít nhất 5 ký tự'
+       });
+    }
+
+    // 3. Tìm người dùng trong DB, cần lấy cả trường password
+    const user = await User.findById(userId).select('+password');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy người dùng' });
+    }
+
+    // 4. So sánh mật khẩu cũ (Sử dụng hàm bạn đã định nghĩa trong Model giống như lúc login)
+    const isMatch = await user.comparePassword(oldPassword);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Mật khẩu hiện tại không chính xác' });
+    }
+
+    // 5. Cập nhật mật khẩu mới 
+    // (Nếu bạn đã có pre-save hook trong User.js để tự động hash password thì chỉ cần gán thẳng)
+    user.password = newPassword; 
+    await user.save();
+
+    // Log để dễ debug
+    console.log('✅ Password changed successfully for user:', userId);
+
+    return res.json({ success: true, message: 'Đổi mật khẩu thành công!' });
+
+  } catch (error) {
+    console.error('Change password error:', error);
+    return res.status(500).json({ success: false, message: 'Lỗi server: ' + error.message });
+  }
+};
+
 
 module.exports = {
   register,
@@ -638,5 +688,6 @@ module.exports = {
   getStudentById,
    updateStudent,
    uploadAvatar,
-   deleteOldAvatar
+  deleteOldAvatar,
+   changePassword
 };

@@ -1,21 +1,21 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter, useFocusEffect } from "expo-router";
-import { useEffect, useState, useCallback } from 'react';
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from 'react';
 import {
+    ActivityIndicator,
     Alert,
     Image,
     ScrollView,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
-    ActivityIndicator
+    View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth } from "../../contexts/AuthContext";
 import { API_URL } from '../../config/api';
+import { useAuth } from "../../contexts/AuthContext";
 
 
 export default function ProfileScreen() {
@@ -38,10 +38,13 @@ export default function ProfileScreen() {
             onPress: () => router.push("/tabs/screens-for-profile/StudentInfoScreen"),
         },
         {
-            id: 2,
-            icon: "lock-closed-outline",
-            title: "Đổi mật khẩu",
-            onPress: () => router.push("/tabs/screens-for-profile/StudentInfoScreen"),
+            id: '2',
+            title: 'Đổi mật khẩu',
+            icon: 'lock-closed-outline',
+            onPress: () => router.push({
+                pathname: '/tabs/screens-for-profile/StudentInfoScreen',
+                params: { view: 'password' } // ✅ Kích hoạt giao diện đổi mật khẩu
+            }),
         },
         {
             id: 3,
