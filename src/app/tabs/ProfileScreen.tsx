@@ -38,7 +38,7 @@ export default function ProfileScreen() {
             onPress: () => router.push("/tabs/screens-for-profile/StudentInfoScreen"),
         },
         {
-            id: '2',
+            id: 2,
             title: 'Đổi mật khẩu',
             icon: 'lock-closed-outline',
             onPress: () => router.push({

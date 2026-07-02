@@ -10,11 +10,11 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router, useLocalSearchParams } from 'expo-router'; // ✅ Thêm useLocalSearchParams
+import { router, useLocalSearchParams } from 'expo-router';
 import { styles } from '../../../a_styles/style_student_info';
 import { API_URL } from '../../../config/api';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -22,36 +22,42 @@ import { useAuth } from '../../../contexts/AuthContext';
 export default function StudentInfoScreen() {
   const { user } = useAuth();
 
-  // ✅ Lấy tham số 'view' xem người dùng đang muốn mở gì ('info' hay 'password')
+  // Lấy params view từ ProfileScreen truyền sang
   const { view } = useLocalSearchParams();
 
-  // --- State cho Thông tin sinh viên ---
   const [student, setStudent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // --- State cho Đổi mật khẩu ---
+  // State cho form đổi mật khẩu
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [isChanging, setIsChanging] = useState(false);
 
   useEffect(() => {
-    if (user?.studentId && view !== 'password') {
+    if (user?.studentId) {
       loadStudent();
     }
-  }, [user, view]);
+  }, [user]);
 
+  // loadStudent từ database
   const loadStudent = async () => {
     try {
       setLoading(true);
       const token = await AsyncStorage.getItem('token');
-      const response = await fetch(`${API_URL}/students/${user?.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      const response = await fetch(
+        `${API_URL}/students/${user?.id}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
         }
-      });
+      );
+
       const data = await response.json();
+      console.log('Student API:', data);
+
       if (data.success) {
         setStudent(data.student);
       }
@@ -62,52 +68,53 @@ export default function StudentInfoScreen() {
     }
   };
 
+  // Hàm xử lý đổi mật khẩu
   const handleChangePassword = async () => {
     if (!oldPassword || !newPassword || !confirmPassword) {
-      Alert.alert('Thông báo', 'Vui lòng điền đầy đủ thông tin!');
+      Alert.alert('Thông báo', 'Vui lòng nhập đầy đủ thông tin!');
       return;
     }
-    if (newPassword.length < 5) {
-      Alert.alert('Thông báo', 'Mật khẩu mới phải có ít nhất 5 ký tự!');
-      return;
-    }
+
     if (newPassword !== confirmPassword) {
       Alert.alert('Lỗi', 'Mật khẩu mới và xác nhận mật khẩu không khớp!');
       return;
     }
 
     try {
-      setPasswordLoading(true);
+      setIsChanging(true);
       const token = await AsyncStorage.getItem('token');
+
+      // Chỗ này cậu thay thế bằng API Endpoint đổi mật khẩu thực tế của backend cậu nha
       const response = await fetch(`${API_URL}/auth/change-password`, {
-        method: 'PUT',
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ oldPassword, newPassword })
+        body: JSON.stringify({
+          oldPassword: oldPassword,
+          newPassword: newPassword
+        })
       });
+
       const data = await response.json();
 
-      if (response.ok && data.success) {
-        Alert.alert('Thành công', 'Đổi mật khẩu thành công!');
-        setOldPassword(''); setNewPassword(''); setConfirmPassword('');
-        router.back();
+      if (response.ok && (data.success || data.message === 'Thành công')) {
+        Alert.alert('Thành công', 'Đổi mật khẩu thành công!', [
+          { text: 'OK', onPress: () => router.back() } // Đổi xong quay về Profile
+        ]);
       } else {
-        Alert.alert('Lỗi', data.message || 'Đổi mật khẩu thất bại!');
+        Alert.alert('Lỗi', data.message || 'Mật khẩu cũ không chính xác hoặc có lỗi xảy ra.');
       }
     } catch (error) {
-      Alert.alert('Lỗi kết nối', 'Không thể kết nối đến server.');
+      console.log('Lỗi đổi mật khẩu:', error);
+      Alert.alert('Lỗi', 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
     } finally {
-      setPasswordLoading(false);
+      setIsChanging(false);
     }
   };
 
-  const handleback = () => {
-    router.back();
-  };
-
+  // Lấy các thông tin trong database rồi hiện ra đây
   const studentInfo = [
     { label: 'Trạng thái', value: student?.status === 'active' ? 'Đang học' : 'Nghỉ học' },
     { label: 'Họ và tên', value: student?.fullName ?? '' },
@@ -117,77 +124,32 @@ export default function StudentInfoScreen() {
     { label: 'Lớp', value: student?.class ?? '' },
     { label: 'Khoa', value: student?.facultyId?.name ?? '' },
     { label: 'Chuyên ngành', value: student?.departmentId?.name ?? '' },
+    { label: 'Bậc đào tạo', value: student?.academicInfo?.trainingLevel ?? '' },
+    { label: 'Khóa', value: student?.course ?? '' },
+    { label: 'Email', value: student?.email ?? '' },
+    { label: 'SĐT', value: student?.phone ?? '' },
+    { label: 'Địa chỉ', value: student?.address ?? '' },
+    { label: 'Nơi sinh', value: student?.placeOfBirth ?? '' },
+    { label: 'CCCD', value: student?.personalInfo?.cccd ?? '' },
+    { label: 'Dân tộc', value: student?.personalInfo?.ethnicity ?? '' },
+    { label: 'Quốc tịch', value: student?.personalInfo?.nationality ?? '' },
+    { label: 'Niên khóa', value: student?.academicInfo?.courseYear ?? '' },
   ];
 
-  // ==========================================
-  // GIAO DIỆN 1: NẾU TRUYỀN VÀO view='password'
-  // ==========================================
-  if (view === 'password') {
-    return (
-      <SafeAreaView style={localStyles.container}>
-        <View style={localStyles.header}>
-          <TouchableOpacity onPress={handleback}>
-            <Ionicons name="arrow-back" size={24} color="#333" />
-          </TouchableOpacity>
-          <Text style={localStyles.headerTitle}>Đổi mật khẩu</Text>
-          <View style={{ width: 24 }} />
-        </View>
-
-        <View style={localStyles.formContainer}>
-          <TextInput
-            style={localStyles.input}
-            placeholder="Mật khẩu hiện tại"
-            secureTextEntry
-            value={oldPassword}
-            onChangeText={setOldPassword}
-            editable={!passwordLoading}
-          />
-          <TextInput
-            style={localStyles.input}
-            placeholder="Mật khẩu mới"
-            secureTextEntry
-            value={newPassword}
-            onChangeText={setNewPassword}
-            editable={!passwordLoading}
-          />
-          <TextInput
-            style={localStyles.input}
-            placeholder="Xác nhận mật khẩu mới"
-            secureTextEntry
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            editable={!passwordLoading}
-          />
-
-          <TouchableOpacity
-            style={[localStyles.button, passwordLoading && localStyles.buttonDisabled]}
-            onPress={handleChangePassword}
-            disabled={passwordLoading}
-          >
-            {passwordLoading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={localStyles.buttonText}>Xác nhận</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  // ==========================================
-  // GIAO DIỆN 2: MẶC ĐỊNH LÀ XEM THÔNG TIN SINH VIÊN
-  // ==========================================
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color="#214D8A" />
-          <Text>Đang tải...</Text>
+          <Text style={{ marginTop: 10, color: '#214D8A' }}>Đang tải...</Text>
         </View>
       </SafeAreaView>
     );
   }
+
+  const handleback = () => {
+    router.back(); // Dùng router.back() thay vì replace để quay lại mượt hơn
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -195,83 +157,154 @@ export default function StudentInfoScreen() {
         <TouchableOpacity onPress={handleback}>
           <Ionicons name='arrow-back' size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Thông tin sinh viên</Text>
+
+        {/* Thay đổi tiêu đề Header dựa vào view */}
+        <Text style={styles.headerTitle}>
+          {view === 'password' ? 'Đổi mật khẩu' : 'Thông tin sinh viên'}
+        </Text>
+
         <View style={{ width: 24 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.card}>
-          <View style={styles.avatarContainer}>
-            <Image
-              source={
-                student?.avatar
-                  ? { uri: student.avatar }
-                  : require('../../../../assets/images/Nhan_imported_image/account_circle_withbackground.png')
-              }
-              style={styles.avatar}
-            />
-          </View>
-          <Text style={styles.name}>{student?.fullName}</Text>
-          <Text style={styles.studentId}>MSSV: {student?.studentId}</Text>
+        {view === 'password' ? (
+          // ==============================
+          // GIAO DIỆN ĐỔI MẬT KHẨU
+          // ==============================
+          <View style={localStyles.formContainer}>
+            <Text style={localStyles.formLabel}>Mật khẩu hiện tại</Text>
+            <View style={localStyles.inputContainer}>
+              <Ionicons name="lock-closed-outline" size={20} color="#666" style={localStyles.inputIcon} />
+              <TextInput
+                style={localStyles.input}
+                placeholder="Nhập mật khẩu hiện tại"
+                secureTextEntry
+                value={oldPassword}
+                onChangeText={setOldPassword}
+              />
+            </View>
 
-          <View style={styles.infoContainer}>
-            {studentInfo.map((item, index) => (
-              <View key={index} style={styles.row}>
-                <Text style={styles.label}>{item.label}</Text>
-                <Text style={styles.value}>{item.value}</Text>
-              </View>
-            ))}
+            <Text style={localStyles.formLabel}>Mật khẩu mới</Text>
+            <View style={localStyles.inputContainer}>
+              <Ionicons name="key-outline" size={20} color="#666" style={localStyles.inputIcon} />
+              <TextInput
+                style={localStyles.input}
+                placeholder="Nhập mật khẩu mới"
+                secureTextEntry
+                value={newPassword}
+                onChangeText={setNewPassword}
+              />
+            </View>
+
+            <Text style={localStyles.formLabel}>Xác nhận mật khẩu mới</Text>
+            <View style={localStyles.inputContainer}>
+              <Ionicons name="checkmark-done-outline" size={20} color="#666" style={localStyles.inputIcon} />
+              <TextInput
+                style={localStyles.input}
+                placeholder="Nhập lại mật khẩu mới"
+                secureTextEntry
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[localStyles.submitButton, isChanging && { opacity: 0.7 }]}
+              onPress={handleChangePassword}
+              disabled={isChanging}
+            >
+              {isChanging ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={localStyles.submitButtonText}>Xác nhận đổi mật khẩu</Text>
+              )}
+            </TouchableOpacity>
           </View>
-        </View>
+        ) : (
+          // ==============================
+          // GIAO DIỆN THÔNG TIN SINH VIÊN (GIỮ NGUYÊN)
+          // ==============================
+          <View style={styles.card}>
+            <View style={styles.avatarContainer}>
+              <Image
+                source={
+                  student?.avatar
+                    ? { uri: student.avatar }
+                    : require('../../../../assets/images/Nhan_imported_image/account_circle_withbackground.png')
+                }
+                style={styles.avatar}
+              />
+            </View>
+
+            <Text style={styles.name}>{student?.fullName}</Text>
+            <Text style={styles.studentId}>MSSV: {student?.studentId}</Text>
+
+            <View style={styles.infoContainer}>
+              {studentInfo.map((item, index) => (
+                <View key={index} style={styles.row}>
+                  <Text style={styles.label}>{item.label}</Text>
+                  <Text style={styles.value}>{item.value}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-// CSS dành riêng cho phần đổi mật khẩu
+// Bổ sung style riêng cho form đổi mật khẩu (không làm hỏng style của thông tin sinh viên)
 const localStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F6FA',
+  formContainer: {
+    backgroundColor: '#fff',
+    margin: 16,
+    padding: 20,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  header: {
+  formLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+    marginTop: 12,
+  },
+  inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 15,
+    backgroundColor: '#F5F6FA',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    height: 50,
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  formContainer: {
-    padding: 16,
-    marginTop: 10,
+  inputIcon: {
+    marginRight: 10,
   },
   input: {
-    backgroundColor: '#FFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 16,
-    fontSize: 16,
+    flex: 1,
+    height: '100%',
+    fontSize: 15,
+    color: '#333',
   },
-  button: {
-    backgroundColor: '#4285F4',
-    padding: 15,
-    borderRadius: 8,
+  submitButton: {
+    backgroundColor: '#214D8A',
+    borderRadius: 10,
+    height: 50,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 30,
+    marginBottom: 10,
   },
-  buttonDisabled: {
-    backgroundColor: '#A0AEC0',
-  },
-  buttonText: {
-    color: '#FFF',
+  submitButtonText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-  },
+  }
 });
