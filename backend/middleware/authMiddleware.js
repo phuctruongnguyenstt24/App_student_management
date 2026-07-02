@@ -4,15 +4,33 @@ const User = require('../models/User');
 const protect = async (req, res, next) => {
   let token;
 
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    try {
-      // Lấy token từ header
+  try {
+    // Lấy token từ header
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       token = req.headers.authorization.split(' ')[1];
+      
+      // 🔥 QUAN TRỌNG: Clean token
+      token = token.trim();
+      console.log('AUTH HEADER:', req.headers.authorization);
+      // 🔥 Kiểm tra token có hợp lệ không (có đủ 3 phần không)
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        console.error('❌ Invalid token format: wrong number of parts');
+        return res.status(401).json({
+          success: false,
+          message: 'Token không hợp lệ. Vui lòng đăng nhập lại.'
+        });
+      }
+
+      // Log để debug
+      console.log('🔑 Token received, length:', token.length);
+      console.log('🔑 Token preview:', token.substring(0, 30) + '...');
 
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log('✅ Token verified for user ID:', decoded.id);
 
-      // Lấy user từ database (không lấy password)
+      // Lấy user từ database
       req.user = await User.findById(decoded.id).select('-password');
 
       if (!req.user) {
@@ -23,24 +41,40 @@ const protect = async (req, res, next) => {
       }
 
       next();
-    } catch (error) {
-      console.error('Auth middleware error:', error);
+    } else {
       return res.status(401).json({
         success: false,
-        message: 'Không được phép truy cập, token không hợp lệ'
+        message: 'Không được phép truy cập, không có token'
       });
     }
-  } else {
+  } catch (error) {
+    console.error('❌ Auth middleware error:', error.message);
+    console.error('❌ Token received:', token ? token.substring(0, 50) : 'No token');
+    
+    // Xử lý chi tiết các loại lỗi
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Token không hợp lệ. Vui lòng đăng nhập lại.'
+      });
+    }
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Token đã hết hạn. Vui lòng đăng nhập lại.'
+      });
+    }
+    
     return res.status(401).json({
       success: false,
-      message: 'Không được phép truy cập, không có token'
+      message: 'Không được phép truy cập, token không hợp lệ'
     });
   }
 };
 
 // Middleware kiểm tra quyền admin
 const isAdmin = async (req, res, next) => {
-  // Đảm bảo đã có req.user từ protect middleware
   if (!req.user) {
     return res.status(401).json({
       success: false,

@@ -1,6 +1,6 @@
 // src/contexts/AuthContext.tsx
-import { API_URL } from '@/utils/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '@/config/api'; //Import hàm gọi API tới backend. 
+import AsyncStorage from '@react-native-async-storage/async-storage'; //AsyncStorage: Dùng để lưu dữ liệu vào bộ nhớ điện thoại. ==> Khi tắt app mở lại vẫn còn.
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 // Cập nhật interface User với đầy đủ các trường từ CSDL
@@ -87,6 +87,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
+  token:string | null;
   login: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
@@ -97,6 +98,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] =
+  useState<string | null>(null);
 
   // Hàm lấy thông tin user đầy đủ từ API
   const fetchFullUserProfile = async (userId: string): Promise<User | null> => {
@@ -208,7 +211,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, updateUser, refreshUser }}>
+    <AuthContext.Provider value={{ user, token , login, logout, updateUser, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

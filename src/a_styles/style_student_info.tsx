@@ -26,35 +26,24 @@ export const styles = StyleSheet.create({
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     paddingTop: 65,
-    minHeight: 700,
+  
   },
 
   avatarContainer: {
     position: 'absolute',
     alignSelf: 'center',
-    top: -45,
+    top: -35,
   },
 
   avatar: {
     width: 90,
     height: 90,
-    borderRadius: 45,
-    borderWidth: 4,
+    borderRadius: 50,
+    borderWidth:3,
     borderColor: '#fff',
   },
 
-  cameraButton: {
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 3,
-  },
+ 
 
   name: {
     fontSize: 28,
@@ -73,6 +62,7 @@ export const styles = StyleSheet.create({
 
   infoContainer: {
     marginTop: 10,
+    
   },
 
   row: {
@@ -86,7 +76,7 @@ export const styles = StyleSheet.create({
   },
 
   label: {
-    color: '#9aa3b2',
+    color: '#0f1218',
     fontSize: 16,
   },
 

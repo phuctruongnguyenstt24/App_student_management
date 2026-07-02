@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { styles } from '../../../a_styles/style_student_info';
 import { API_URL } from '../../../config/api'; //Sữa đường dẫn api
 import { useAuth } from '../../../contexts/AuthContext';
+import { router } from 'expo-router';
 
 export default function StudentInfoScreen() {
   const { user } = useAuth();
@@ -83,10 +84,7 @@ export default function StudentInfoScreen() {
     { label: 'Niên khóa', value: student?.academicInfo?.courseYear ?? '' },
   ];
 
-  const onPressUpdateStudent = () => {
-    console.log('Button pressed!');
-    //Gui yeu cau cap nhat thong tin len admin
-  };
+   
 
   if (loading) {
     return (
@@ -96,11 +94,15 @@ export default function StudentInfoScreen() {
     );
   }
 
+  const handleback = () => {
+    router.replace('/tabs/ProfileScreen')
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity>
-          <Ionicons name="chevron-back" size={24} color="#fff" />
+        <TouchableOpacity onPress={handleback}>
+          <Ionicons  name='arrow-back' size={24} color="#fff" />
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>Thông tin sinh viên</Text>
@@ -110,7 +112,7 @@ export default function StudentInfoScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 30 }}
+        //contentContainerStyle={{ paddingBottom: 30 }}
       >
         <View style={styles.card}>
           <View style={styles.avatarContainer}>
@@ -123,13 +125,7 @@ export default function StudentInfoScreen() {
                 style={styles.avatar}
             />
 
-            <TouchableOpacity style={styles.cameraButton}>
-              <Ionicons
-                name="camera-outline"
-                size={18}
-                color="#555"
-              />
-            </TouchableOpacity>
+        
           </View>
 
           <Text style={styles.name}>
@@ -149,14 +145,6 @@ export default function StudentInfoScreen() {
               </View>
             ))}
           </View>
-
-          <Button
-          onPress={onPressUpdateStudent}
-          title="Cap Nhat Sinh Vien"
-          color="#6d7c99"
-          accessibilityLabel="Cap Nhat Sinh Vien"
-          />
-
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -281,7 +281,7 @@ export default function HomeScreen() {
             showsHorizontalScrollIndicator={false}
             onScroll={handleScroll}
             scrollEventThrottle={16}
-            contentContainerStyle={styles.bannerScrollContent}
+            //contentContainerStyle={styles.bannerScrollContent}
           >
             {banners.map((banner) => (
               <TouchableOpacity
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5F6FA",
-    marginTop: -50,
+   
   },
 
   header: {

@@ -100,6 +100,10 @@ const userSchema = new mongoose.Schema({
     trim: true,
     default: ''
   },
+  gender: {
+    type: String,
+    default: ''
+  },
 dateOfBirth: {
     type: String,
     default: ''

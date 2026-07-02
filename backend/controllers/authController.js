@@ -1,6 +1,8 @@
 // controllers/authController.js
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
+const path = require('path');
+const fs = require('fs');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -8,6 +10,91 @@ const generateToken = (id) => {
   });
 };
 
+const uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Không có file ảnh được tải lên'
+      });
+    }
+
+    const userId = req.user.id;
+    
+    // ✅ Xóa avatar cũ trước khi update
+    await deleteOldAvatar(userId);
+
+    const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+    const avatarUrl = `${baseUrl}/uploads/avatars/${req.file.filename}`;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { avatar: avatarUrl },
+      { new: true, runValidators: true }
+    );
+
+    if (!user) {
+      // Nếu không tìm thấy user, xóa file vừa upload
+      const filePath = path.join(__dirname, '../uploads/avatars/', req.file.filename);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy người dùng'
+      });
+    }
+
+    console.log('✅ Avatar uploaded successfully for user:', userId);
+    console.log('📸 Avatar URL:', avatarUrl);
+
+    res.status(200).json({
+      success: true,
+      message: 'Cập nhật ảnh đại diện thành công',
+      avatar: avatarUrl,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        avatar: user.avatar
+      }
+    });
+
+  } catch (error) {
+    console.error('Upload avatar error:', error);
+    
+    if (req.file) {
+      const filePath = path.join(__dirname, '../uploads/avatars/', req.file.filename);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi upload ảnh: ' + error.message
+    });
+  }
+};
+
+const deleteOldAvatar = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+    if (user && user.avatar) {
+      // Lấy tên file từ URL
+      const fileName = user.avatar.split('/').pop();
+      if (fileName) {
+        const filePath = path.join(__dirname, '../uploads/avatars/', fileName);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+          console.log('🗑️ Deleted old avatar:', fileName);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error deleting old avatar:', error);
+  }
+};
 // Admin tạo tài khoản sinh viên
 const createStudentAccount = async (req, res) => {
   try {
@@ -549,5 +636,7 @@ module.exports = {
   deleteStudent,
   searchStudents,
   getStudentById,
-   updateStudent
+   updateStudent,
+   uploadAvatar,
+   deleteOldAvatar
 };
