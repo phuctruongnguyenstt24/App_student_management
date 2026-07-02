@@ -30,11 +30,12 @@ export default function ProfileScreen() {
     const studentName = student?.fullName || user?.fullName || "Nguyễn Trường Phúc";
     const studentId = student?.studentId || user?.studentId || "KTPM2311047";
 
-    const menuItems = [
+   const menuItems = [
         {
             id: 1,
             icon: "person-outline",
             title: "Thông tin sinh viên",
+            // Giữ nguyên, không truyền view thì sẽ hiển thị thông tin sinh viên
             onPress: () => router.push("/tabs/screens-for-profile/StudentInfoScreen"),
         },
         {
@@ -50,13 +51,21 @@ export default function ProfileScreen() {
             id: 3,
             icon: "document-text-outline",
             title: "Điều khoản và chính sách sử dụng",
-            onPress: () => router.push("/tabs/screens-for-profile/StudentInfoScreen"),
+            // ✅ Kích hoạt hành động mở link web điều khoản
+            onPress: () => router.push({
+                pathname: '/tabs/screens-for-profile/StudentInfoScreen',
+                params: { view: 'terms' } 
+            }),
         },
         {
             id: 4,
             icon: "chatbubble-outline",
             title: "Góp ý ứng dụng",
-            onPress: () => router.push("/tabs/screens-for-profile/StudentInfoScreen"),
+            // ✅ Kích hoạt giao diện form Góp ý
+            onPress: () => router.push({
+                pathname: '/tabs/screens-for-profile/StudentInfoScreen',
+                params: { view: 'feedback' } 
+            }),
         },
         {
             id: 5,

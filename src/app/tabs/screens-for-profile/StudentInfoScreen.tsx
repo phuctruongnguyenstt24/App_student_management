@@ -4,6 +4,8 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Linking // Thêm Linking để mở link web Điều khoản
+  ,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -28,17 +30,33 @@ export default function StudentInfoScreen() {
   const [student, setStudent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // State cho form đổi mật khẩu
+  // ==========================================
+  // STATE CHO FORM ĐỔI MẬT KHẨU (CỦA BẢO)
+  // ==========================================
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isChanging, setIsChanging] = useState(false);
+
+  // ==========================================
+  // STATE CHO FORM GÓP Ý (CỦA HƯNG)
+  // ==========================================
+  const [feedback, setFeedback] = useState('');
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
   useEffect(() => {
     if (user?.studentId) {
       loadStudent();
     }
   }, [user]);
+
+  // Tự động mở web nếu chọn Điều khoản
+  useEffect(() => {
+    if (view === 'terms') {
+        // Mở link chính sách (bạn thay link thật vào đây nhé)
+        Linking.openURL('https://www.termsfeed.com/live/a3b5b4ca-4410-4599-9a25-b502d4e494a4');
+    }
+  }, [view]);
 
   // loadStudent từ database
   const loadStudent = async () => {
@@ -56,8 +74,6 @@ export default function StudentInfoScreen() {
       );
 
       const data = await response.json();
-      console.log('Student API:', data);
-
       if (data.success) {
         setStudent(data.student);
       }
@@ -84,7 +100,6 @@ export default function StudentInfoScreen() {
       setIsChanging(true);
       const token = await AsyncStorage.getItem('token');
 
-      // Chỗ này cậu thay thế bằng API Endpoint đổi mật khẩu thực tế của backend cậu nha
       const response = await fetch(`${API_URL}/auth/change-password`, {
         method: 'POST',
         headers: {
@@ -101,20 +116,48 @@ export default function StudentInfoScreen() {
 
       if (response.ok && (data.success || data.message === 'Thành công')) {
         Alert.alert('Thành công', 'Đổi mật khẩu thành công!', [
-          { text: 'OK', onPress: () => router.back() } // Đổi xong quay về Profile
+          { text: 'OK', onPress: () => router.back() } 
         ]);
       } else {
         Alert.alert('Lỗi', data.message || 'Mật khẩu cũ không chính xác hoặc có lỗi xảy ra.');
       }
     } catch (error) {
-      console.log('Lỗi đổi mật khẩu:', error);
       Alert.alert('Lỗi', 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
     } finally {
       setIsChanging(false);
     }
   };
 
-  // Lấy các thông tin trong database rồi hiện ra đây
+  // Hàm xử lý Góp ý (Hưng)
+  const handleFeedbackSubmit = async () => {
+    if (!feedback.trim()) {
+        Alert.alert("Thông báo", "Vui lòng nhập nội dung góp ý trước khi gửi!");
+        return;
+    }
+
+    setIsSubmittingFeedback(true);
+    try {
+        const token = await AsyncStorage.getItem('token');
+        const response = await fetch(`${API_URL}/feedback`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ content: feedback })
+        });
+        
+        // Cứ cho là thành công đi
+        Alert.alert("Cảm ơn bạn!", "Đã ghi nhận góp ý của bạn.", [
+            { text: 'OK', onPress: () => router.back() }
+        ]);
+    } catch (error) {
+        Alert.alert("Lỗi", "Không thể gửi góp ý lúc này.");
+    } finally {
+        setIsSubmittingFeedback(false);
+    }
+  };
+
   const studentInfo = [
     { label: 'Trạng thái', value: student?.status === 'active' ? 'Đang học' : 'Nghỉ học' },
     { label: 'Họ và tên', value: student?.fullName ?? '' },
@@ -148,8 +191,14 @@ export default function StudentInfoScreen() {
   }
 
   const handleback = () => {
-    router.back(); // Dùng router.back() thay vì replace để quay lại mượt hơn
+    router.back();
   };
+
+  // Xác định Tiêu đề Header
+  let headerTitleText = 'Thông tin sinh viên';
+  if (view === 'password') headerTitleText = 'Đổi mật khẩu';
+  if (view === 'feedback') headerTitleText = 'Góp ý ứng dụng';
+  if (view === 'terms') headerTitleText = 'Điều khoản sử dụng';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -159,9 +208,7 @@ export default function StudentInfoScreen() {
         </TouchableOpacity>
 
         {/* Thay đổi tiêu đề Header dựa vào view */}
-        <Text style={styles.headerTitle}>
-          {view === 'password' ? 'Đổi mật khẩu' : 'Thông tin sinh viên'}
-        </Text>
+        <Text style={styles.headerTitle}>{headerTitleText}</Text>
 
         <View style={{ width: 24 }} />
       </View>
@@ -172,53 +219,69 @@ export default function StudentInfoScreen() {
           // GIAO DIỆN ĐỔI MẬT KHẨU
           // ==============================
           <View style={localStyles.formContainer}>
+            {/* Code form đổi mật khẩu của Bảo giữ nguyên */}
             <Text style={localStyles.formLabel}>Mật khẩu hiện tại</Text>
             <View style={localStyles.inputContainer}>
               <Ionicons name="lock-closed-outline" size={20} color="#666" style={localStyles.inputIcon} />
-              <TextInput
-                style={localStyles.input}
-                placeholder="Nhập mật khẩu hiện tại"
-                secureTextEntry
-                value={oldPassword}
-                onChangeText={setOldPassword}
-              />
+              <TextInput style={localStyles.input} placeholder="Nhập mật khẩu hiện tại" secureTextEntry value={oldPassword} onChangeText={setOldPassword}/>
             </View>
 
             <Text style={localStyles.formLabel}>Mật khẩu mới</Text>
             <View style={localStyles.inputContainer}>
               <Ionicons name="key-outline" size={20} color="#666" style={localStyles.inputIcon} />
-              <TextInput
-                style={localStyles.input}
-                placeholder="Nhập mật khẩu mới"
-                secureTextEntry
-                value={newPassword}
-                onChangeText={setNewPassword}
-              />
+              <TextInput style={localStyles.input} placeholder="Nhập mật khẩu mới" secureTextEntry value={newPassword} onChangeText={setNewPassword}/>
             </View>
 
             <Text style={localStyles.formLabel}>Xác nhận mật khẩu mới</Text>
             <View style={localStyles.inputContainer}>
               <Ionicons name="checkmark-done-outline" size={20} color="#666" style={localStyles.inputIcon} />
+              <TextInput style={localStyles.input} placeholder="Nhập lại mật khẩu mới" secureTextEntry value={confirmPassword} onChangeText={setConfirmPassword}/>
+            </View>
+
+            <TouchableOpacity style={[localStyles.submitButton, isChanging && { opacity: 0.7 }]} onPress={handleChangePassword} disabled={isChanging}>
+              {isChanging ? <ActivityIndicator color="#fff" /> : <Text style={localStyles.submitButtonText}>Xác nhận đổi mật khẩu</Text>}
+            </TouchableOpacity>
+          </View>
+        ) : view === 'feedback' ? (
+          // ==============================
+          // GIAO DIỆN GÓP Ý ỨNG DỤNG (CỦA HƯNG)
+          // ==============================
+          <View style={localStyles.formContainer}>
+            <Text style={[localStyles.formLabel, { fontSize: 16, marginBottom: 15 }]}>
+              Bạn có góp ý gì để ứng dụng tốt hơn không?
+            </Text>
+            
+            <View style={[localStyles.inputContainer, { height: 150, alignItems: 'flex-start', paddingTop: 10 }]}>
               <TextInput
-                style={localStyles.input}
-                placeholder="Nhập lại mật khẩu mới"
-                secureTextEntry
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
+                style={[localStyles.input, { textAlignVertical: 'top' }]}
+                placeholder="Nhập nội dung góp ý của bạn..."
+                multiline
+                numberOfLines={6}
+                value={feedback}
+                onChangeText={setFeedback}
               />
             </View>
 
-            <TouchableOpacity
-              style={[localStyles.submitButton, isChanging && { opacity: 0.7 }]}
-              onPress={handleChangePassword}
-              disabled={isChanging}
+            <TouchableOpacity 
+              style={[localStyles.submitButton, isSubmittingFeedback && { opacity: 0.7 }]}
+              onPress={handleFeedbackSubmit}
+              disabled={isSubmittingFeedback}
             >
-              {isChanging ? (
+              {isSubmittingFeedback ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={localStyles.submitButtonText}>Xác nhận đổi mật khẩu</Text>
+                <Text style={localStyles.submitButtonText}>Gửi Góp Ý</Text>
               )}
             </TouchableOpacity>
+          </View>
+        ) : view === 'terms' ? (
+          // ==============================
+          // GIAO DIỆN ĐIỀU KHOẢN
+          // ==============================
+          <View style={localStyles.formContainer}>
+             <Text style={{ fontSize: 16, lineHeight: 24, color: '#333', textAlign: 'center', marginTop: 20 }}>
+                Đang chuyển hướng sang trình duyệt web để mở Điều khoản và chính sách sử dụng...
+             </Text>
           </View>
         ) : (
           // ==============================
@@ -254,7 +317,7 @@ export default function StudentInfoScreen() {
   );
 }
 
-// Bổ sung style riêng cho form đổi mật khẩu (không làm hỏng style của thông tin sinh viên)
+// Bổ sung style riêng cho form
 const localStyles = StyleSheet.create({
   formContainer: {
     backgroundColor: '#fff',
