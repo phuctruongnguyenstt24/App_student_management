@@ -1,6 +1,6 @@
 // app/(tabs)/_layout.tsx
-import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Tabs } from 'expo-router';
 
 export default function TabLayout() {
   return (
@@ -51,6 +51,13 @@ export default function TabLayout() {
       />
 <Tabs.Screen
   name="settings"
+  options={{
+    href: null,
+  }}
+/>
+{/* href: null, ==> ẩn tab NewsScreen khỏi tabBar */}
+<Tabs.Screen
+  name="NewsScreen"
   options={{
     href: null,
   }}

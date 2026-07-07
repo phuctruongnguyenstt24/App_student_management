@@ -1,20 +1,18 @@
 //Import thư viện
-import React, { useEffect, useState, useRef } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { FontAwesome5, Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router"; // Thay đổi import
+import { useEffect, useRef, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
   Animated,
   Dimensions,
-  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { useAuth } from "../../contexts/AuthContext";
-import { useRouter } from "expo-router"; // Thay đổi import
 
 const { width } = Dimensions.get("window");
 
@@ -337,7 +335,7 @@ export default function HomeScreen() {
           <Text style={styles.sectionTitle}>Tin tức mới</Text>
           <TouchableOpacity 
             style={styles.newsItem}
-            onPress={() => router.push("/screens/NewsDetailScreen")}
+            onPress={() => router.push("../tabs/NewsScreen")}
           >
             <View style={styles.newsDot} />
             <Text style={styles.newsText}>
@@ -347,7 +345,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.newsItem}
-            onPress={() => router.push("/screens/NewsDetailScreen")}
+            onPress={() => router.push("../tabs/NewsScreen")}
           >
             <View style={styles.newsDot} />
             <Text style={styles.newsText}>

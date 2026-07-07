@@ -14,6 +14,7 @@ const courseRoutes = require('./routes/courses');
 const updateRequestRoutes = require('./routes/updateRequestRoutes');
 const studentRoutes = require('./routes/studentRoutes');
 const scheduleRoutes = require('./routes/scheduleRoutes');
+const newsRoutes = require("./routes/newsRoutes");
 
 const app = express();
 
@@ -50,7 +51,7 @@ app.use('/api/courses', courseRoutes);
 app.use('/api', updateRequestRoutes);
 app.use('/api', studentRoutes);
 app.use('/api/schedules', scheduleRoutes);
-
+app.use("/api/news", newsRoutes);
 // Test
 app.get('/api/test', (req, res) => {
   res.json({
