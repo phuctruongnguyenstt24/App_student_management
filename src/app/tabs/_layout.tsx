@@ -91,6 +91,12 @@ export default function TabLayout() {
   }}
 />
 
+<Tabs.Screen
+  name="AllFeaturesScreen"
+  options={{
+    href: null,
+  }}
+/>
     </Tabs>
   );
 }
