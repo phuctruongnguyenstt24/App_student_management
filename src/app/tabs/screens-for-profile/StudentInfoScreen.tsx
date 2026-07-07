@@ -1,18 +1,18 @@
 // screens/StudentInfoScreen.tsx
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
   SafeAreaView,
   ScrollView,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
+// import style từ globalStyles ==> đề dùng layout chung cho phần đầu app (đầu app đồng bộ ui với nhau)
 import { styles as globalStyles } from '../../../a_styles/style_student_info';
 import { API_URL } from '../../../config/api';
 import { useAuth } from '../../../contexts/AuthContext';

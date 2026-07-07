@@ -106,7 +106,7 @@ export default function HomeScreen() {
       icon: "grid-outline",
       title: "Tất cả",
       color: "#7367F0",
-      href: "/screens/AllFeaturesScreen",
+      href: "../tabs/AllFeaturesScreen", // Sử dụng đường dẫn tương đối
     },
   ];
 

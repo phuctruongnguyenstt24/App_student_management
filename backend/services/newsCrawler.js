@@ -62,14 +62,18 @@ const crawlNews = async () => {
         const seen = new Set();
 
         $(".block").each((_, block) => {
+            // Extract the title link, description, and date from the block (lấy link tiêu đề, mô tả và ngày từ block(website gốc))
             const titleLink = $(block).find(".text-left h4 a").first();
             const description = $(block).find(".text-left p").first().text();
             const date = $(block).find(".button .float-right").first().text();
+            // Normalize the URL and clean the title (làm sạch tiêu đề và chuẩn hóa URL)
             const href = titleLink.attr("href");
             const title = titleLink.text();
             const cleanedTitle = cleanText(title);
             const normalizedUrl = normalizeUrl(href);
-
+            // Extract the image URL (lấy URL hình ảnh từ block(website gốc))
+            const image = $(block).find("img").first().attr("src");
+            const normalizedImage = normalizeUrl(image);// chuẩn hóa URL hình ảnh
             if (!cleanedTitle || !normalizedUrl || !isLikelyNewsLink(href, cleanedTitle)) {
                 return;
             }
@@ -79,11 +83,14 @@ const crawlNews = async () => {
             }
 
             seen.add(normalizedUrl);
+
+            // push the article to the articles array (đẩy bài viết(gồm các thuộc tính bên dưới) vào mảng articles)
             articles.push({
                 title: cleanedTitle,
                 url: normalizedUrl,
                 description: cleanText(description),
                 publishedAt: cleanText(date),
+                image: normalizedImage,   // chuẩn hóa URL hình ảnh
                 source: BASE_URL
             });
         });
