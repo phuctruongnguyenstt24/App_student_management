@@ -75,3 +75,6 @@ Lưu ý: Nhớ di chuyển vào đúng thư mục dự án trước khi chạy l
 npm run web
 4. Test trên máy ảo Android (Android Studio Emulator)
 npm run android
+
+# chỉnh ẩn hiện icon đường dẫn footer trong file _layout.tsx
+options={{href: null,}} ==> để ẩn tab đó đi
