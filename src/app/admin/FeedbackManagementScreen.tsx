@@ -252,12 +252,17 @@ export default function FeedbackManagementScreen() {
             </SafeAreaView>
         );
     }
+    const handleback = () => {
+        if(router.canGoBack()){
+                router.replace('/admin/dashboard')
+        }
+    }
 
     return (
         <SafeAreaView style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                <TouchableOpacity onPress={handleback} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color="#0c0707" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Quản lý góp ý</Text>
