@@ -1,11 +1,11 @@
 // app/admin/dashboard.tsx
-import { View, Text, TouchableOpacity, ScrollView, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useState, useEffect } from 'react';
-import { styles } from '../../a_styles/style_dashboard';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { styles } from '../../a_styles/style_dashboard';
 
 
 
@@ -22,7 +22,7 @@ export default function AdminDashboard() {
         if (userData) {
           const user = JSON.parse(userData);
           setUserName(user.fullName || user.username || 'Admin');
-           setUserRole(user.role);
+          setUserRole(user.role);
         }
       } catch (error) {
         console.error('Error getting user info:', error);
@@ -43,20 +43,20 @@ export default function AdminDashboard() {
       setCurrentDate(now.toLocaleDateString('vi-VN', options));
     };
 
-     const checkRole = async () => {
-    const userData = await AsyncStorage.getItem('user');
+    const checkRole = async () => {
+      const userData = await AsyncStorage.getItem('user');
 
-    if (!userData) {
-      router.replace('/login');
-      return;
-    }
+      if (!userData) {
+        router.replace('/login');
+        return;
+      }
 
-    const user = JSON.parse(userData);
+      const user = JSON.parse(userData);
 
-    if (user.role !== 'admin') {
-      router.replace('/login'); // hoặc dashboard khác
-    }
-  };
+      if (user.role !== 'admin') {
+        router.replace('/login'); // hoặc dashboard khác
+      }
+    };
     getUserInfo();
     getCurrentDate();
     checkRole();
@@ -155,6 +155,17 @@ export default function AdminDashboard() {
               </View>
               <Text style={styles.menuTitle}>Quản lý lịch học</Text>
               <Text style={styles.menuDesc}>Xếp lịch học cho sinh viên</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuCard}
+              onPress={() => router.push('/admin/FeedbackManagementScreen')}
+            >
+              <View style={styles.menuIconWrapper}>
+                <Ionicons name="calendar-outline" size={32} color="#16d6e0" />
+              </View>
+              <Text style={styles.menuTitle}>Quản lý Góp ý</Text>
+              <Text style={styles.menuDesc}>Góp ý sinh viên</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

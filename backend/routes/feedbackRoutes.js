@@ -1,15 +1,41 @@
+// routes/feedbackRoutes.js
 const express = require('express');
 const router = express.Router();
-const { createFeedback, getFeedbacks } = require('../controllers/feedbackController');
+const {
+    createFeedback,
+    getFeedbacks,
+    getFeedbackDetail,
+    updateFeedbackStatus,
+    replyFeedback,
+    deleteFeedback,
+    getFeedbackStats
+} = require('../controllers/feedbackController');
 
-// Import middleware để chặn người lạ (bắt buộc đăng nhập mới được gửi)
-// (Mình giả định tên hàm là protect từ file authMiddleware.js của bạn)
-const { protect } = require('../middleware/authMiddleware');
+// Import middleware
+const { protect, isAdmin } = require('../middleware/authMiddleware');
+ 
 
+// ===== ROUTES DÀNH CHO SINH VIÊN =====
 // Route POST: Sinh viên gửi góp ý
 router.post('/', protect, createFeedback);
 
-// Route GET: Lấy danh sách góp ý (có thể thêm authorize('admin') nếu muốn chỉ admin xem)
-router.get('/', protect, getFeedbacks);
+// ===== ROUTES DÀNH CHO ADMIN =====
+// Route GET: Lấy danh sách góp ý (Admin)
+router.get('/', protect, isAdmin, getFeedbacks);
+
+// Route GET: Lấy thống kê (Admin)
+router.get('/stats', protect, isAdmin, getFeedbackStats);
+
+// Route GET: Lấy chi tiết feedback (Admin)
+router.get('/:id', protect, isAdmin, getFeedbackDetail);
+
+// Route PUT: Cập nhật trạng thái (Admin)
+router.put('/:id', protect, isAdmin, updateFeedbackStatus);
+
+// Route POST: Phản hồi feedback (Admin)
+router.post('/:id/reply', protect, isAdmin, replyFeedback);
+
+// Route DELETE: Xóa feedback (Admin)
+router.delete('/:id', protect,isAdmin, deleteFeedback);
 
 module.exports = router;

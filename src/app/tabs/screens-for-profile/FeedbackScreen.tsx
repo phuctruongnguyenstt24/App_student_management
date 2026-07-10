@@ -188,7 +188,6 @@ export default function FeedbackScreen() {
 
             <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={styles.formContainer}>
-                    {/* Thông tin người gửi */}
                     <View style={styles.infoSection}>
                         <Text style={styles.infoTitle}>👤 Thông tin người gửi</Text>
                         

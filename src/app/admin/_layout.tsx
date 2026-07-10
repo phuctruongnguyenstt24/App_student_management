@@ -8,7 +8,8 @@ export default function AdminLayout() {
       <Stack.Screen name="create-student" options={{ title: 'Tạo tài khoản sinh viên' }} />
       <Stack.Screen name="student-management" options={{ title: 'Danh sách tài khoản sinh viên' }} />
       <Stack.Screen name="courses" options={{ title: 'Quản lý môn học' }} />
-       <Stack.Screen name="schedule" options={{ title: 'Quản lý lịch học' }} />
+      <Stack.Screen name="schedule" options={{ title: 'Quản lý lịch học' }} />
+      <Stack.Screen name="FeedbackManagementScreen" options={{ title: 'Quản lý Góp ý' }} />
     </Stack>
   );
 }
