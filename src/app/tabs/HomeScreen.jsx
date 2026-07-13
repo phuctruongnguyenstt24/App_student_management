@@ -1,6 +1,6 @@
 //Import thư viện
 import { FontAwesome5, Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";  
+import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -100,7 +100,7 @@ export default function HomeScreen() {
       icon: "person-outline",
       title: "Điểm danh",
       color: "#FFB400",
-      href: "/screens/AttendanceScreen",
+      href: "../tabs/AttendanceScreen",
     },
     {
       icon: "grid-outline",

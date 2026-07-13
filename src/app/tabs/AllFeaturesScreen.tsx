@@ -1,12 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRouter } from "expo-router"; //import useRouter từ expo-router để điều hướng đến các màn hình khác
 import {
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
 
 import { styles as globalStyles } from '../../a_styles/style_student_info'; //style chung cho phần đầu app (đầu app đồng bộ ui với nhau)
@@ -57,7 +57,7 @@ export default function AllFeaturesScreen() {
     title: "Thống kê\nđiểm danh",
     icon: "person",
     color: "#F5B73A",
-    href: "Attendance",
+    href: "../tabs/AttendanceScreen",
   },
   {
     title: "Rèn luyện",

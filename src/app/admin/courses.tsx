@@ -3,12 +3,12 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Modal, RefreshControl, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Modal, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { ActivityIndicator, Chip } from 'react-native-paper';
 import { styles } from '../../a_styles/style_courses';
-import { API_URL } from '../../config/api';  
+import { API_URL } from '../../config/api';
+import { closeAttendanceSession, getAttendanceSessions, upsertAttendanceSession, type AttendanceSession } from '../../utils/attendanceStorage';
 
- 
 interface Course {
   _id: string;
   courseCode: string;
@@ -32,12 +32,91 @@ interface Department {
   facultyId: string;
 }
 
+const localStyles = StyleSheet.create({
+  attendancePanel: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  attendanceHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  attendanceTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  attendanceSubtitle: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  closeButton: {
+    backgroundColor: '#ef4444',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  closeButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  attendanceCourse: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#2563eb',
+    marginBottom: 4,
+  },
+  attendanceMeta: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginBottom: 8,
+  },
+  studentList: {
+    marginTop: 6,
+  },
+  studentItem: {
+    fontSize: 13,
+    color: '#374151',
+    marginBottom: 4,
+  },
+  sessionCard: {
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 8,
+    backgroundColor: '#f9fafb',
+  },
+  sessionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 13,
+    color: '#6b7280',
+    lineHeight: 20,
+  },
+});
+
 export default function CoursesScreen() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [faculties, setFaculties] = useState<Faculty[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [attendanceSessions, setAttendanceSessions] = useState<AttendanceSession[]>([]);
 
   // Modal states
   const [modalVisible, setModalVisible] = useState(false);
@@ -59,6 +138,11 @@ export default function CoursesScreen() {
   const [facultyCode, setFacultyCode] = useState('');
   const [deptName, setDeptName] = useState('');
   const [deptCode, setDeptCode] = useState('');
+
+  const refreshAttendance = useCallback(async () => {
+    const sessions = await getAttendanceSessions();
+    setAttendanceSessions(sessions);
+  }, []);
 
   // Fetch data
   const fetchData = async () => {
@@ -88,12 +172,16 @@ export default function CoursesScreen() {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+    refreshAttendance();
+  }, [refreshAttendance]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchData();
-  }, []);
+    refreshAttendance();
+  }, [refreshAttendance]);
 
   // Reset forms
   const resetCourseForm = () => {
@@ -108,6 +196,29 @@ export default function CoursesScreen() {
 
   const resetDeptForm = () => {
     setDeptName(''); setDeptCode(''); setEditingDept(null); setSelectedFacultyId('');
+  };
+
+  const handleRequestAttendance = async (course: Course) => {
+    const session: AttendanceSession = {
+      id: `${course._id}-${Date.now()}`,
+      courseId: course._id,
+      courseCode: course.courseCode,
+      courseName: course.courseName,
+      department: course.department,
+      requestedAt: new Date().toISOString(),
+      requestedBy: 'Admin',
+      status: 'active',
+      presentStudents: [],
+    };
+
+    const nextSessions = await upsertAttendanceSession(session);
+    setAttendanceSessions(nextSessions);
+    Alert.alert('Thành công', `Đã mở buổi điểm danh cho ${course.courseCode} - ${course.courseName}`);
+  };
+
+  const handleCloseAttendance = async (sessionId: string) => {
+    const nextSessions = await closeAttendanceSession(sessionId);
+    setAttendanceSessions(nextSessions);
   };
 
   // ============= COURSE CRUD =============
@@ -459,6 +570,49 @@ export default function CoursesScreen() {
           ))}
         </View>
 
+        <View style={localStyles.attendancePanel}>
+          <View style={localStyles.attendanceHeader}>
+            <View>
+              <Text style={localStyles.attendanceTitle}>Điểm danh đang mở</Text>
+              <Text style={localStyles.attendanceSubtitle}>
+                {attendanceSessions.filter((session) => session.status === 'active').length > 0
+                  ? `${attendanceSessions.filter((session) => session.status === 'active').length} môn đang điểm danh`
+                  : 'Chưa có buổi điểm danh nào đang mở'}
+              </Text>
+            </View>
+          </View>
+
+          {attendanceSessions.filter((session) => session.status === 'active').length > 0 ? (
+            attendanceSessions
+              .filter((session) => session.status === 'active')
+              .map((session) => (
+                <View key={session.id} style={localStyles.sessionCard}>
+                  <View style={localStyles.sessionRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={localStyles.attendanceCourse}>{session.courseName}</Text>
+                      <Text style={localStyles.attendanceMeta}>{session.courseCode} • {session.department || '---'}</Text>
+                      <Text style={localStyles.attendanceMeta}>Đã điểm danh: {session.presentStudents.length} sinh viên</Text>
+                    </View>
+                    <TouchableOpacity style={localStyles.closeButton} onPress={() => handleCloseAttendance(session.id)}>
+                      <Text style={localStyles.closeButtonText}>Đóng</Text>
+                    </TouchableOpacity>
+                  </View>
+                  {session.presentStudents.length > 0 ? (
+                    <View style={localStyles.studentList}>
+                      {session.presentStudents.map((student, index) => (
+                        <Text key={`${student.studentId}-${index}`} style={localStyles.studentItem}>{index + 1}. {student.fullName}</Text>
+                      ))}
+                    </View>
+                  ) : (
+                    <Text style={localStyles.emptyText}>Chưa có sinh viên nào điểm danh</Text>
+                  )}
+                </View>
+              ))
+          ) : (
+            <Text style={localStyles.emptyText}>Hãy bấm nút xác nhận trên từng môn để mở điểm danh cho nhiều môn cùng lúc.</Text>
+          )}
+        </View>
+
         {/* Danh sách môn học */}
         <View style={styles.sectionContainer}>
           <View style={styles.sectionHeader}>
@@ -473,48 +627,53 @@ export default function CoursesScreen() {
               <Text style={styles.emptySubText}>Nhấn + để thêm</Text>
             </View>
           ) : (
-            courses.map((course) => (
-              <View key={course._id} style={styles.courseCard}>
-                <View style={styles.courseHeader}>
-                  <View style={styles.courseCodeContainer}>
-                    <Text style={styles.courseCode}>{course.courseCode}</Text>
-                  </View>
-                  <View style={styles.courseActions}>
-                    <TouchableOpacity onPress={() => {
-                      setEditingCourse(course);
-                      setCourseCode(course.courseCode);
-                      setCourseName(course.courseName);
-                      setCredits(course.credits.toString());
-                      setDepartment(course.department || '');
-                      setDescription(course.description || '');
-                      setSemester(course.semester || '');
-                      setModalVisible(true);
-                    }}>
-                      <Ionicons name="pencil-outline" size={20} color="#4A90E2" />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => handleDeleteCourse(course)}>
-                      <Ionicons name="trash-outline" size={20} color="#dc3545" />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-                <Text style={styles.courseName}>{course.courseName}</Text>
-                <View style={styles.courseInfo}>
-                  <View style={styles.infoItem}>
-                    <Ionicons name="star-outline" size={14} color="#666" />
-                    <Text style={styles.infoText}>{course.credits} TC</Text>
-                  </View>
-                  {course.department && (
-                    <View style={styles.infoItem}>
-                      <Ionicons name="business-outline" size={14} color="#666" />
-                      <Text style={styles.infoText}>{course.department}</Text>
+            <View>
+              {courses.map((course) => (
+                <View key={course._id} style={styles.courseCard}>
+                  <View style={styles.courseHeader}>
+                    <View style={styles.courseCodeContainer}>
+                      <Text style={styles.courseCode}>{course.courseCode}</Text>
                     </View>
+                    <View style={styles.courseActions}>
+                      <TouchableOpacity onPress={() => handleRequestAttendance(course)}>
+                        <Ionicons name="checkmark-done-outline" size={20} color="#16a34a" />
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => {
+                        setEditingCourse(course);
+                        setCourseCode(course.courseCode);
+                        setCourseName(course.courseName);
+                        setCredits(course.credits.toString());
+                        setDepartment(course.department || '');
+                        setDescription(course.description || '');
+                        setSemester(course.semester || '');
+                        setModalVisible(true);
+                      }}>
+                        <Ionicons name="pencil-outline" size={20} color="#4A90E2" />
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => handleDeleteCourse(course)}>
+                        <Ionicons name="trash-outline" size={20} color="#dc3545" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                  <Text style={styles.courseName}>{course.courseName}</Text>
+                  <View style={styles.courseInfo}>
+                    <View style={styles.infoItem}>
+                      <Ionicons name="star-outline" size={14} color="#666" />
+                      <Text style={styles.infoText}>{course.credits} TC</Text>
+                    </View>
+                    {course.department && (
+                      <View style={styles.infoItem}>
+                        <Ionicons name="business-outline" size={14} color="#666" />
+                        <Text style={styles.infoText}>{course.department}</Text>
+                      </View>
+                    )}
+                  </View>
+                  {course.description && (
+                    <Text style={styles.courseDescription} numberOfLines={2}>{course.description}</Text>
                   )}
                 </View>
-                {course.description && (
-                  <Text style={styles.courseDescription} numberOfLines={2}>{course.description}</Text>
-                )}
-              </View>
-            ))
+              ))}
+            </View>
           )}
         </View>
       </ScrollView>
