@@ -176,9 +176,54 @@ const getStudentById = async (req, res) => {
     });
   }
 };
+// 1. Lấy toàn bộ danh sách người dùng có role là 'student' để Admin chọn
+const getAllStudents = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Bạn không có quyền xem danh sách này' });
+    }
+
+    const students = await User.find({ role: 'student' }).select('-password');
+    res.json({ success: true, students });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Lỗi server: ' + error.message });
+  }
+};
+
+// 2. API Chấm/Cập nhật điểm rèn luyện cho 1 sinh viên cụ thể
+const updateTrainingPoint = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { trainingPoint } = req.body;
+
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Chỉ Admin mới có quyền chấm điểm rèn luyện' });
+    }
+
+    if (trainingPoint === undefined || trainingPoint < 0 || trainingPoint > 100) {
+      return res.status(400).json({ success: false, message: 'Điểm rèn luyện phải từ 0 đến 100' });
+    }
+
+    const updatedStudent = await User.findOneAndUpdate(
+      { _id: id, role: 'student' },
+      { $set: { trainingPoint: Number(trainingPoint) } },
+      { new: true }
+    ).select('-password');
+
+    if (!updatedStudent) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy sinh viên này' });
+    }
+
+    res.json({ success: true, message: 'Cập nhật điểm rèn luyện thành công!', student: updatedStudent });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Lỗi server: ' + error.message });
+  }
+};
 
 module.exports = {
   updateStudent,
   updateStudentProfile,
-  getStudentById
+  getStudentById,
+  getAllStudents,      // <-- Export hàm này
+  updateTrainingPoint  // <-- Export hàm này
 };

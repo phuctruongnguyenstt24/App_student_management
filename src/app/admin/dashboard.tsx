@@ -7,8 +7,6 @@ import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from '../../a_styles/style_dashboard';
 
-
-
 export default function AdminDashboard() {
   const [userName, setUserName] = useState('');
   const [userRole, setUserRole] = useState('');
@@ -27,9 +25,6 @@ export default function AdminDashboard() {
       } catch (error) {
         console.error('Error getting user info:', error);
       }
-
-
-
     };
 
     const getCurrentDate = () => {
@@ -57,6 +52,7 @@ export default function AdminDashboard() {
         router.replace('/login'); // hoặc dashboard khác
       }
     };
+    
     getUserInfo();
     getCurrentDate();
     checkRole();
@@ -168,17 +164,30 @@ export default function AdminDashboard() {
               <Text style={styles.menuDesc}>Góp ý sinh viên</Text>
             </TouchableOpacity>
 
-
+            {/* 🚀 ĐÃ FIX CONFLICT: Nút Quản lý chương trình khung */}
             <TouchableOpacity
               style={styles.menuCard}
-              onPress={() => router.push('/admin/mng_frameworkprogram')}
+              onPress={() => router.push('/admin/mng_frameworkprogram' as any)}
             >
               <View style={styles.menuIconWrapper}>
                 <Ionicons name="library-outline" size={32} color="#16d6e0" />
               </View>
               <Text style={styles.menuTitle}>Quản lý Chương trình khung</Text>
-              <Text style={styles.menuDesc}>CHƯƠNG TRÌNH KHUNG</Text>
+              <Text style={styles.menuDesc}>Chương trình khung</Text>
             </TouchableOpacity>
+
+            {/* 🚀 ĐÃ FIX CONFLICT: Nút Điểm rèn luyện */}
+            <TouchableOpacity
+              style={styles.menuCard}
+              onPress={() => router.push('/admin/training-points')}
+            >
+              <View style={styles.menuIconWrapper}>
+                <Ionicons name="ribbon-outline" size={32} color="#9b59b6" />
+              </View>
+              <Text style={styles.menuTitle}>Điểm rèn luyện</Text>
+              <Text style={styles.menuDesc}>Chấm điểm cho sinh viên</Text>
+            </TouchableOpacity>
+
           </View>
         </ScrollView>
 

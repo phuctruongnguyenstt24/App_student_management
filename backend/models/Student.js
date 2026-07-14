@@ -56,6 +56,7 @@ const studentSchema = new mongoose.Schema({
     enum: ['active', 'inactive'],
     default: 'active',
   },
+  
   // Thông tin bổ sung
   academicInfo: {
     enrollmentDate: String,

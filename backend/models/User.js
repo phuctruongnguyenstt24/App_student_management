@@ -117,6 +117,14 @@ dateOfBirth: {
     enum: ['active', 'inactive'],
     default: 'active'
   },
+ 
+  trainingPoint: {
+    type: Number,
+    default: 0,
+    min: [0, 'Điểm rèn luyện không được nhỏ hơn 0'],
+    max: [100, 'Điểm rèn luyện không vượt quá 100']
+  },
+
    // Thông tin học vấn
   academicInfo: {
     enrollmentDate: { type: String, default: '' },
