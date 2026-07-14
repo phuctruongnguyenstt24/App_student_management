@@ -615,8 +615,6 @@ export default function CreateStudentScreen() {
                         </View>
                     </View>
 
-
-
                     {/* Chọn Khoa */}
                     <View style={styles.pickerContainer}>
                         <Text style={styles.pickerLabel}>Khoa</Text>

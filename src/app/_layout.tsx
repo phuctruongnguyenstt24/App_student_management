@@ -8,7 +8,7 @@ import {
 
 import { AuthProvider } from '../contexts/AuthContext';
 import { ThemeProvider, useTheme } from '../contexts/ThemeContext';
-
+import { FieldsProvider } from '../contexts/FieldsContext';  
 function RootLayoutNav() {
   const { theme } = useTheme();
 
@@ -34,7 +34,7 @@ function RootLayoutNav() {
     <PaperProvider theme={paperTheme}>
       <Stack
         screenOptions={{
-          headerShown:false,
+          headerShown: false,
           headerStyle: {
             backgroundColor: paperTheme.colors.surface,
           },
@@ -51,6 +51,7 @@ function RootLayoutNav() {
           name="login"
           options={{ headerShown: false }}
         />
+       
       </Stack>
     </PaperProvider>
   );
@@ -60,7 +61,9 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <RootLayoutNav />
+        <FieldsProvider> 
+          <RootLayoutNav />
+        </FieldsProvider>
       </AuthProvider>
     </ThemeProvider>
   );

@@ -17,7 +17,7 @@ export default function AdminTrainingPointsScreen() {
   const [selectedSemester, setSelectedSemester] = useState<any>(null);
   const [showSemesterModal, setShowSemesterModal] = useState(false);
 
-  // 1. GỌI API LẤY DANH SÁCH HỌC KỲ (Dựa theo chương trình khung)
+
  // 1. GỌI API LẤY DANH SÁCH HỌC KỲ
   const fetchSemesters = async () => {
     try {
@@ -33,7 +33,7 @@ export default function AdminTrainingPointsScreen() {
       
       // Đọc dữ liệu thô để debug
       const text = await response.text();
-      console.log("📦 Dữ liệu thô từ /curriculum:", text);
+     //console.log("📦 Dữ liệu thô từ /curriculum:", text);
 
       let data;
       try {

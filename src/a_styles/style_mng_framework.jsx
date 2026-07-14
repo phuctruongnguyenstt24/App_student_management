@@ -31,6 +31,52 @@ export const styles = StyleSheet.create({
     padding: 16,
     elevation: 2,
   },
+  subjectCodeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  subjectCode: {
+    fontSize: 13,
+    color: "#546e7a",
+    fontWeight: "500",
+  },
+
+  syncIcon: {
+    marginLeft: 4,
+  },
+
+  subjectActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  // Button
+  buttonRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 6,
+  },
+  halfButton: {
+    flex: 1,
+  },
+  syncButton: {
+    backgroundColor: "#e3f2fd",
+    borderColor: "#90caf9",
+  },
+  headerButtons: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 4,
+  },
+
+  syncAllButton: {
+    backgroundColor: "rgba(33, 150, 243, 0.8)",
+  },
+  syncButtonText: {
+    color: "#1565c0",
+  },
+
   semesterHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -282,7 +328,21 @@ export const styles = StyleSheet.create({
     fontStyle: "italic",
   },
 
-   backButton: {
+  backButton: {
     padding: 4,
+  },
+  // Thêm vào cuối file styles
+  syncBadge: {
+    color: "#4CAF50",
+    fontWeight: "bold",
+    fontSize: 12,
+  },
+  subjectDepartment: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 4,
+    paddingTop: 4,
+    borderTopWidth: 1,
+    borderTopColor: "#f0f0f0",
   },
 });

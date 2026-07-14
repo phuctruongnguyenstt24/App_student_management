@@ -1,0 +1,41 @@
+//Code mẫu đồng bộ cho nhiều trang
+
+//import 
+import { useAuth } from '@/contexts/AuthContext';
+
+//khai báo chỗ useState
+  const {user} = useAuth();
+
+//khai báo biến
+    let avatar = user?.avatar || '' ;
+
+//truy cập biến
+      <TouchableOpacity onPress={toggleProfileMenu}>
+                <Image 
+                   source={{ uri: avatar }}
+                   style={styles.avatar}
+                />
+            </TouchableOpacity>
+
+-------------------------------------------------------------------------------------------------------------------------
+
+// Trong component bất kỳ
+import { useFields } from '../contexts/FieldsContext';
+
+export default function SomeComponent() {
+  //  Lấy tất cả
+  const { fields } = useFields();
+  
+   
+   // Khai báo biến cho từng field (gọn hơn)
+  const courseCodeField = fields.course.courseCode;
+  
+  // Sử dụng:
+  return (
+    <View>
+      <Text>{fields.course.courseCode.label}</Text>
+      {/* hoặc */}
+      <Text>{getFieldLabel('course', 'courseCode')}</Text>
+    </View>
+  );
+}
