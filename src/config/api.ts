@@ -45,7 +45,8 @@ export const getApiUrl = (): string => {
   }
   
   // IP mặc định (thay bằng IP của máy tính bạn)
-  return 'http:// 192.168.1.7api';
+  return 'http://192.168.1.100:5000/api';
 };
 
 export const API_URL = getApiUrl();
+console.log('[API] Using API_URL:', API_URL);

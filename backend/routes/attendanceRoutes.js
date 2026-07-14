@@ -10,10 +10,27 @@ router.get('/', protect, async (req, res) => {
     const { status } = req.query;
     const query = {};
     if (status) query.status = status;
-    const sessions = await Attendance.find(query).sort({ requestedAt: -1 });
+    const sessions = await Attendance.find(query)
+      .populate('courseId', 'courseCode courseName credits department')
+      .populate('requestedBy', 'fullName email username role')
+      .sort({ requestedAt: -1 });
     res.json({ success: true, data: sessions });
   } catch (error) {
     console.error('Get attendance error:', error);
+    res.status(500).json({ success: false, message: 'Lỗi khi lấy buổi điểm danh' });
+  }
+});
+
+// Get single attendance session by ID
+router.get('/:id', protect, async (req, res) => {
+  try {
+    const session = await Attendance.findById(req.params.id)
+      .populate('courseId', 'courseCode courseName credits department')
+      .populate('requestedBy', 'fullName email username role');
+    if (!session) return res.status(404).json({ success: false, message: 'Không tìm thấy buổi điểm danh' });
+    res.json({ success: true, data: session });
+  } catch (error) {
+    console.error('Get attendance by id error:', error);
     res.status(500).json({ success: false, message: 'Lỗi khi lấy buổi điểm danh' });
   }
 });
@@ -24,29 +41,49 @@ router.post('/', protect, isAdmin, async (req, res) => {
     const { courseId, courseCode, courseName, department } = req.body;
 
     if (!courseId || !courseCode || !courseName) {
-      return res.status(400).json({ success: false, message: 'Thiếu thông tin môn học' });
+      return res.status(400).json({ success: false, message: 'Thiếu thông tin: courseId, courseCode, courseName là bắt buộc' });
     }
 
-    // Optionally check course exists
+    // Kiểm tra course tồn tại
     const course = await Course.findById(courseId);
     if (!course) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy môn học' });
     }
 
+    // Không cho mở 2 buổi active cho cùng 1 môn
+    const existing = await Attendance.findOne({ courseId, status: 'active' });
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: `Môn ${courseCode} đang có buổi điểm danh chưa đóng (ID: ${existing._id})`,
+      });
+    }
+
     const session = new Attendance({
       courseId,
-      courseCode,
-      courseName,
-      department: department || '',
-      requestedBy: req.user?._id,
-      status: 'active',
+      courseCode:   courseCode.trim().toUpperCase(),
+      courseName:   courseName.trim(),
+      department:   (department || course.department || '').trim(),
+      requestedBy:  req.user._id,
+      requestedAt:  new Date(),
+      status:       'active',
+      presentStudents: [],
     });
 
     await session.save();
 
-    console.log('Created attendance session:', { id: session._id, courseCode: session.courseCode, by: req.user?.email || req.user?.username });
+    // Populate để trả về document đầy đủ (giống mẫu trong Atlas)
+    const populated = await Attendance.findById(session._id)
+      .populate('courseId', 'courseCode courseName credits department')
+      .populate('requestedBy', 'fullName email username role');
 
-    res.status(201).json({ success: true, data: session });
+    console.log('✅ Created attendance session:', {
+      id:         session._id,
+      courseCode: session.courseCode,
+      by:         req.user.email || req.user.username,
+    });
+
+    res.status(201).json({ success: true, data: populated });
   } catch (error) {
     console.error('Create attendance error:', error);
     res.status(500).json({ success: false, message: 'Lỗi khi tạo buổi điểm danh' });
@@ -69,13 +106,22 @@ router.post('/:id/mark', protect, async (req, res) => {
       return false;
     });
 
-    if (already) return res.json({ success: true, data: session });
+    if (!already) {
+      const studentEntry = {
+        studentId: studentId ? studentId.trim() : '',
+        fullName:  fullName  ? fullName.trim()  : 'Sinh viên',
+        checkedAt: new Date(),
+      };
+      session.presentStudents.push(studentEntry);
+      await session.save();
+      console.log('✅ Marked attendance:', { sessionId: session._id, student: studentEntry });
+    }
 
-    const studentEntry = { studentId: studentId || '', fullName: fullName || 'Sinh viên', checkedAt: new Date() };
-    session.presentStudents.push(studentEntry);
-    await session.save();
-    console.log('Marked attendance:', { sessionId: session._id, student: studentEntry, by: req.user?.email || req.user?.username });
-    res.json({ success: true, data: session });
+    const populated = await Attendance.findById(session._id)
+      .populate('courseId', 'courseCode courseName credits department')
+      .populate('requestedBy', 'fullName email username role');
+
+    res.json({ success: true, data: populated });
   } catch (error) {
     console.error('Mark attendance error:', error);
     res.status(500).json({ success: false, message: 'Lỗi khi lưu điểm danh' });
@@ -87,9 +133,17 @@ router.put('/:id/close', protect, isAdmin, async (req, res) => {
   try {
     const session = await Attendance.findById(req.params.id);
     if (!session) return res.status(404).json({ success: false, message: 'Không tìm thấy buổi điểm danh' });
+    if (session.status === 'closed') return res.json({ success: true, data: session }); // idempotent
+
     session.status = 'closed';
     await session.save();
-    res.json({ success: true, data: session });
+
+    const populated = await Attendance.findById(session._id)
+      .populate('courseId', 'courseCode courseName credits department')
+      .populate('requestedBy', 'fullName email username role');
+
+    console.log('✅ Closed attendance session:', { id: session._id, courseCode: session.courseCode });
+    res.json({ success: true, data: populated });
   } catch (error) {
     console.error('Close attendance error:', error);
     res.status(500).json({ success: false, message: 'Lỗi khi đóng buổi điểm danh' });

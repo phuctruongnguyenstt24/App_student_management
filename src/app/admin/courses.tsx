@@ -108,6 +108,72 @@ const localStyles = StyleSheet.create({
     color: '#6b7280',
     lineHeight: 20,
   },
+  // History panel
+  historyPanel: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  historyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  historySubtitle: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginBottom: 8,
+  },
+  historyCard: {
+    borderWidth: 1,
+    borderColor: '#d1fae5',
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 8,
+    backgroundColor: '#f0fdf4',
+  },
+  historyCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  closedBadge: {
+    backgroundColor: '#6b7280',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  closedBadgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  historyCourseName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#111827',
+    flex: 1,
+    marginRight: 8,
+  },
+  historyMeta: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 2,
+    marginBottom: 6,
+  },
+  presentCount: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#16a34a',
+    marginBottom: 4,
+  },
 });
 
 export default function CoursesScreen() {
@@ -612,6 +678,47 @@ export default function CoursesScreen() {
             <Text style={localStyles.emptyText}>Hãy bấm nút xác nhận trên từng môn để mở điểm danh cho nhiều môn cùng lúc.</Text>
           )}
         </View>
+
+        {/* Lịch sử điểm danh (các buổi đã đóng) */}
+        {attendanceSessions.filter((s) => s.status === 'closed').length > 0 && (
+          <View style={localStyles.historyPanel}>
+            <Text style={localStyles.historyTitle}>📋 Lịch sử điểm danh</Text>
+            <Text style={localStyles.historySubtitle}>
+              {attendanceSessions.filter((s) => s.status === 'closed').length} buổi đã kết thúc
+            </Text>
+            {attendanceSessions
+              .filter((s) => s.status === 'closed')
+              .map((session) => (
+                <View key={session.id} style={localStyles.historyCard}>
+                  <View style={localStyles.historyCardHeader}>
+                    <Text style={localStyles.historyCourseName}>{session.courseName}</Text>
+                    <View style={localStyles.closedBadge}>
+                      <Text style={localStyles.closedBadgeText}>Đã đóng</Text>
+                    </View>
+                  </View>
+                  <Text style={localStyles.historyMeta}>
+                    {session.courseCode} • {session.department || '---'} •{' '}
+                    {new Date(session.requestedAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </Text>
+                  <Text style={localStyles.presentCount}>
+                    ✓ {session.presentStudents.length} sinh viên đã điểm danh
+                  </Text>
+                  {session.presentStudents.length > 0 ? (
+                    <View style={localStyles.studentList}>
+                      {session.presentStudents.map((student, index) => (
+                        <Text key={`${student.studentId}-${index}`} style={localStyles.studentItem}>
+                          {index + 1}. {student.fullName}
+                          {student.studentId ? ` (${student.studentId})` : ''}
+                        </Text>
+                      ))}
+                    </View>
+                  ) : (
+                    <Text style={localStyles.emptyText}>Không có sinh viên nào điểm danh trong buổi này</Text>
+                  )}
+                </View>
+              ))}
+          </View>
+        )}
 
         {/* Danh sách môn học */}
         <View style={styles.sectionContainer}>
