@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import {
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useAuth } from "../../contexts/AuthContext";
 import { getAttendanceSessions, markAttendanceForStudent, type AttendanceSession } from "../../utils/attendanceStorage";
@@ -41,10 +41,15 @@ export default function AttendanceScreen() {
   };
 
   const isMarked = (session: AttendanceSession) => {
-    const studentId = user?.studentId || user?.id;
+    const studentId = (user?.studentId || user?.id || '').toString().trim().toLowerCase();
+    const name = (user?.fullName || user?.username || '').toString().trim().toLowerCase();
+
     return session.presentStudents.some((student) => {
-      if (studentId && student.studentId === studentId) return true;
-      return student.fullName === (user?.fullName || user?.username);
+      const sid = (student.studentId || '').toString().trim().toLowerCase();
+      const sname = (student.fullName || '').toString().trim().toLowerCase();
+      if (studentId && sid && sid === studentId) return true;
+      if (name && sname && sname === name) return true;
+      return false;
     });
   };
 
