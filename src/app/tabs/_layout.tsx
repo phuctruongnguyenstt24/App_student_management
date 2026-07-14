@@ -49,12 +49,14 @@ export default function TabLayout() {
           ),
         }}
       />
+
       <Tabs.Screen
         name="settings"
         options={{
           href: null,
         }}
       />
+
       {/* href: null, ==> ẩn tab NewsScreen khỏi tabBar */}
       <Tabs.Screen
         name="NewsScreen"
@@ -91,6 +93,7 @@ export default function TabLayout() {
         }}
       />
 
+      {/* 🚀 Code đã được gộp chuẩn: Giữ cả AllFeatures, Curriculum và TrainingPoint */}
       <Tabs.Screen
         name="AllFeaturesScreen"
         options={{
@@ -98,18 +101,19 @@ export default function TabLayout() {
         }}
       />
 
-
-       <Tabs.Screen
+      <Tabs.Screen
         name="CurriculumStudentScreen"
         options={{
           href: null,
         }}
       />
-     
-    </Tabs>
 
-
-
-     
+      <Tabs.Screen
+        name="TrainingPointScreen"
+        options={{
+          href: null,
+        }}
+      />
+    </Tabs>   
   );
 }

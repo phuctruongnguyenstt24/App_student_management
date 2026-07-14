@@ -1,15 +1,12 @@
 // app/admin/dashboard.tsx
+import { useAuth } from '@/contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View ,Image } from 'react-native';
+import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from '../../a_styles/style_dashboard';
-import { useAuth } from '@/contexts/AuthContext';
-import { black } from 'react-native-paper/lib/typescript/styles/themes/v2/colors';
-
-
 
 export default function AdminDashboard() {
   const {user} = useAuth();
@@ -30,9 +27,6 @@ export default function AdminDashboard() {
       } catch (error) {
         console.error('Error getting user info:', error);
       }
-
-
-
     };
 
     const getCurrentDate = () => {
@@ -60,6 +54,7 @@ export default function AdminDashboard() {
         router.replace('/login'); // hoặc dashboard khác
       }
     };
+    
     getUserInfo();
     getCurrentDate();
     checkRole();
@@ -177,19 +172,29 @@ export default function AdminDashboard() {
               <Text style={styles.menuDesc}>Góp ý sinh viên</Text>
             </TouchableOpacity>
 
-
+            {/* 🚀 ĐÃ FIX CONFLICT: Nút Quản lý chương trình khung */}
             <TouchableOpacity
               style={styles.menuCard}
-              onPress={() => router.push('/admin/mng_frameworkprogram')}
+              onPress={() => router.push('/admin/mng_frameworkprogram' as any)}
             >
               <View style={styles.menuIconWrapper}>
                 <Ionicons name="library-outline" size={32} color="#16d6e0" />
               </View>
               <Text style={styles.menuTitle}>Quản lý Chương trình khung</Text>
-              <Text style={styles.menuDesc}>CHƯƠNG TRÌNH KHUNG</Text>
+              <Text style={styles.menuDesc}>Chương trình khung</Text>
             </TouchableOpacity>
 
-
+            {/* 🚀 ĐÃ FIX CONFLICT: Nút Điểm rèn luyện */}
+            <TouchableOpacity
+              style={styles.menuCard}
+              onPress={() => router.push('/admin/training-points')}
+            >
+              <View style={styles.menuIconWrapper}>
+                <Ionicons name="ribbon-outline" size={32} color="#9b59b6" />
+              </View>
+              <Text style={styles.menuTitle}>Điểm rèn luyện</Text>
+              <Text style={styles.menuDesc}>Chấm điểm cho sinh viên</Text>   
+            </TouchableOpacity>
 
           </View>
         </ScrollView>
@@ -213,19 +218,15 @@ export default function AdminDashboard() {
                 </View>
               </View>
 
-              <TouchableOpacity style={styles.menuItem} onPress={ () => router.push('/admin/AdminProfileScreen')}>
+              <TouchableOpacity style={styles.menuItem} onPress={ () => router.push('/admin/AdminProfileScreen'as any)}>
                 <Ionicons name="person-outline" size={22} color="#333" />
                 <Text style={styles.menuItemText}>Thông tin cá nhân</Text>
               </TouchableOpacity>
 
-          
-
-              <TouchableOpacity style={styles.menuItem} onPress={ () => router.push('/admin/ChangePasswordScreen')}>
+              <TouchableOpacity style={styles.menuItem} onPress={ () => router.push('/admin/ChangePasswordScreen' as any)}>
                 <Ionicons name="lock-closed-outline" size={22} color="#333" />
                 <Text style={styles.menuItemText}>Đổi mật khẩu</Text>
               </TouchableOpacity>
-
-          
 
               <TouchableOpacity style={[styles.menuItem, styles.logoutItem]} onPress={handleLogout}>
                 <Ionicons name="log-out-outline" size={22} color="#dc3545" />

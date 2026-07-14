@@ -1,6 +1,6 @@
 // config/api.ts
-import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 export const getApiUrl = (): string => {
   // Trên Web - kiểm tra Platform trước
@@ -45,7 +45,7 @@ export const getApiUrl = (): string => {
   }
   
   // IP mặc định (thay bằng IP của máy tính bạn)
-  return 'http://192.168.1.100:5000/api';
+  return 'http:// 192.168.1.7api';
 };
 
 export const API_URL = getApiUrl();
