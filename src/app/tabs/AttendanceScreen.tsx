@@ -1,5 +1,8 @@
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
+  Alert,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -11,17 +14,22 @@ import { getAttendanceSessions, markAttendanceForStudent, type AttendanceSession
 
 export default function AttendanceScreen() {
   const { user } = useAuth();
-  const [attendanceSessions, setAttendanceSessions] = useState<AttendanceSession[]>([]);
+  // allSessions giữ toàn bộ list (active + closed) từ storage,
+  // UI chỉ hiển thị các session active.
+  const [allSessions, setAllSessions] = useState<AttendanceSession[]>([]);
   const [markingSessionId, setMarkingSessionId] = useState<string | null>(null);
+
+  const activeSessions = allSessions.filter((s) => s.status === 'active');
 
   useEffect(() => {
     const loadSessions = async () => {
       const sessions = await getAttendanceSessions();
-      setAttendanceSessions(sessions.filter((session) => session.status === 'active'));
+      console.log(`[AttendanceScreen] sessions loaded: total=${sessions.length}, active=${sessions.filter(s => s.status === 'active').length}`);
+      setAllSessions(sessions);
     };
 
     loadSessions();
-    const interval = setInterval(loadSessions, 2000);
+    const interval = setInterval(loadSessions, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -29,15 +37,25 @@ export default function AttendanceScreen() {
     if (!user) return;
 
     setMarkingSessionId(sessionId);
-    const updatedSessions = await markAttendanceForStudent(
-      {
-        studentId: user.studentId || user.id,
-        fullName: user.fullName || user.username,
-      },
-      sessionId
-    );
-    setAttendanceSessions((updatedSessions || []).filter((session) => session.status === 'active'));
-    setMarkingSessionId(null);
+    try {
+      const merged = await markAttendanceForStudent(
+        {
+          studentId: user.studentId || user.id,
+          fullName: user.fullName || user.username,
+        },
+        sessionId
+      );
+      // Cập nhật toàn bộ list — UI sẽ tự re-render với presentStudents mới nhất
+      setAllSessions(merged || []);
+    } catch (error: any) {
+      // Server trả về lỗi "Buổi điểm danh đã đóng" → thông báo rõ cho sinh viên
+      Alert.alert('Không thể điểm danh', error?.message || 'Buổi điểm danh đã kết thúc hoặc có lỗi xảy ra.');
+      // Refresh lại để đồng bộ trạng thái mới nhất
+      const sessions = await getAttendanceSessions();
+      setAllSessions(sessions);
+    } finally {
+      setMarkingSessionId(null);
+    }
   };
 
   const isMarked = (session: AttendanceSession) => {
@@ -53,17 +71,30 @@ export default function AttendanceScreen() {
     });
   };
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.replace("/tabs/AllFeaturesScreen");
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
+        <TouchableOpacity onPress={handleBack}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+
         <Text style={styles.headerTitle}>Điểm danh</Text>
+
+        {/* Giữ cân đối vì bên trái có icon */}
+        <View style={{ width: 24 }} />
       </View>
 
       {/* Card */}
       <View style={styles.card}>
-        {attendanceSessions.length > 0 ? (
-          attendanceSessions.map((session) => (
+        {activeSessions.length > 0 ? (
+          activeSessions.map((session) => (
             <View key={session.id} style={styles.sessionCard}>
               <Text style={styles.subject}>{session.courseCode} - {session.courseName}</Text>
               <View style={styles.line} />
@@ -136,11 +167,13 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    height: 70,
-    backgroundColor: "#0B66D6",
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 5,
+  height: 70,
+  backgroundColor: "#214D8A",
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "space-between",
+  paddingHorizontal: 16,
+  elevation: 5,
   },
 
   headerTitle: {
