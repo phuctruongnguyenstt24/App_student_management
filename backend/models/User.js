@@ -117,13 +117,13 @@ dateOfBirth: {
     default: 'active'
   },
  
-  trainingPoint: {
-    type: Number,
-    default: 0,
-    min: [0, 'Điểm rèn luyện không được nhỏ hơn 0'],
-    max: [100, 'Điểm rèn luyện không vượt quá 100']
-  },
-
+// Thay thế trường trainingPoint cũ bằng mảng này:
+  trainingPoints: [
+    {
+      semesterNumber: { type: Number, required: true },
+      point: { type: Number, default: 0 }
+    }
+  ],
    // Thông tin học vấn
   academicInfo: {
     enrollmentDate: { type: String, default: '' },

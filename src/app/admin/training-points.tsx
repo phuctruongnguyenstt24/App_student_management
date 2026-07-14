@@ -295,4 +295,4 @@ const styles = StyleSheet.create({
   scoreAction: { flexDirection: 'row', alignItems: 'center' },
   inputScore: { borderBottomWidth: 1, borderColor: '#4CAF50', width: 50, textAlign: 'center', fontSize: 18, fontWeight: 'bold', marginRight: 12, paddingVertical: 2 },
   btnSave: { backgroundColor: '#4CAF50', padding: 8, borderRadius: 6 }
-});
+}); 

@@ -1,27 +1,25 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  Alert,
-  ActivityIndicator,
-  Modal,
-  RefreshControl,
-  Platform,
-} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from 'expo-router';
-import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from "react-native";
+// 1. THÊM IMPORT ASYNCSTORAGE
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import { styles } from "../../a_styles/style_mng_framework";
-import { useAuth } from "../../contexts/AuthContext";
 import { API_URL } from "../../config/api";
- 
+import { useAuth } from "../../contexts/AuthContext";
 
 const CurriculumManagementScreen = () => {
-  
   const { user } = useAuth();
   const [semesters, setSemesters] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +27,7 @@ const CurriculumManagementScreen = () => {
 
   // Modal thêm/sửa môn học
   const [modalVisible, setModalVisible] = useState(false);
-  const [modalMode, setModalMode] = useState("add"); // "add" hoặc "edit"
+  const [modalMode, setModalMode] = useState("add");
   const [editingSubject, setEditingSubject] = useState(null);
   const [newSubjectName, setNewSubjectName] = useState("");
   const [newSubjectCode, setNewSubjectCode] = useState("");
@@ -51,7 +49,13 @@ const CurriculumManagementScreen = () => {
 
   const fetchCurriculum = async () => {
     try {
-      const response = await fetch(`${API_URL}/curriculum`);
+      const token = await AsyncStorage.getItem("token"); // 👈 Lấy token
+      const response = await fetch(`${API_URL}/curriculum`, {
+        headers: {
+          "Authorization": `Bearer ${token}`, // 👈 Gắn token vào
+          "Content-Type": "application/json",
+        },
+      });
       const data = await response.json();
       setSemesters(data);
     } catch (error) {
@@ -70,11 +74,15 @@ const CurriculumManagementScreen = () => {
 
   const updateSemester = async (semesterNumber, subjects) => {
     try {
+      const token = await AsyncStorage.getItem("token"); // 👈
       const response = await fetch(
         `${API_URL}/curriculum/semester/${semesterNumber}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`, // 👈
+          },
           body: JSON.stringify({ subjects }),
         },
       );
@@ -97,11 +105,15 @@ const CurriculumManagementScreen = () => {
 
   const updateSubject = async (subjectId, updates) => {
     try {
+      const token = await AsyncStorage.getItem("token"); // 👈
       const response = await fetch(
         `${API_URL}/curriculum/subject/${subjectId}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`, // 👈
+          },
           body: JSON.stringify(updates),
         },
       );
@@ -126,7 +138,6 @@ const CurriculumManagementScreen = () => {
     updateSubject(subjectId, { isCompleted: !currentStatus });
   };
 
-  // Mở modal thêm môn học
   const openAddSubjectModal = (semester) => {
     setModalMode("add");
     setSelectedSemester(semester);
@@ -140,7 +151,6 @@ const CurriculumManagementScreen = () => {
     setModalVisible(true);
   };
 
-  // Mở modal sửa môn học
   const openEditSubjectModal = (subject, semester) => {
     setModalMode("edit");
     setSelectedSemester(semester);
@@ -154,7 +164,6 @@ const CurriculumManagementScreen = () => {
     setModalVisible(true);
   };
 
-  // Xử lý thêm/sửa môn học
   const handleSaveSubject = async () => {
     if (!newSubjectName.trim()) {
       Alert.alert("Lỗi", "Vui lòng nhập tên môn học");
@@ -177,11 +186,9 @@ const CurriculumManagementScreen = () => {
     };
 
     if (modalMode === "add") {
-      // Thêm mới
       const updatedSubjects = [...selectedSemester.subjects, subjectData];
       await updateSemester(selectedSemester.semesterNumber, updatedSubjects);
     } else {
-      // Sửa
       const subjectId = editingSubject._id || editingSubject.id;
       const updatedSubjects = selectedSemester.subjects.map((sub) =>
         (sub._id || sub.id) === subjectId ? { ...sub, ...subjectData } : sub,
@@ -204,7 +211,6 @@ const CurriculumManagementScreen = () => {
     setSelectedSemester(null);
   };
 
-  // Xóa môn học
   const deleteSubject = (subjectId, semester) => {
     Alert.alert("Xóa môn học", "Bạn có chắc chắn muốn xóa môn học này?", [
       { text: "Hủy", style: "cancel" },
@@ -226,7 +232,6 @@ const CurriculumManagementScreen = () => {
     ]);
   };
 
-  // Mở modal thêm học kỳ
   const openAddSemesterModal = () => {
     setSemesterModalMode("add");
     setNewSemesterNumber("");
@@ -234,7 +239,6 @@ const CurriculumManagementScreen = () => {
     setSemesterModalVisible(true);
   };
 
-  // Mở modal sửa học kỳ
   const openEditSemesterModal = (semester) => {
     setSemesterModalMode("edit");
     setEditingSemester(semester);
@@ -242,7 +246,7 @@ const CurriculumManagementScreen = () => {
     setSemesterModalVisible(true);
   };
 
-  // Xử lý thêm/sửa học kỳ
+  // 🚀 ĐÂY LÀ CHỖ ĐÃ SỬA CÁI LỖI "THÊM HỌC KỲ THẤT BẠI" NÈ
   const handleSaveSemester = async () => {
     if (!newSemesterNumber.trim() || isNaN(newSemesterNumber)) {
       Alert.alert("Lỗi", "Vui lòng nhập số học kỳ hợp lệ");
@@ -251,7 +255,6 @@ const CurriculumManagementScreen = () => {
 
     const semesterNumber = parseInt(newSemesterNumber);
 
-    // Kiểm tra trùng số học kỳ
     const exists = semesters.some(
       (s) =>
         s.semesterNumber === semesterNumber &&
@@ -265,8 +268,9 @@ const CurriculumManagementScreen = () => {
       return;
     }
 
+    const token = await AsyncStorage.getItem("token"); // 👈 LẤY TOKEN Ở ĐÂY
+
     if (semesterModalMode === "add") {
-      // Thêm mới
       const newSemester = {
         semesterNumber: semesterNumber,
         subjects: [],
@@ -276,7 +280,10 @@ const CurriculumManagementScreen = () => {
       try {
         const response = await fetch(`${API_URL}/curriculum`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` // 👈 GẮN TOKEN VÀO ĐÂY
+          },
           body: JSON.stringify(newSemester),
         });
 
@@ -286,21 +293,24 @@ const CurriculumManagementScreen = () => {
           setSemesterModalVisible(false);
           setNewSemesterNumber("");
         } else {
-          Alert.alert("Lỗi", "Thêm học kỳ thất bại");
+          // Lấy tin nhắn báo lỗi chi tiết từ backend thay vì thông báo chung chung
+          const errData = await response.json().catch(() => ({}));
+          Alert.alert("Lỗi", errData.message || "Thêm học kỳ thất bại");
         }
       } catch (error) {
         console.error("Error creating semester:", error);
         Alert.alert("Lỗi", "Không thể thêm học kỳ");
       }
     } else {
-      // Sửa học kỳ
       try {
-        // Cập nhật số học kỳ
         const response = await fetch(
           `${API_URL}/curriculum/semester/${editingSemester.semesterNumber}`,
           {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}` // 👈 GẮN TOKEN VÀO ĐÂY NỮA
+            },
             body: JSON.stringify({
               semesterNumber: semesterNumber,
               subjects: editingSemester.subjects,
@@ -323,7 +333,6 @@ const CurriculumManagementScreen = () => {
     }
   };
 
-  // Xóa học kỳ
   const deleteSemester = (semester) => {
     Alert.alert(
       "Xóa học kỳ",
@@ -335,9 +344,15 @@ const CurriculumManagementScreen = () => {
           style: "destructive",
           onPress: async () => {
             try {
+              const token = await AsyncStorage.getItem("token"); // 👈
               const response = await fetch(
                 `${API_URL}/curriculum/semester/${semester.semesterNumber}`,
-                { method: "DELETE" },
+                { 
+                  method: "DELETE",
+                  headers: {
+                    "Authorization": `Bearer ${token}` // 👈
+                  }
+                },
               );
 
               if (response.ok) {
@@ -473,11 +488,12 @@ const CurriculumManagementScreen = () => {
       </View>
     );
   }
- const handleback = () => {
-         if(router.canGoBack()){
-                 router.replace('/admin/dashboard')
-         }
-     }
+
+  const handleback = () => {
+    if(router.canGoBack()){
+      router.replace('/admin/dashboard')
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -487,9 +503,9 @@ const CurriculumManagementScreen = () => {
         }
       >
         <View style={styles.header}>
-            <TouchableOpacity onPress={handleback} style={styles.backButton}>
-                                <Ionicons name="arrow-back" size={24} color="#0c0707" />
-                            </TouchableOpacity>
+          <TouchableOpacity onPress={handleback} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#0c0707" />
+          </TouchableOpacity>
           <Text style={styles.headerTitle}>Chương trình khung</Text>
           <Text style={styles.headerSubtitle}>
             Kỹ thuật phần mềm - Đại học chính quy

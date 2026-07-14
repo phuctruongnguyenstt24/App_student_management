@@ -63,7 +63,7 @@ export default function AllFeaturesScreen() {
     title: "Rèn luyện",
     icon: "ribbon",
     color: "#EF4B4B",
-    href: "../tabs/TrainingPointScreen",
+    href: "../tabs/TrainingPointScreen",  
   },
   {
     title: "Tin tức",

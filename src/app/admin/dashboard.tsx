@@ -185,7 +185,7 @@ export default function AdminDashboard() {
                 <Ionicons name="ribbon-outline" size={32} color="#9b59b6" />
               </View>
               <Text style={styles.menuTitle}>Điểm rèn luyện</Text>
-              <Text style={styles.menuDesc}>Chấm điểm cho sinh viên</Text>
+              <Text style={styles.menuDesc}>Chấm điểm cho sinh viên</Text>   
             </TouchableOpacity>
 
           </View>

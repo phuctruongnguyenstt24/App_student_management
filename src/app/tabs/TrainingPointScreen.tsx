@@ -81,9 +81,7 @@ export default function TrainingPointScreen() {
       setShowDropdown(false); // Ẩn dropdown khi bắt đầu tải
       const savedToken = await AsyncStorage.getItem('token');
 
-      // ⚠️ LƯU Ý CHO BRO: Sửa lại API này cho đúng với Backend của bro nhé!
-      // Ví dụ nếu BE của bro cần truyền query: ?semesterId=... hoặc /semester/...
-      // Hiện tại mình đang giữ URL cũ của bro, bro cần check lại Backend viết route này thế nào
+      // Vẫn giữ nguyên API gọi thông tin chi tiết sinh viên
       const response = await fetch(`${API_URL}/students/${userId}`, { 
         method: 'GET',
         headers: {
@@ -97,9 +95,26 @@ export default function TrainingPointScreen() {
       if (data.success || response.ok) {
         const studentData = data.data || data.student || data.user || data;
         
-        // ⚠️ GIẢ ĐỊNH: Nếu BE trả về 1 mảng điểm các kỳ, bro phải dùng hàm find/filter ở đây.
-        // Còn nếu BE đã trả về đúng điểm của kỳ đó rồi thì xài luôn.
-        setPoint(studentData?.trainingPoint || 0);
+        // ✅ XỬ LÝ LỌC ĐIỂM THEO MẢNG HỌC KỲ MỚI CỦA BACKEND
+        let currentSemesterPoint = 0; // Điểm mặc định nếu chưa được chấm
+
+        // Kiểm tra xem backend có trả về mảng trainingPoints không
+        if (studentData?.trainingPoints && Array.isArray(studentData.trainingPoints)) {
+          // Dùng hàm find để bới trong mảng xem có điểm của kỳ đang chọn không
+          const found = studentData.trainingPoints.find(
+            (tp: any) => tp.semesterNumber === semester.semesterNumber
+          );
+          if (found) {
+            currentSemesterPoint = found.point; // Có thì lấy điểm đó
+          }
+        } else if (studentData?.trainingPoint !== undefined) {
+          // Giữ lại cái này đề phòng sinh viên cũ chưa được đưa vào mảng
+          currentSemesterPoint = studentData.trainingPoint; 
+        }
+
+        // Cập nhật state điểm để hiển thị ra UI
+        setPoint(currentSemesterPoint);
+
       } else {
         Alert.alert("Lỗi", "Không thể lấy điểm rèn luyện kỳ này");
       }
