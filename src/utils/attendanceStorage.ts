@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '../config/api';
 
 export interface AttendanceStudent {
   studentId: string;
@@ -33,6 +34,33 @@ export const saveAttendanceSessions = async (sessions: AttendanceSession[] | nul
 };
 
 export const getAttendanceSessions = async (): Promise<AttendanceSession[]> => {
+  // Try server first
+  try {
+    const token = await AsyncStorage.getItem('token');
+    if (token) {
+      const res = await fetch(`${API_URL}/attendance?status=active`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          // Map server session (_id) to local shape
+          return (json.data || []).map((s: any) => ({
+            id: s._id,
+            courseId: s.courseId,
+            courseCode: s.courseCode,
+            courseName: s.courseName,
+            department: s.department,
+            requestedAt: s.requestedAt,
+            requestedBy: s.requestedBy,
+            status: s.status,
+            presentStudents: (s.presentStudents || []).map((p: any) => ({ studentId: p.studentId, fullName: p.fullName, checkedAt: p.checkedAt })),
+          } as AttendanceSession));
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('Attendance API fetch failed, falling back to AsyncStorage', error);
+  }
+
   const stored = await AsyncStorage.getItem(ATTENDANCE_SESSIONS_KEY);
   if (stored) {
     try {
@@ -60,6 +88,33 @@ export const getAttendanceSessions = async (): Promise<AttendanceSession[]> => {
 };
 
 export const upsertAttendanceSession = async (session: AttendanceSession) => {
+  // Try to create session on server (admin)
+  try {
+    const token = await AsyncStorage.getItem('token');
+    if (token) {
+      const body = {
+        courseId: session.courseId,
+        courseCode: session.courseCode,
+        courseName: session.courseName,
+        department: session.department,
+      };
+      const res = await fetch(`${API_URL}/attendance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+      if (json.success) {
+        // Return fresh list from server
+        const sessions = await getAttendanceSessions();
+        return sessions;
+      }
+    }
+  } catch (error) {
+    console.warn('upsertAttendanceSession failed, falling back to local', error);
+  }
+
+  // Fallback: local upsert
   const sessions = await getAttendanceSessions();
   const existingIndex = sessions.findIndex((item) => item.id === session.id || item.courseId === session.courseId);
 
@@ -73,6 +128,22 @@ export const upsertAttendanceSession = async (session: AttendanceSession) => {
 };
 
 export const closeAttendanceSession = async (sessionId: string) => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    if (token) {
+      const res = await fetch(`${API_URL}/attendance/${sessionId}/close`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (json.success) {
+        return getAttendanceSessions();
+      }
+    }
+  } catch (error) {
+    console.warn('closeAttendanceSession API failed, falling back to local', error);
+  }
+
   const sessions = await getAttendanceSessions();
   const updatedSessions = sessions.map((session) =>
     session.id === sessionId ? { ...session, status: 'closed' as const } : session
@@ -85,6 +156,29 @@ export const markAttendanceForStudent = async (
   student: { studentId?: string; fullName?: string },
   sessionId?: string
 ) => {
+  // Try server mark
+  try {
+    const token = await AsyncStorage.getItem('token');
+    if (token && sessionId) {
+      const payload = {
+        studentId: student.studentId ? student.studentId.toString().trim() : undefined,
+        fullName: student.fullName ? student.fullName.toString().trim() : undefined,
+      };
+      const res = await fetch(`${API_URL}/attendance/${sessionId}/mark`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+      if (json.success) {
+        const sessions = await getAttendanceSessions();
+        return sessions;
+      }
+    }
+  } catch (error) {
+    console.warn('markAttendanceForStudent API failed, falling back to local', error);
+  }
+
   const sessions = await getAttendanceSessions();
   const studentId = student.studentId?.trim();
   const fullName = student.fullName?.trim();
