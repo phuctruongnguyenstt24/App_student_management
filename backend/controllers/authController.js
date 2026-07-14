@@ -307,10 +307,14 @@ const login = async (req, res) => {
   }
 };
 
+// controllers/authController.js
 const getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.id)
+      .populate('facultyId', 'name code')
+      .populate('departmentId', 'name code');
     
+    // Trả về đầy đủ thông tin
     res.json({
       success: true,
       user: {
@@ -321,6 +325,17 @@ const getMe = async (req, res) => {
         email: user.email,
         role: user.role,
         avatar: user.avatar,
+        phone: user.phone || '',
+        address: user.address || '',
+        dateOfBirth: user.dateOfBirth || '',
+        placeOfBirth: user.placeOfBirth || '',
+        gender: user.gender || '',
+        class: user.class || '',
+        facultyId: user.facultyId,
+        departmentId: user.departmentId,
+        personalInfo: user.personalInfo || {},
+        academicInfo: user.academicInfo || {},
+        isFirstLogin: user.isFirstLogin,
         createdAt: user.createdAt,
         lastLogin: user.lastLogin
       }
@@ -330,6 +345,54 @@ const getMe = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Lỗi server'
+    });
+  }
+};
+
+const getAdminProfile = async (req, res) => {
+  try {
+    // Kiểm tra quyền admin
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền truy cập'
+      });
+    }
+
+    const admin = await User.findById(req.user.id)
+      .select('-password')
+      .populate('facultyId', 'name code')
+      .populate('departmentId', 'name code');
+
+    res.json({
+      success: true,
+      user: {
+        id: admin._id,
+        username: admin.username,
+        fullName: admin.fullName,
+        email: admin.email,
+        role: admin.role,
+        avatar: admin.avatar,
+        phone: admin.phone || '',
+        address: admin.address || '',
+        dateOfBirth: admin.dateOfBirth || '',
+        placeOfBirth: admin.placeOfBirth || '',
+        gender: admin.gender || '',
+        class: admin.class || '',
+        facultyId: admin.facultyId,
+        departmentId: admin.departmentId,
+        personalInfo: admin.personalInfo || {},
+        academicInfo: admin.academicInfo || {},
+        isFirstLogin: admin.isFirstLogin,
+        createdAt: admin.createdAt,
+        lastLogin: admin.lastLogin
+      }
+    });
+  } catch (error) {
+    console.error('Get admin profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server: ' + error.message
     });
   }
 };
@@ -681,6 +744,7 @@ module.exports = {
   register,
   login,
   getMe,
+  getAdminProfile,
   createStudentAccount,
   getAllStudents,
   deleteStudent,

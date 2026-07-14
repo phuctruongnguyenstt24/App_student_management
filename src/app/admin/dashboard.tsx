@@ -70,7 +70,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    <SafeAreaView style={styles.safeContainer} edges={['left', 'right']}>
+    <SafeAreaView style={styles.safeContainer} edges={['top', 'right']}>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -207,22 +207,15 @@ export default function AdminDashboard() {
                 </View>
               </View>
 
-              <TouchableOpacity style={styles.menuItem}>
+              <TouchableOpacity style={styles.menuItem} onPress={ () => router.push('/admin/AdminProfileScreen'as any)}>
                 <Ionicons name="person-outline" size={22} color="#333" />
                 <Text style={styles.menuItemText}>Thông tin cá nhân</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.menuItem}>
-                <Ionicons name="settings-outline" size={22} color="#333" />
-                <Text style={styles.menuItemText}>Tùy chỉnh</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.menuItem}>
+              <TouchableOpacity style={styles.menuItem} onPress={ () => router.push('/admin/ChangePasswordScreen' as any)}>
                 <Ionicons name="lock-closed-outline" size={22} color="#333" />
                 <Text style={styles.menuItemText}>Đổi mật khẩu</Text>
               </TouchableOpacity>
-
-              <View style={styles.divider} />
 
               <TouchableOpacity style={[styles.menuItem, styles.logoutItem]} onPress={handleLogout}>
                 <Ionicons name="log-out-outline" size={22} color="#dc3545" />

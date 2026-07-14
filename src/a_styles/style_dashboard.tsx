@@ -167,7 +167,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingVertical: 8,
   },
   menuItemText: {
     fontSize: 15,
@@ -184,9 +184,12 @@ export const styles = StyleSheet.create({
     borderTopColor: '#f0f0f0',
     marginTop: 5,
     paddingTop: 15,
+     
   },
   logoutText: {
     color: '#dc3545',
+ 
+     
   },
 
   // Footer Styles

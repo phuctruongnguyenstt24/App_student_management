@@ -2,12 +2,12 @@
 const express = require('express');
 const router = express.Router();
 const { protect, isAdmin } = require('../middleware/authMiddleware');
-const upload = require('../middleware/upload'); // ✅ Import upload
+const upload = require('../middleware/upload');
 const {
- 
   login,
   getMe,
   createStudentAccount,
+  getAdminProfile,  // ✅ Đã import
   getAllStudents,
   deleteStudent,
   searchStudents,
@@ -15,7 +15,6 @@ const {
   uploadAvatar,
   updateStudent,
   changePassword
-
 } = require('../controllers/authController');
 
 const {
@@ -23,16 +22,19 @@ const {
 } = require('../controllers/updateRequestController');
 
 // Public routes
- 
 router.post('/login', login);
 
 // Protected routes
 router.get('/me', protect, getMe);
 
-// ✅ Thêm upload.single('avatar') vào route
+// Upload avatar
 router.post('/upload-avatar', protect, upload.single('avatar'), uploadAvatar);
-// ✅ Route đổi mật khẩu (chỉ cần đăng nhập, không cần admin)
+
+// Change password
 router.put('/change-password', protect, changePassword);
+
+// ✅ Admin profile route
+router.get('/admin/profile', protect, isAdmin, getAdminProfile);
 
 // Admin only routes
 router.post('/create-student', protect, isAdmin, createStudentAccount);

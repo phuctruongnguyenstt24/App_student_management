@@ -92,21 +92,20 @@ const userSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    trim: true,
-    default: ''
+    trim: true
+    
   },
   address: {
     type: String,
-    trim: true,
-    default: ''
+    trim: true
   },
   gender: {
     type: String,
     default: ''
   },
 dateOfBirth: {
-    type: String,
-    default: ''
+    type: String
+    
   },
   placeOfBirth: {
     type: String,

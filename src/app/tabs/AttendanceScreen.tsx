@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import {
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useAuth } from "../../contexts/AuthContext";
 import { getAttendanceSessions, markAttendanceForStudent, type AttendanceSession } from "../../utils/attendanceStorage";
@@ -41,10 +41,15 @@ export default function AttendanceScreen() {
   };
 
   const isMarked = (session: AttendanceSession) => {
-    const studentId = user?.studentId || user?.id;
+    const studentId = (user?.studentId || user?.id || '').toString().trim().toLowerCase();
+    const name = (user?.fullName || user?.username || '').toString().trim().toLowerCase();
+
     return session.presentStudents.some((student) => {
-      if (studentId && student.studentId === studentId) return true;
-      return student.fullName === (user?.fullName || user?.username);
+      const sid = (student.studentId || '').toString().trim().toLowerCase();
+      const sname = (student.fullName || '').toString().trim().toLowerCase();
+      if (studentId && sid && sid === studentId) return true;
+      if (name && sname && sname === name) return true;
+      return false;
     });
   };
 
@@ -129,7 +134,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F3F5F9",
   },
-
   header: {
     height: 70,
     backgroundColor: "#0B66D6",
@@ -137,13 +141,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     elevation: 5,
   },
-
   headerTitle: {
     color: "#fff",
     fontSize: 20,
     fontWeight: "700",
   },
-
   card: {
     margin: 15,
     backgroundColor: "#fff",
@@ -151,7 +153,6 @@ const styles = StyleSheet.create({
     padding: 15,
     elevation: 3,
   },
-
   sessionCard: {
     marginBottom: 16,
     borderWidth: 1,
@@ -160,91 +161,77 @@ const styles = StyleSheet.create({
     padding: 12,
     backgroundColor: "#FAFAFA",
   },
-
   subject: {
     fontSize: 18,
     fontWeight: "700",
     color: "#333",
   },
-
   line: {
     height: 1,
     backgroundColor: "#E6E6E6",
     marginVertical: 12,
   },
-
   content: {
     flexDirection: "row",
   },
-
   infoRow: {
     flexDirection: "row",
     marginBottom: 12,
   },
-
   label: {
     width: 70,
     color: "#8B8B8B",
     fontSize: 15,
   },
-
   value: {
     fontWeight: "700",
     fontSize: 15,
     color: "#222",
   },
-
   notYet: {
     marginTop: 18,
     color: "#F28C28",
     fontSize: 15,
   },
-
   listBox: {
     marginTop: 14,
+    marginRight:20,
     borderWidth: 1,
     borderColor: "#E5E7EB",
     borderRadius: 10,
     padding: 10,
     backgroundColor: "#F9FAFB",
   },
-
   listTitle: {
     fontSize: 14,
     fontWeight: "700",
     color: "#111827",
     marginBottom: 6,
   },
-
   listItem: {
     fontSize: 13,
     color: "#374151",
     marginBottom: 4,
   },
-
   listEmpty: {
     fontSize: 13,
     color: "#6B7280",
   },
-
   emptyState: {
     alignItems: "center",
     justifyContent: "center",
     minHeight: 220,
   },
-
   emptyText: {
     color: "#6B7280",
     fontSize: 14,
     textAlign: "center",
     marginTop: 8,
   },
-
   right: {
     justifyContent: "space-between",
     alignItems: "center",
   },
-
   avatar: {
     width: 65,
     height: 65,
@@ -255,38 +242,22 @@ const styles = StyleSheet.create({
     elevation: 5,
     marginBottom: 20,
   },
-
   avatarText: {
     fontSize: 40,
     fontFamily: "serif",
   },
-
   button: {
     backgroundColor: "#0B66D6",
     borderRadius: 8,
     paddingHorizontal: 18,
-    paddingVertical: 10,
+    paddingVertical: 24,
   },
-
   buttonDisabled: {
     backgroundColor: "#9CA3AF",
   },
-
   buttonText: {
     color: "#fff",
     fontWeight: "600",
     fontSize: 15,
-  },
-
- 
-
-  navItem: {
-    alignItems: "center",
-  },
-
-  navText: {
-    marginTop: 4,
-    fontSize: 12,
-    color: "#9CA3AF",
   },
 });
