@@ -9,7 +9,8 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../contexts/AuthContext";
@@ -19,7 +20,7 @@ const { width } = Dimensions.get("window");
 export default function HomeScreen() {
   const router = useRouter(); // Sử dụng useRouter thay vì useNavigation
   const { user } = useAuth();
-  
+
   // State cho quảng cáo
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const scrollViewRef = useRef(null);
@@ -57,6 +58,7 @@ export default function HomeScreen() {
   // Lấy tên và MSSV
   let studentName = user?.fullName || "Sinh viên";
   let studentId = user?.studentId || "---";
+  let avatar = user?.avatar || "---";
 
   // Danh sách chức năng với đường dẫn expo-router
   const features = [
@@ -163,7 +165,8 @@ export default function HomeScreen() {
         style={[
           styles.dot,
           {
-            backgroundColor: index === currentBannerIndex ? "#FFF" : "rgba(255,255,255,0.4)",
+            backgroundColor:
+              index === currentBannerIndex ? "#FFF" : "rgba(255,255,255,0.4)",
             width: index === currentBannerIndex ? 20 : 8,
           },
         ]}
@@ -174,61 +177,53 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.userInfo}>
             <View style={styles.avatar}>
-              <FontAwesome5 name="user-graduate" size={24} color="#fff" />
+              <Image
+                source={{ uri: avatar }}
+                style={{ width: 50, height: 50, borderRadius: 50 }}
+              />
             </View>
 
             <View>
               <Text style={styles.greeting}>Xin chào,</Text>
-              <Text style={styles.studentName}>
-                {studentName}
-              </Text>
+              <Text style={styles.studentName}>{studentName}</Text>
               <Text style={styles.studentId}>
-                {studentId ? `MSSV: ${studentId}` : ''}
+                {studentId ? `MSSV: ${studentId}` : ""}
               </Text>
             </View>
           </View>
 
-          <TouchableOpacity onPress={() => router.push("/screens/NotificationScreen")}>
-            <Ionicons
-              name="notifications"
-              size={24}
-              color="white"
-            />
+          <TouchableOpacity
+            onPress={() => router.push("/screens/NotificationScreen")}
+          >
+            <Ionicons name="notifications" size={24} color="white" />
           </TouchableOpacity>
         </View>
 
         {/* Card môn học - navigate đến chi tiết môn học */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.courseCard}
-          onPress={() => router.push({
-            pathname: "/screens/CourseDetailScreen",
-            params: { courseId: "KCSQPM" }
-          })}
+          onPress={() =>
+            router.push({
+              pathname: "/screens/CourseDetailScreen",
+              params: { courseId: "KCSQPM" },
+            })
+          }
         >
           <View>
             <Text style={styles.courseTitle}>
               Kiểm soát chất lượng phần mềm
             </Text>
 
-            <Text style={styles.courseInfo}>
-              Tiết 1 - 6
-            </Text>
+            <Text style={styles.courseInfo}>Tiết 1 - 6</Text>
 
-            <Text style={styles.courseRoom}>
-              Phòng PM Mở 2
-            </Text>
+            <Text style={styles.courseRoom}>Phòng PM Mở 2</Text>
           </View>
 
-          <Ionicons
-            name="arrow-forward"
-            size={22}
-            color="#3B5BDB"
-          />
+          <Ionicons name="arrow-forward" size={22} color="#3B5BDB" />
         </TouchableOpacity>
 
         {/* Chức năng */}
@@ -248,28 +243,22 @@ export default function HomeScreen() {
                   { backgroundColor: `${item.color}20` },
                 ]}
               >
-                <Ionicons
-                  name={item.icon}
-                  size={24}
-                  color={item.color}
-                />
+                <Ionicons name={item.icon} size={24} color={item.color} />
               </View>
 
-              <Text style={styles.featureText}>
-                {item.title}
-              </Text>
+              <Text style={styles.featureText}>{item.title}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Banner với hiệu ứng slideshow */}
-        <Animated.View 
+        <Animated.View
           style={[
             styles.bannerContainer,
             {
               opacity: fadeAnim,
               transform: [{ translateX: slideAnim }],
-            }
+            },
           ]}
         >
           <ScrollView
@@ -284,10 +273,7 @@ export default function HomeScreen() {
             {banners.map((banner) => (
               <TouchableOpacity
                 key={banner.id}
-                style={[
-                  styles.banner,
-                  { backgroundColor: banner.color }
-                ]}
+                style={[styles.banner, { backgroundColor: banner.color }]}
                 onPress={() => {
                   // Xử lý khi click vào banner
                   console.log(`Banner ${banner.id} clicked`);
@@ -296,13 +282,9 @@ export default function HomeScreen() {
               >
                 <View style={styles.bannerContent}>
                   <Text style={styles.bannerEmoji}>{banner.image}</Text>
-                  <Text style={styles.bannerTitle}>
-                    {banner.title}
-                  </Text>
-                  <Text style={styles.bannerSubtitle}>
-                    {banner.subtitle}
-                  </Text>
-                  <TouchableOpacity 
+                  <Text style={styles.bannerTitle}>{banner.title}</Text>
+                  <Text style={styles.bannerSubtitle}>{banner.subtitle}</Text>
+                  <TouchableOpacity
                     style={styles.bannerButton}
                     onPress={() => {
                       // Xử lý khi click button banner
@@ -323,34 +305,28 @@ export default function HomeScreen() {
               </TouchableOpacity>
             ))}
           </ScrollView>
-          
+
           {/* Dot indicators */}
-          <View style={styles.dotsContainer}>
-            {renderDots()}
-          </View>
+          <View style={styles.dotsContainer}>{renderDots()}</View>
         </Animated.View>
 
         {/* Tin tức mới */}
         <View style={styles.newsSection}>
           <Text style={styles.sectionTitle}>Tin tức mới</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.newsItem}
             onPress={() => router.push("../tabs/NewsScreen")}
           >
             <View style={styles.newsDot} />
-            <Text style={styles.newsText}>
-              Thông báo lịch thi cuối kỳ
-            </Text>
+            <Text style={styles.newsText}>Thông báo lịch thi cuối kỳ</Text>
             <Text style={styles.newsTime}>2h trước</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.newsItem}
             onPress={() => router.push("../tabs/NewsScreen")}
           >
             <View style={styles.newsDot} />
-            <Text style={styles.newsText}>
-              Đăng ký môn học học kỳ mới
-            </Text>
+            <Text style={styles.newsText}>Đăng ký môn học học kỳ mới</Text>
             <Text style={styles.newsTime}>5h trước</Text>
           </TouchableOpacity>
         </View>
@@ -365,7 +341,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5F6FA",
-   
   },
 
   header: {

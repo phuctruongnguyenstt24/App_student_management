@@ -3,13 +3,16 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View ,Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from '../../a_styles/style_dashboard';
+import { useAuth } from '@/contexts/AuthContext';
+import { black } from 'react-native-paper/lib/typescript/styles/themes/v2/colors';
 
 
 
 export default function AdminDashboard() {
+  const {user} = useAuth();
   const [userName, setUserName] = useState('');
   const [userRole, setUserRole] = useState('');
   const [currentDate, setCurrentDate] = useState('');
@@ -62,6 +65,9 @@ export default function AdminDashboard() {
     checkRole();
 
   }, []);
+  
+  //truy cap avatar 
+  let avatar = user?.avatar || '' ;
 
   const handleLogout = async () => {
     await AsyncStorage.removeItem('token');
@@ -79,7 +85,7 @@ export default function AdminDashboard() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.greeting}>{userName} -  {userRole.toUpperCase()}</Text>
+            <Text style={styles.greeting}>{userName.toLocaleUpperCase()} -  {userRole.toUpperCase()}</Text>
             <Text style={styles.dateText}>{currentDate}</Text>
           </View>
           <View style={styles.headerRight}>
@@ -90,7 +96,10 @@ export default function AdminDashboard() {
               </View>
             </TouchableOpacity>
             <TouchableOpacity onPress={toggleProfileMenu}>
-              <Ionicons name="person-circle-outline" size={40} color="#4A90E2" />
+                <Image 
+                   source={{ uri: avatar }}
+                   style={styles.avatar}
+                />
             </TouchableOpacity>
           </View>
         </View>
@@ -194,7 +203,10 @@ export default function AdminDashboard() {
           >
             <View style={styles.profileMenu}>
               <View style={styles.profileHeader}>
-                <Ionicons name="person-circle-outline" size={60} color="#4A90E2" />
+                 <Image 
+                   source={{ uri: avatar }}
+                   style={styles.avatar}
+                />
                 <View>
                   <Text style={styles.profileName}>{userName}</Text>
                   <Text style={styles.profileRole}>Quản trị viên</Text>
