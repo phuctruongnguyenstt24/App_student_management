@@ -84,7 +84,7 @@ export default function HomeScreen() {
       icon: "star-outline",
       title: "Thành tích",
       color: "#FF9F43",
-      href: "/screens/AchievementScreen",
+      href: "../tabs/my-achievements",
     },
     {
       icon: "reader-outline",
