@@ -15,9 +15,13 @@ const attendanceRoutes = require('./routes/attendanceRoutes');
 const updateRequestRoutes = require('./routes/updateRequestRoutes');
 const studentRoutes = require('./routes/studentRoutes');
 const scheduleRoutes = require('./routes/scheduleRoutes');
+
 const newsRoutes = require("./routes/newsRoutes");
 const feedbackRoutes = require('./routes/feedbackRoutes');
 const curriculumRoutes = require('./routes/curriculumRoutes'); 
+
+
+const gradeRoutes = require('./routes/gradeRoutes');
 
 const app = express();
 
@@ -55,12 +59,17 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api', updateRequestRoutes);
 app.use('/api', studentRoutes);
 app.use('/api/schedules', scheduleRoutes);
+
 app.use("/api/news", newsRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/curriculum', curriculumRoutes);
 
 
  
+
+
+// Gắn vào đường dẫn /api/grades
+app.use('/api/grades', gradeRoutes);
 
 // Test
 app.get('/api/test', (req, res) => {

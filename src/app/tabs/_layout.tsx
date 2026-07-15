@@ -114,6 +114,14 @@ export default function TabLayout() {
           href: null,
         }}
       />
+      // app/tabs/_layout.tsx
+      <Tabs.Screen
+        name="my-achievements"
+        options={{
+          href: null, // ĐÂY LÀ CÂU THẦN CHÚ ĐỂ GIẤU NÓ KHỎI THANH BOTTOM TAB
+          headerShown: false
+        }}
+      />
     </Tabs>   
   );
 }
