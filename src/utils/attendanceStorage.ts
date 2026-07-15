@@ -22,6 +22,27 @@ export interface AttendanceSession {
 const ATTENDANCE_SESSIONS_KEY = 'attendance_sessions';
 const LEGACY_ATTENDANCE_KEY = 'attendance_session';
 
+/** Map một document từ server (dùng _id) sang AttendanceSession cục bộ */
+const mapServerSession = (s: any): AttendanceSession => ({
+  id: s._id,
+  // courseId có thể là ObjectId string hoặc object (populated)
+  courseId: typeof s.courseId === 'object' && s.courseId !== null ? s.courseId._id : s.courseId,
+  courseCode: s.courseCode,
+  courseName: s.courseName,
+  department: s.department,
+  requestedAt: s.requestedAt,
+  // requestedBy có thể là ObjectId string hoặc object (populated) — lưu tên nếu có
+  requestedBy: typeof s.requestedBy === 'object' && s.requestedBy !== null
+    ? (s.requestedBy.fullName || s.requestedBy.username || s.requestedBy._id)
+    : s.requestedBy,
+  status: s.status,
+  presentStudents: (s.presentStudents || []).map((p: any) => ({
+    studentId: p.studentId,
+    fullName: p.fullName,
+    checkedAt: p.checkedAt,
+  })),
+});
+
 export const saveAttendanceSessions = async (sessions: AttendanceSession[] | null) => {
   if (!sessions || sessions.length === 0) {
     await AsyncStorage.removeItem(ATTENDANCE_SESSIONS_KEY);
@@ -34,31 +55,30 @@ export const saveAttendanceSessions = async (sessions: AttendanceSession[] | nul
 };
 
 export const getAttendanceSessions = async (): Promise<AttendanceSession[]> => {
-  // Try server first
+  // Lấy tất cả session (không filter status) để local cache đồng bộ đầy đủ.
+  // AttendanceScreen tự filter active khi hiển thị.
   try {
     const token = await AsyncStorage.getItem('token');
     if (token) {
-      const res = await fetch(`${API_URL}/attendance?status=active`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_URL}/attendance`, { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const json = await res.json();
         if (json.success) {
-          // Map server session (_id) to local shape
-          return (json.data || []).map((s: any) => ({
-            id: s._id,
-            courseId: s.courseId,
-            courseCode: s.courseCode,
-            courseName: s.courseName,
-            department: s.department,
-            requestedAt: s.requestedAt,
-            requestedBy: s.requestedBy,
-            status: s.status,
-            presentStudents: (s.presentStudents || []).map((p: any) => ({ studentId: p.studentId, fullName: p.fullName, checkedAt: p.checkedAt })),
-          } as AttendanceSession));
+          const sessions = (json.data || []).map(mapServerSession);
+          console.log(`[Attendance] Fetched ${sessions.length} sessions from server (active: ${sessions.filter((s) => s.status === 'active').length})`);
+          // Đồng bộ cache cục bộ
+          await AsyncStorage.setItem(ATTENDANCE_SESSIONS_KEY, JSON.stringify(sessions));
+          return sessions;
         }
+        console.warn('[Attendance] Server returned success:false', await res.text());
+      } else {
+        console.warn('[Attendance] HTTP error', res.status, res.url);
       }
+    } else {
+      console.warn('[Attendance] No token found — not logged in?');
     }
   } catch (error) {
-    console.warn('Attendance API fetch failed, falling back to AsyncStorage', error);
+    console.warn('[Attendance] API fetch failed, falling back to AsyncStorage:', error);
   }
 
   const stored = await AsyncStorage.getItem(ATTENDANCE_SESSIONS_KEY);
@@ -155,33 +175,47 @@ export const closeAttendanceSession = async (sessionId: string) => {
 export const markAttendanceForStudent = async (
   student: { studentId?: string; fullName?: string },
   sessionId?: string
-) => {
+): Promise<AttendanceSession[]> => {
+  const studentId = student.studentId?.toString().trim();
+  const fullName = student.fullName?.toString().trim();
+
   // Try server mark
   try {
     const token = await AsyncStorage.getItem('token');
     if (token && sessionId) {
-      const payload = {
-        studentId: student.studentId ? student.studentId.toString().trim() : undefined,
-        fullName: student.fullName ? student.fullName.toString().trim() : undefined,
-      };
+      const payload = { studentId, fullName };
       const res = await fetch(`${API_URL}/attendance/${sessionId}/mark`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload),
       });
       const json = await res.json();
-      if (json.success) {
-        const sessions = await getAttendanceSessions();
-        return sessions;
+      if (json.success && json.data) {
+        // Merge the updated session returned by the server directly into the
+        // local cache — no second network round-trip needed.
+        const updatedSession = mapServerSession(json.data);
+        const cached = await getAttendanceSessions();
+        const merged = cached.map((s) => (s.id === updatedSession.id ? updatedSession : s));
+        // If for some reason the session wasn't in the cache yet, add it.
+        if (!merged.find((s) => s.id === updatedSession.id)) {
+          merged.push(updatedSession);
+        }
+        await AsyncStorage.setItem(ATTENDANCE_SESSIONS_KEY, JSON.stringify(merged));
+        return merged;
       }
+      // Server trả về lỗi (ví dụ: session đã đóng) → ném lỗi để caller xử lý
+      throw new Error(json.message || 'Không thể điểm danh');
     }
   } catch (error) {
+    // Nếu là lỗi do server (message rõ ràng) thì re-throw để UI hiển thị
+    if (error instanceof Error && error.message !== 'markAttendanceForStudent API failed, falling back to local') {
+      throw error;
+    }
     console.warn('markAttendanceForStudent API failed, falling back to local', error);
   }
 
+  // Offline fallback: mutate the local cache directly
   const sessions = await getAttendanceSessions();
-  const studentId = student.studentId?.trim();
-  const fullName = student.fullName?.trim();
 
   if (!studentId && !fullName) {
     return sessions;
@@ -197,9 +231,7 @@ export const markAttendanceForStudent = async (
       return false;
     });
 
-    if (alreadyMarked) {
-      return session;
-    }
+    if (alreadyMarked) return session;
 
     return {
       ...session,

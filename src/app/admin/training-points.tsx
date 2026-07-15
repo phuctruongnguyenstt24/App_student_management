@@ -115,16 +115,19 @@ export default function AdminTrainingPointsScreen() {
     setStudents(prev => prev.map(s => (s._id === id || s.id === id) ? { ...s, trainingPoint: point } : s));
   };
 
-  // 3. LƯU ĐIỂM XUỐNG BACKEND
+ // 3. LƯU ĐIỂM XUỐNG BACKEND
   const savePoint = async (id: string, point: number) => {
     if (!selectedSemester) {
       Alert.alert('Lỗi', 'Vui lòng chọn học kỳ trước khi chấm điểm!');
       return;
     }
-    if (point < 0 || point > 100) {
-      Alert.alert('Lỗi', 'Điểm rèn luyện phải nằm trong khoảng 0 - 100');
+    
+    // 🚨 CHẶN NGAY TẠI ĐÂY: Điểm phải LỚN HƠN 0 và <= 100
+    if (point <= 0 || point > 100) {
+      Alert.alert('Cảnh báo', 'Điểm rèn luyện phải lớn hơn 0 và tối đa là 100!');
       return;
     }
+
     try {
       setSubmittingId(id);
       const token = await AsyncStorage.getItem('token');

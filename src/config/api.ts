@@ -1,16 +1,15 @@
-// config/api.ts
-
-
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
+/**
+ * 👉 Lấy header cho API (có kèm token nếu đã login)
+ */
 const getAuthHeaders = async (): Promise<Record<string, string>> => {
   try {
     const token = await AsyncStorage.getItem('userToken');
 
-    // Nếu có token thì gửi kèm Authorization
+    // Nếu có token → gửi Authorization
     if (token) {
       return {
         'Content-Type': 'application/json',
@@ -18,7 +17,7 @@ const getAuthHeaders = async (): Promise<Record<string, string>> => {
       };
     }
 
-    // Nếu không có token thì chỉ gửi Content-Type
+    // Không có token → chỉ gửi Content-Type
     return {
       'Content-Type': 'application/json'
     };
@@ -29,34 +28,47 @@ const getAuthHeaders = async (): Promise<Record<string, string>> => {
   }
 };
 
-
+/**
+ * 👉 Tự động lấy API URL tùy theo môi trường
+ */
 export const getApiUrl = (): string => {
-  // ... (Phần code bên trong giữ nguyên y hệt của bạn) ...
+
+  // 🌐 Nếu chạy WEB
   if (Platform.OS === 'web') {
     if (typeof window !== 'undefined') {
       const hostname = window?.location?.hostname || 'localhost';
+
+      // Nếu deploy server thật → dùng hostname
       if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
         return `http://${hostname}:5000/api`;
       }
+
+      // Local
       return `http://localhost:5000/api`;
     }
+
     return 'http://localhost:5000/api';
   }
 
+  // 📱 Nếu chạy trên Expo (lấy IP máy dev)
   try {
     const hostUri = Constants.expoConfig?.hostUri;
     if (hostUri) {
       const ip = hostUri.split(':')[0];
+
+      // Nếu là IP hợp lệ → dùng
       if (ip && ip.match(/^(\d{1,3}\.){3}\d{1,3}$/)) {
         return `http://${ip}:5000/api`;
       }
     }
   } catch (error) { }
 
+  // 🔁 Fallback cách 2 (Expo cũ)
   try {
     const manifest = Constants.manifest || Constants.__unsafeNoWarnManifest;
     if (manifest?.hostUri) {
       const ip = manifest.hostUri.split(':')[0];
+
       if (ip && ip.match(/^(\d{1,3}\.){3}\d{1,3}$/)) {
         return `http://${ip}:5000/api`;
       }
@@ -65,24 +77,37 @@ export const getApiUrl = (): string => {
     console.warn('Không thể lấy IP từ manifest:', error);
   }
 
+  // ❗ Fallback cuối cùng (fix cứng IP)
   return 'http://192.168.1.100:5000/api';
 };
 
-// 👉 ĐƯA DÒNG NÀY LÊN ĐÂY (Ngay dưới hàm getApiUrl)
+/**
+ * 👉 BASE URL dùng cho toàn app
+ */
 export const API_URL = getApiUrl();
 
+// Debug xem đang dùng URL nào
+console.log('[API] Using API_URL:', API_URL);
 
-// ==========================================
-// CÁC HÀM GỌI API BÊN DƯỚI GIỮ NGUYÊN
-// ==========================================
 
+
+// ================= API CALL =================
+
+/**
+ * 👉 Lấy điểm theo học kỳ (admin)
+ */
 export const fetchGradesBySemester = async (semester: string) => {
   try {
     const headers = await getAuthHeaders();
-    const response = await fetch(`${API_URL}/grades/admin?semester=${semester}`, {
-      method: 'GET',
-      headers,
-    });
+
+    const response = await fetch(
+      `${API_URL}/grades/admin?semester=${semester}`,
+      {
+        method: 'GET',
+        headers,
+      }
+    );
+
     return await response.json();
   } catch (error) {
     console.error("Lỗi fetchGradesBySemester:", error);
@@ -90,15 +115,25 @@ export const fetchGradesBySemester = async (semester: string) => {
   }
 };
 
-// Sửa lại dòng khai báo biến truyền vào
-export const saveStudentGrade = async (data: { studentCode: string, courseCode: string, semester: string, midtermScore: number, finalScore: number }) => {
+/**
+ * 👉 Lưu điểm sinh viên
+ */
+export const saveStudentGrade = async (data: {
+  studentCode: string,
+  courseCode: string,
+  semester: string,
+  midtermScore: number,
+  finalScore: number
+}) => {
   try {
     const headers = await getAuthHeaders();
+
     const response = await fetch(`${API_URL}/grades/admin`, {
       method: 'POST',
       headers,
       body: JSON.stringify(data),
     });
+
     return await response.json();
   } catch (error) {
     console.error("Lỗi saveStudentGrade:", error);
@@ -106,44 +141,55 @@ export const saveStudentGrade = async (data: { studentCode: string, courseCode: 
   }
 };
 
+/**
+ * 👉 Sinh viên xem điểm của mình
+ */
 export const fetchMyGrades = async (semester: string) => {
   try {
     const headers = await getAuthHeaders();
-    const response = await fetch(`${API_URL}/grades/student/me?semester=${semester}`, {
-      method: 'GET',
-      headers,
-    });
+
+    const response = await fetch(
+      `${API_URL}/grades/student/me?semester=${semester}`,
+      {
+        method: 'GET',
+        headers,
+      }
+    );
+
     return await response.json();
   } catch (error) {
     console.error("Lỗi fetchMyGrades:", error);
     throw error;
   }
 };
-// Lấy danh sách toàn bộ môn học
+
+/**
+ * 👉 Lấy danh sách môn học
+ */
 export const fetchAllCourses = async () => {
   try {
     const headers = await getAuthHeaders();
+
     const response = await fetch(`${API_URL}/courses`, {
       method: 'GET',
       headers,
     });
-    const result = await response.json();
-    return result;
+
+    return await response.json();
   } catch (error) {
     console.error("Lỗi fetchAllCourses:", error);
     return { success: false, data: [] };
   }
 };
-// Thêm hàm này vào cuối file src/config/api.ts của bạn
-// Đảm bảo bạn đã import AsyncStorage ở đầu file api.ts nhé:
-// import AsyncStorage from '@react-native-async-storage/async-storage';
 
+/**
+ * 👉 Lấy chương trình đào tạo
+ */
 export const fetchCurriculums = async () => {
   try {
-    // 1. Phải lấy token để chứng minh đã đăng nhập
-    const token = await AsyncStorage.getItem("token");
+    // ⚠️ phải dùng đúng key userToken
+    const token = await AsyncStorage.getItem("userToken");
 
-    // 2. Gọi đúng đường dẫn /curriculum và nhét token vào Headers
     const response = await fetch(`${API_URL}/curriculum`, {
       method: 'GET',
       headers: {
@@ -152,13 +198,14 @@ export const fetchCurriculums = async () => {
       }
     });
 
-    // Nếu backend trả về mã lỗi (401, 404, 500...) thì chặn luôn không cho parse JSON để tránh lỗi dấu <
+    // Nếu server lỗi → không parse JSON (tránh lỗi dấu <)
     if (!response.ok) {
       throw new Error(`Lỗi Server: ${response.status}`);
     }
 
     const data = await response.json();
-    return { success: true, data: data };
+
+    return { success: true, data };
 
   } catch (error: any) {
     console.error("Lỗi fetchCurriculums:", error);

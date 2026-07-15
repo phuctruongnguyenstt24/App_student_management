@@ -17,14 +17,23 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 50,
+    paddingTop: 10,
     paddingBottom: 15,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
+  
   headerLeft: {
     flex: 1,
+  },
+  avatar: {
+     width:40,
+     height:40,
+     borderRadius:50 ,
+     backgroundColor:'#e6dcdc',
+     borderWidth: 2,
+     borderColor: "#1c54e2", // Màu viền
   },
   greeting: {
     fontSize: 18,

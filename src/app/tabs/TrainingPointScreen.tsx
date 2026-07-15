@@ -95,8 +95,8 @@ export default function TrainingPointScreen() {
       if (data.success || response.ok) {
         const studentData = data.data || data.student || data.user || data;
         
-        // ✅ XỬ LÝ LỌC ĐIỂM THEO MẢNG HỌC KỲ MỚI CỦA BACKEND
-        let currentSemesterPoint = 0; // Điểm mặc định nếu chưa được chấm
+       // ✅ XỬ LÝ LỌC ĐIỂM THEO MẢNG HỌC KỲ MỚI CỦA BACKEND
+        let currentSemesterPoint = null; // Đổi từ 0 thành null (chưa có điểm)
 
         // Kiểm tra xem backend có trả về mảng trainingPoints không
         if (studentData?.trainingPoints && Array.isArray(studentData.trainingPoints)) {
@@ -112,9 +112,13 @@ export default function TrainingPointScreen() {
           currentSemesterPoint = studentData.trainingPoint; 
         }
 
+        // Nếu điểm bằng 0 (chưa chấm) thì ép về null luôn
+        if (currentSemesterPoint === 0) {
+            currentSemesterPoint = null;
+        }
+
         // Cập nhật state điểm để hiển thị ra UI
         setPoint(currentSemesterPoint);
-
       } else {
         Alert.alert("Lỗi", "Không thể lấy điểm rèn luyện kỳ này");
       }
@@ -189,10 +193,16 @@ export default function TrainingPointScreen() {
               <ActivityIndicator size="large" color="#4F6EF7" style={{ marginTop: 50, marginBottom: 50 }} />
             ) : (
               <View style={styles.scoreCircle}>
-                <Text style={styles.scoreText}>{point !== null ? point : '-'}</Text>
-                {point !== null && (
-                  <Text style={[styles.classificationText, { color: getClassification(point).color }]}>
-                    {getClassification(point).text}
+                {point !== null && point > 0 ? (
+                  <>
+                    <Text style={styles.scoreText}>{point}</Text>
+                    <Text style={[styles.classificationText, { color: getClassification(point).color }]}>
+                      {getClassification(point).text}
+                    </Text>
+                  </>
+                ) : (
+                  <Text style={{ fontSize: 18, color: '#888', fontWeight: 'bold', textAlign: 'center' }}>
+                    Chưa có{"\n"}dữ liệu
                   </Text>
                 )}
               </View>
