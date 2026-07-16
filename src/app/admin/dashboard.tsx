@@ -197,7 +197,7 @@ export default function AdminDashboard() {
 
             <TouchableOpacity
               style={styles.menuCard}
-              onPress={() => router.push({ pathname: '/admin/student-achievements' })}
+              onPress={() => router.push({ pathname: '/admin/student-achievements' as any })} 
             >
               <View style={styles.menuIconWrapper}>
                 <Ionicons name="trophy-outline" size={32} color="#f5a623" />

@@ -1,6 +1,9 @@
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
+  // ==========================================
+  // 1. GLOBAL & LAYOUT
+  // ==========================================
   container: {
     flex: 1,
     backgroundColor: '#F5F6FA',
@@ -15,13 +18,29 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#999',
+    marginTop: 12,
+  },
+  footer: {
+    height: 20,
+  },
+
+  // ==========================================
+  // 2. HEADER
+  // ==========================================
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-     paddingTop: 30,
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
     paddingBottom: 16,
     backgroundColor: '#FFF',
     borderBottomWidth: 1,
@@ -38,6 +57,10 @@ export const styles = StyleSheet.create({
   headerRight: {
     width: 40,
   },
+
+  // ==========================================
+  // 3. THỐNG KÊ (STATS CARDS)
+  // ==========================================
   statsContainer: {
     flexDirection: 'row',
     paddingHorizontal: 16,
@@ -78,6 +101,7 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     marginTop: 4,
+    textAlign: 'center',
   },
   badge: {
     position: 'absolute',
@@ -96,30 +120,46 @@ export const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: 'bold',
   },
+
+  // ==========================================
+  // 4. DANH SÁCH & TÌM KIẾM
+  // ==========================================
   searchBar: {
     marginHorizontal: 16,
     marginBottom: 12,
     elevation: 2,
     backgroundColor: '#FFF',
+    borderRadius: 8,
   },
   listContainer: {
     flex: 1,
     paddingHorizontal: 16,
   },
+
+  // ==========================================
+  // 5. THẺ SINH VIÊN (STUDENT CARD) - FIXED
+  // ==========================================
   studentCard: {
     marginBottom: 12,
     borderRadius: 12,
     elevation: 2,
+    backgroundColor: '#FFF',
+    padding: 12,
   },
-  studentHeader: {
+studentHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'flex-start', // Trả về flex-start để canh mép trên
+    width: '100%',
   },
   studentInfo: {
     flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+    alignItems: 'flex-start', // Trả về flex-start
+    flex: 1, 
+    marginRight: 12,
+  },
+  studentTextContainer: {
+    flex: 1, // Rất quan trọng: Bắt buộc text bên trong không được tràn ra ngoài
   },
   avatar: {
     width: 44,
@@ -129,6 +169,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    flexShrink: 0, // Không cho avatar bị méo
   },
   avatarText: {
     color: '#FFF',
@@ -139,23 +180,22 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#1a1a2e',
-      
+    flexShrink: 1, 
   },
   studentId: {
     fontSize: 14,
     color: '#666',
-    paddingTop:4,
+    paddingTop: 4,
   },
   studentDept: {
     fontSize: 12,
     color: '#151212',
-    paddingTop:4,
-    marginBottom:4,
-  
+    paddingTop: 4,
+    marginBottom: 4,
+    flexShrink: 1,
   },
   statusChip: {
-    height: 26,
-    alignSelf: 'flex-start',
+    flexShrink: 0, // QUAN TRỌNG NHẤT: Ép Chip không bao giờ bị bóp méo hay đè lên text
   },
   statusActive: {
     backgroundColor: '#d4edda',
@@ -166,20 +206,27 @@ export const styles = StyleSheet.create({
   statusChipText: {
     fontSize: 11,
     fontWeight: '500',
+    lineHeight: 16,
+    marginVertical: 4,
   },
   studentActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginTop: -10,
-    paddingTop: 2,
-  
-   
+    paddingTop: 8,
+    marginTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
     gap: 16,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    paddingVertical: 4,
+  },
+  actionText: {
+    fontSize: 13,
+    color: '#666',
   },
   actionView: {
     backgroundColor: 'transparent',
@@ -189,29 +236,15 @@ export const styles = StyleSheet.create({
   },
   actionDelete: {
     backgroundColor: 'transparent',
-  },
-  actionText: {
-    fontSize: 13,
-    color: '#666',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#999',
-    marginTop: 12,
-  },
-  footer: {
-    height: 20,
-  },
+  },  
 
-  // Modal styles
+  // ==========================================
+  // 6. MODAL & DIALOG
+  // ==========================================
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: '#FFF',
@@ -220,7 +253,6 @@ export const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingBottom: 20,
-    marginTop: 'auto',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -241,10 +273,12 @@ export const styles = StyleSheet.create({
     marginTop: 12,
     borderRadius: 12,
     elevation: 2,
+    backgroundColor: '#FFF',
+    padding: 12,
   },
   infoRow: {
     flexDirection: 'row',
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#f5f5f5',
     alignItems: 'flex-start',
@@ -277,9 +311,10 @@ export const styles = StyleSheet.create({
     borderRadius: 8,
   },
 
-  // Edit dialog styles
+  // --- Edit Dialog Styles ---
   editInput: {
     marginBottom: 12,
+    backgroundColor: '#FFF',
   },
   statusSelector: {
     flexDirection: 'row',
@@ -287,11 +322,13 @@ export const styles = StyleSheet.create({
     marginVertical: 8,
   },
   statusOption: {
+    flex: 1,
     flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#ddd',
@@ -305,17 +342,22 @@ export const styles = StyleSheet.create({
     backgroundColor: '#f8d7da',
   },
 
-  // Request styles
+  // ==========================================
+  // 7. YÊU CẦU (REQUEST CARDS)
+  // ==========================================
   requestCard: {
     marginHorizontal: 16,
     marginTop: 12,
     borderRadius: 12,
     elevation: 2,
+    backgroundColor: '#FFF',
+    padding: 16,
   },
   requestHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 8,
   },
   requestStudent: {
     fontSize: 16,
@@ -325,16 +367,21 @@ export const styles = StyleSheet.create({
   requestId: {
     fontSize: 13,
     color: '#666',
+    marginTop: 2,
   },
   requestPending: {
     backgroundColor: '#fff3cd',
   },
   requestFields: {
     marginTop: 8,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
   },
   requestLabel: {
     fontSize: 13,
     color: '#666',
+    width: '100%',
     marginBottom: 4,
   },
   requestFieldTag: {
@@ -342,8 +389,6 @@ export const styles = StyleSheet.create({
     borderRadius: 4,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    marginBottom: 4,
-    alignSelf: 'flex-start',
   },
   requestFieldText: {
     fontSize: 12,
@@ -353,7 +398,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     gap: 8,
-    marginTop: 12,
+    marginTop: 16,
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
     paddingTop: 12,
@@ -363,5 +408,78 @@ export const styles = StyleSheet.create({
   },
   requestApprove: {
     backgroundColor: '#28a745',
+  },
+
+  // ==========================================
+  // 8. BỘ LỌC KHOA & LỚP HỌC (NEW)
+  // ==========================================
+  facultyFilter: {
+    flexDirection: 'row',
+    paddingBottom: 8,
+  },
+  facultyChip: {
+    marginRight: 8,
+    backgroundColor: '#E8E8E8',
+    borderRadius: 20,
+  },
+  facultyChipSelected: {
+    backgroundColor: '#007AFF',
+  },
+  classCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFF',
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  classCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  classCardText: {
+    flexDirection: 'column',
+  },
+  classNameTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1a1a2e',
+  },
+  classStudentCount: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 2,
+  },
+  classHeader: {
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8E8E8',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  backToClassBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 4,
+  },
+  backToClassText: {
+    fontSize: 14,
+    color: '#007AFF',
+    fontWeight: '500',
+  },
+  selectedClassTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1a1a2e',
   },
 });
