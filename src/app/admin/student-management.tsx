@@ -2,7 +2,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
     Alert,
     Modal,
@@ -16,8 +16,6 @@ import {
     Button,
     Card,
     Chip,
-    Dialog,
-    Portal,
     Searchbar,
     Text,
     TextInput
@@ -31,8 +29,8 @@ interface Student {
     fullName: string;
     studentId: string;
     email: string;
-    facultyId: string;  // ← sửa thành có thể là object hoặc string
-    departmentId:  string;  // ← sửa thành có thể là object hoặc string
+    facultyId: string;
+    departmentId: string;
     class: string;
     phone: string;
     address: string;
@@ -41,7 +39,6 @@ interface Student {
     status: 'active' | 'inactive';
     createdAt: string;
     updatedAt: string;
-    // Thông tin bổ sung
     academicInfo?: {
         enrollmentDate: string;
         trainingLevel: string;
@@ -120,12 +117,20 @@ interface Department {
     facultyId: string;
 }
 
+type EditFormType = Partial<Student> & { courseYear?: string };
+
 export default function StudentManagementScreen() {
     const [students, setStudents] = useState<Student[]>([]);
     const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
     const [faculties, setFaculties] = useState<Faculty[]>([]);
     const [departments, setDepartments] = useState<Department[]>([]);
     const [updateRequests, setUpdateRequests] = useState<UpdateRequest[]>([]);
+    
+    // State cho việc lọc Lớp & Khoa
+    const [classes, setClasses] = useState<string[]>([]);
+    const [selectedClass, setSelectedClass] = useState<string>('All');
+    const [selectedFacultyFilter, setSelectedFacultyFilter] = useState<string | null>(null);
+    
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -133,20 +138,36 @@ export default function StudentManagementScreen() {
     const [detailModalVisible, setDetailModalVisible] = useState(false);
     const [editModalVisible, setEditModalVisible] = useState(false);
     const [requestModalVisible, setRequestModalVisible] = useState(false);
-    const [selectedRequest, setSelectedRequest] = useState<UpdateRequest | null>(null);
 
-    // Form edit
-    const [editForm, setEditForm] = useState<Partial<Student>>({});
+    const [editForm, setEditForm] = useState<EditFormType>({});
 
     useEffect(() => {
         loadData();
     }, []);
+
+    useEffect(() => {
+        if (faculties.length > 0 && !selectedFacultyFilter) {
+            setSelectedFacultyFilter(String(faculties[0]._id));
+        }
+    }, [faculties]);
+
+    useEffect(() => {
+        filterData();
+    }, [students, searchQuery, selectedClass]);
+
+    const classesInSelectedFaculty = useMemo(() => {
+        if (!selectedFacultyFilter) return [];
+        const studentsInFaculty = students.filter(s => String(s.facultyId) === selectedFacultyFilter);
+        const uniqueClasses = Array.from(new Set(studentsInFaculty.map(s => s.class))).filter(Boolean);
+        return uniqueClasses.sort();
+    }, [students, selectedFacultyFilter]);
 
     const loadData = async () => {
         setIsLoading(true);
         try {
             await Promise.all([
                 loadStudents(),
+                loadClasses(),
                 loadFaculties(),
                 loadDepartments(),
                 loadUpdateRequests(),
@@ -159,53 +180,64 @@ export default function StudentManagementScreen() {
         }
     };
 
-   const loadStudents = async () => {
-    const token = await AsyncStorage.getItem('token');
-    if (!token) {
-        Alert.alert('Lỗi', 'Vui lòng đăng nhập lại');
-        router.replace('/login');
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_URL}/auth/students`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await response.json();
-         
-        
-        if (data.success) {
-            setStudents(data.students || []);
-            setFilteredStudents(data.students || []);
-            
-            
-             
+    const loadStudents = async () => {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+            Alert.alert('Lỗi', 'Vui lòng đăng nhập lại');
+            router.replace('/login');
+            return;
         }
-    } catch (error) {
-        console.error('Load students error:', error);
-        throw error;
-    }
-};
 
-  const loadFaculties = async () => {
-    const token = await AsyncStorage.getItem('token');
-    if (!token) return;
-
-    try {
-        const response = await fetch(`${API_URL}/faculties`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await response.json();
-       
-        
-        if (data.success) {
-            setFaculties(data.faculties || []);
-          
+        try {
+            const response = await fetch(`${API_URL}/students/all`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                setStudents(data.students || []);
+            }
+        } catch (error) {
+            console.error('Load students error:', error);
+            throw error;
         }
-    } catch (error) {
-        console.error('❌ Load faculties error:', error);
-    }
-};
+    };
+
+    const loadClasses = async () => {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) return;
+
+        try {
+            const response = await fetch(`${API_URL}/students/classes`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                setClasses(data.classes || []);
+            }
+        } catch (error) {
+            console.error('Load classes error:', error);
+        }
+    };
+
+    const loadFaculties = async () => {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) return;
+
+        try {
+            const response = await fetch(`${API_URL}/faculties`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                setFaculties(data.faculties || []);
+            }
+        } catch (error) {
+            console.error('Load faculties error:', error);
+        }
+    };
 
     const loadDepartments = async () => {
         const token = await AsyncStorage.getItem('token');
@@ -241,39 +273,40 @@ export default function StudentManagementScreen() {
         }
     };
 
-    const handleSearch = (query: string) => {
-        setSearchQuery(query);
-        if (query.trim() === '') {
-            setFilteredStudents(students);
-        } else {
-            const filtered = students.filter(
-                (student) =>
-                    student.fullName.toLowerCase().includes(query.toLowerCase()) ||
-                    student.studentId.toLowerCase().includes(query.toLowerCase()) ||
-                    student.email.toLowerCase().includes(query.toLowerCase())
-            );
-            setFilteredStudents(filtered);
+    const filterData = () => {
+        let result = students;
+
+        if (selectedClass !== 'All') {
+            result = result.filter((student) => student.class === selectedClass);
         }
+
+        if (searchQuery.trim() !== '') {
+            const query = searchQuery.toLowerCase();
+            result = result.filter(
+                (student) =>
+                    student.fullName.toLowerCase().includes(query) ||
+                    student.studentId.toLowerCase().includes(query) ||
+                    student.email.toLowerCase().includes(query)
+            );
+        }
+
+        setFilteredStudents(result);
     };
 
-const getFacultyName = (facultyId: string) => {
-    console.log('🔍 Looking for facultyId:', facultyId, 'Type:', typeof facultyId);
-    console.log('📚 Available faculties:', faculties.map(f => ({ 
-        id: f._id, 
-        idType: typeof f._id,
-        name: f.name 
-    })));
-    
-    const faculty = faculties.find(f => String(f._id) === String(facultyId));
-    console.log('🎯 Found:', faculty?.name || 'NOT FOUND');
-    return faculty?.name || 'N/A';
-};
+    const handleSearch = (query: string) => {
+        setSearchQuery(query);
+    };
 
-const getDepartmentName = (departmentId: string) => {
-    if (!departmentId) return 'N/A';
-    const department = departments.find(d => String(d._id) === String(departmentId));
-    return department?.name || 'N/A';
-};
+    const getFacultyName = (facultyId: string) => {
+        const faculty = faculties.find(f => String(f._id) === String(facultyId));
+        return faculty?.name || 'N/A';
+    };
+
+    const getDepartmentName = (departmentId: string) => {
+        if (!departmentId) return 'N/A';
+        const department = departments.find(d => String(d._id) === String(departmentId));
+        return department?.name || 'N/A';
+    };
 
     const handleViewDetail = (student: Student) => {
         setSelectedStudent(student);
@@ -290,6 +323,7 @@ const getDepartmentName = (departmentId: string) => {
             placeOfBirth: student.placeOfBirth,
             class: student.class,
             status: student.status,
+            courseYear: student.academicInfo?.courseYear || '', 
         });
         setEditModalVisible(true);
     };
@@ -305,13 +339,21 @@ const getDepartmentName = (departmentId: string) => {
         }
 
         try {
-            const response = await fetch(`${API_URL}/auth/students/${selectedStudent._id}`, {
+            const payload = {
+                ...editForm,
+                academicInfo: {
+                    ...selectedStudent.academicInfo, 
+                    courseYear: editForm.courseYear 
+                }
+            };
+
+            const response = await fetch(`${API_URL}/students/${selectedStudent._id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify(editForm),
+                body: JSON.stringify(payload),
             });
 
             const data = await response.json();
@@ -319,6 +361,7 @@ const getDepartmentName = (departmentId: string) => {
                 Alert.alert('Thành công', 'Cập nhật thông tin sinh viên thành công');
                 setEditModalVisible(false);
                 loadStudents();
+                loadClasses(); 
             } else {
                 Alert.alert('Thất bại', data.message || 'Không thể cập nhật');
             }
@@ -346,7 +389,7 @@ const getDepartmentName = (departmentId: string) => {
                         }
 
                         try {
-                            const response = await fetch(`${API_URL}/auth/students/${student._id}`, {
+                            const response = await fetch(`${API_URL}/students/${student._id}`, {
                                 method: 'DELETE',
                                 headers: { Authorization: `Bearer ${token}` },
                             });
@@ -355,6 +398,7 @@ const getDepartmentName = (departmentId: string) => {
                             if (data.success) {
                                 Alert.alert('Thành công', 'Xóa sinh viên thành công');
                                 loadStudents();
+                                loadClasses();
                             } else {
                                 Alert.alert('Thất bại', data.message || 'Không thể xóa');
                             }
@@ -435,6 +479,7 @@ const getDepartmentName = (departmentId: string) => {
             </View>
         );
     }
+
     const handleBack = () => {
         if (router.canGoBack()) {
             router.back();
@@ -458,10 +503,13 @@ const getDepartmentName = (departmentId: string) => {
 
             {/* Thống kê */}
             <View style={styles.statsContainer}>
-                <View style={styles.statCard}>
+                <TouchableOpacity 
+                    style={[styles.statCard, selectedClass === 'All' && { borderColor: '#007AFF', borderWidth: 1 }]}
+                    onPress={() => setSelectedClass('All')}
+                >
                     <Text style={styles.statNumber}>{students.length}</Text>
                     <Text style={styles.statLabel}>Tổng SV</Text>
-                </View>
+                </TouchableOpacity>
                 <View style={[styles.statCard, styles.statCardActive]}>
                     <Text style={styles.statNumber}>
                         {students.filter((s) => s.status === 'active').length}
@@ -490,86 +538,176 @@ const getDepartmentName = (departmentId: string) => {
 
             {/* Search */}
             <Searchbar
-                placeholder="Tìm kiếm sinh viên..."
+                placeholder={selectedClass === 'All' ? "Tìm kiếm..." : `Tìm sinh viên lớp ${selectedClass}...`}
                 onChangeText={handleSearch}
                 value={searchQuery}
                 style={styles.searchBar}
                 iconColor="#007AFF"
             />
 
-            {/* Danh sách sinh viên */}
-            <ScrollView
-                style={styles.listContainer}
-                refreshControl={
-                    <RefreshControl refreshing={isRefreshing} onRefresh={loadData} />
-                }
-            >
-                {filteredStudents.map((student) => (
-                    <Card key={student._id} style={styles.studentCard}>
-                        <Card.Content>
-                            <View style={styles.studentHeader}>
-                                <View style={styles.studentInfo}>
-                                    <View style={styles.avatar}>
-                                        <Text style={styles.avatarText}>
-                                            {student.fullName.charAt(0)}
-                                        </Text>
-                                    </View>
-                                    <View>
-                                        <Text style={styles.studentName}>{student.fullName}</Text>
-                                        <Text style={styles.studentId}>MSSV: {student.studentId}</Text>
-                                        <Text style={styles.studentDept}>{ (student.departmentId as any)?.name || 'N/A' }</Text>
-                                    </View>
-                                </View>
+            {/* LOGIC HIỂN THỊ CHÍNH (Đã được chia 2 trường hợp) */}
+            {selectedClass === 'All' ? (
+                /* --- TRƯỜNG HỢP 1: HIỂN THỊ BỘ LỌC KHOA & DANH SÁCH LỚP --- */
+                <View style={styles.listContainer}>
+                    {/* Bộ lọc Khoa */}
+                    <View style={{ marginBottom: 12 }}>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                            {faculties.map((faculty) => (
                                 <Chip
-                                    style={[
-                                        styles.statusChip,
-                                        student.status === 'active' ? styles.statusActive : styles.statusInactive,
-                                    ]}
-                                    textStyle={styles.statusChipText}
+                                    key={faculty._id}
+                                    selected={selectedFacultyFilter === String(faculty._id)}
+                                    onPress={() => setSelectedFacultyFilter(String(faculty._id))}
+                                    style={{ 
+                                        marginRight: 8, 
+                                        backgroundColor: selectedFacultyFilter === String(faculty._id) ? '#007AFF' : '#E8E8E8', 
+                                        borderRadius: 20 
+                                    }}
+                                    textStyle={{ 
+                                        color: selectedFacultyFilter === String(faculty._id) ? '#FFF' : '#333' 
+                                    }}
                                 >
-                                    {student.status === 'active' ? 'Đang học' : 'Nghỉ học'}
+                                    {faculty.name}
                                 </Chip>
-                            </View>
-
-                            <View style={styles.studentActions}>
-                                <TouchableOpacity
-                                    style={[styles.actionButton, styles.actionView]}
-                                    onPress={() => handleViewDetail(student)}
-                                >
-                                    <Ionicons name="eye" size={20} color="#007AFF" />
-                                    <Text style={styles.actionText}>Xem</Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={[styles.actionButton, styles.actionEdit]}
-                                    onPress={() => handleEdit(student)}
-                                >
-                                    <Ionicons name="pencil" size={20} color="#FF8A4C" />
-                                    <Text style={styles.actionText}>Sửa</Text>
-                                </TouchableOpacity>
-
-                                <TouchableOpacity
-                                    style={[styles.actionButton, styles.actionDelete]}
-                                    onPress={() => handleDeleteStudent(student)}
-                                >
-                                    <Ionicons name="trash" size={20} color="#FF3B30" />
-                                    <Text style={styles.actionText}>Xóa</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </Card.Content>
-                    </Card>
-                ))}
-
-                {filteredStudents.length === 0 && (
-                    <View style={styles.emptyContainer}>
-                        <Ionicons name="people-outline" size={64} color="#ccc" />
-                        <Text style={styles.emptyText}>Chưa có sinh viên nào</Text>
+                            ))}
+                        </ScrollView>
                     </View>
-                )}
-                <View style={styles.footer} />
-            </ScrollView>
 
-            {/* Modal chi tiết sinh viên */}
+                    {/* Danh sách lớp thuộc Khoa đã chọn */}
+                    <ScrollView refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={loadData} />}>
+                        {!selectedFacultyFilter ? (
+                            <View style={styles.emptyContainer}>
+                                <Ionicons name="funnel-outline" size={64} color="#ccc" />
+                                <Text style={styles.emptyText}>Vui lòng chọn Khoa</Text>
+                            </View>
+                        ) : classesInSelectedFaculty.length === 0 ? (
+                            <View style={styles.emptyContainer}>
+                                <Ionicons name="folder-open-outline" size={64} color="#ccc" />
+                                <Text style={styles.emptyText}>Chưa có lớp nào trong Khoa này</Text>
+                            </View>
+                        ) : (
+                            classesInSelectedFaculty.map((cls) => {
+                                // Tính sĩ số
+                                const studentCount = students.filter(s => s.class === cls).length;
+                                // Tìm Khoa Name để hiển thị
+                                const facName = getFacultyName(selectedFacultyFilter);
+
+                                return (
+                                    <TouchableOpacity
+                                        key={cls}
+                                        style={{
+                                            flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                                            backgroundColor: '#FFF', padding: 16, marginBottom: 12, borderRadius: 12,
+                                            shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2, elevation: 2
+                                        }}
+                                        onPress={() => {
+                                            setSelectedClass(cls);
+                                            setSearchQuery(''); // Xóa thanh tìm kiếm khi vào lớp
+                                        }}
+                                    >
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                                            <Ionicons name="school" size={28} color="#007AFF" />
+                                            <View>
+                                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1a1a2e' }}>Lớp {cls}</Text>
+                                                <Text style={{ fontSize: 13, color: '#666', marginTop: 2 }}>{facName} • {studentCount} sinh viên</Text>
+                                            </View>
+                                        </View>
+                                        <Ionicons name="chevron-forward" size={24} color="#ccc" />
+                                    </TouchableOpacity>
+                                );
+                            })
+                        )}
+                        <View style={styles.footer} />
+                    </ScrollView>
+                </View>
+            ) : (
+                /* --- TRƯỜNG HỢP 2: HIỂN THỊ DANH SÁCH SINH VIÊN TRONG LỚP --- */
+                <View style={styles.listContainer}>
+                    {/* Thanh tiêu đề lớp */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#E8E8E8' }}>
+                        <TouchableOpacity onPress={() => setSelectedClass('All')} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                            <Ionicons name="arrow-back" size={20} color="#007AFF" />
+                            <Text style={{ fontSize: 14, color: '#007AFF', fontWeight: '500' }}>Quay lại</Text>
+                        </TouchableOpacity>
+                        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1a1a2e', marginLeft: 'auto' }}>Lớp {selectedClass}</Text>
+                    </View>
+
+                    {/* Danh sách sinh viên */}
+                    <ScrollView refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={loadData} />}>
+                        {filteredStudents.map((student) => (
+                            <Card key={student._id} style={styles.studentCard}>
+                                <Card.Content>
+                                   <View style={styles.studentHeader}>
+                                        <View style={styles.studentInfo}>
+                                            <View style={styles.avatar}>
+                                                <Text style={styles.avatarText}>
+                                                    {student.fullName.charAt(0)}
+                                                </Text>
+                                            </View>
+                                            
+                                            <View style={styles.studentTextContainer}>
+                                                {/* ĐÃ BỎ numberOfLines={1} ĐỂ TÊN ĐƯỢC XUỐNG DÒNG */}
+                                                <Text style={styles.studentName}>{student.fullName}</Text>
+                                                
+                                                <Text style={styles.studentId}>MSSV: {student.studentId}</Text>
+                                            </View>
+                                        </View>
+
+                                        <Chip
+                                            style={[
+                                                styles.statusChip,
+                                                student.status === 'active' ? styles.statusActive : styles.statusInactive,
+                                            ]}
+                                            textStyle={styles.statusChipText}
+                                        >
+                                            {student.status === 'active' ? 'Đang học' : 'Nghỉ học'}
+                                        </Chip>
+                                    </View>
+
+                                    <View style={styles.studentActions}>
+                                        <TouchableOpacity
+                                            style={[styles.actionButton, styles.actionView]}
+                                            onPress={() => handleViewDetail(student)}
+                                        >
+                                            <Ionicons name="eye" size={20} color="#007AFF" />
+                                            <Text style={styles.actionText}>Xem</Text>
+                                        </TouchableOpacity>
+
+                                        <TouchableOpacity
+                                            style={[styles.actionButton, styles.actionEdit]}
+                                            onPress={() => handleEdit(student)}
+                                        >
+                                            <Ionicons name="pencil" size={20} color="#FF8A4C" />
+                                            <Text style={styles.actionText}>Sửa</Text>
+                                        </TouchableOpacity>
+
+                                        <TouchableOpacity
+                                            style={[styles.actionButton, styles.actionDelete]}
+                                            onPress={() => handleDeleteStudent(student)}
+                                        >
+                                            <Ionicons name="trash" size={20} color="#FF3B30" />
+                                            <Text style={styles.actionText}>Xóa</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </Card.Content>
+                            </Card>
+                        ))}
+
+                        {filteredStudents.length === 0 && (
+                            <View style={styles.emptyContainer}>
+                                <Ionicons name="people-outline" size={64} color="#ccc" />
+                                <Text style={styles.emptyText}>Chưa có sinh viên nào</Text>
+                            </View>
+                        )}
+                        <View style={styles.footer} />
+                    </ScrollView>
+                </View>
+            )}
+
+            {/* ============================================== */}
+            {/* CÁC MODAL BÊN DƯỚI */}
+            {/* ============================================== */}
+
+           {/* Modal chi tiết sinh viên */}
             <Modal
                 animationType="slide"
                 transparent
@@ -587,15 +725,13 @@ const getDepartmentName = (departmentId: string) => {
 
                         {selectedStudent && (
                             <>
-                                {/* Thông tin học vấn */}
+                                {/* 1. Thông tin học vấn */}
                                 <Card style={styles.infoCard}>
                                     <Card.Title title="📚 Thông tin học vấn" />
                                     <Card.Content>
                                         <View style={styles.infoRow}>
                                             <Text style={styles.infoLabel}>Trạng thái:</Text>
-                                            <Chip
-                                                style={selectedStudent.status === 'active' ? styles.statusActive : styles.statusInactive}
-                                            >
+                                            <Chip style={selectedStudent.status === 'active' ? styles.statusActive : styles.statusInactive}>
                                                 {selectedStudent.status === 'active' ? 'Đang học' : 'Nghỉ học'}
                                             </Chip>
                                         </View>
@@ -627,24 +763,27 @@ const getDepartmentName = (departmentId: string) => {
                                         </View>
                                         <View style={styles.infoRow}>
                                             <Text style={styles.infoLabel}>Khoa:</Text>
-                                            <Text style={styles.infoValue}>{(selectedStudent.facultyId as any)?.name || 'N/A'}</Text>
+                                            <Text style={styles.infoValue}>{getFacultyName(selectedStudent.facultyId as string)}</Text>
                                         </View>
                                         <View style={styles.infoRow}>
                                             <Text style={styles.infoLabel}>Ngành:</Text>
-                                            <Text style={styles.infoValue}> {(selectedStudent.departmentId as any )?.name || 'N/A'}</Text>
+                                            <Text style={styles.infoValue}>{getDepartmentName(selectedStudent.departmentId as string)}</Text>
                                         </View>
                                         <View style={styles.infoRow}>
                                             <Text style={styles.infoLabel}>Chuyên ngành:</Text>
-                                            <Text style={styles.infoValue}>{(selectedStudent.departmentId as any )?.name || 'N/A'}</Text>
+                                            <Text style={styles.infoValue}>{getDepartmentName(selectedStudent.departmentId as string)}</Text>
                                         </View>
                                         <View style={styles.infoRow}>
                                             <Text style={styles.infoLabel}>Khóa học:</Text>
-                                            <Text style={styles.infoValue}>{selectedStudent.academicInfo?.courseYear || 'Chưa cập nhật'}</Text>
+                                            <Text style={styles.infoValue}>
+                                                {selectedStudent.academicInfo?.courseYear || 
+                                                (selectedStudent.class ? `Khóa ${selectedStudent.class.replace(/[^0-9]/g, '').substring(0, 2)}` : 'Chưa cập nhật')}
+                                            </Text>
                                         </View>
                                     </Card.Content>
                                 </Card>
 
-                                {/* Thông tin cá nhân */}
+                                {/* 2. Thông tin cá nhân */}
                                 <Card style={styles.infoCard}>
                                     <Card.Title title="👤 Thông tin cá nhân" />
                                     <Card.Content>
@@ -665,10 +804,6 @@ const getDepartmentName = (departmentId: string) => {
                                             <Text style={styles.infoValue}>{selectedStudent.personalInfo?.nationality || 'Việt Nam'}</Text>
                                         </View>
                                         <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Khu vực:</Text>
-                                            <Text style={styles.infoValue}>{selectedStudent.personalInfo?.region || 'Chưa cập nhật'}</Text>
-                                        </View>
-                                        <View style={styles.infoRow}>
                                             <Text style={styles.infoLabel}>Số CCCD:</Text>
                                             <Text style={styles.infoValue}>{selectedStudent.personalInfo?.cccd || 'Chưa cập nhật'}</Text>
                                         </View>
@@ -681,20 +816,8 @@ const getDepartmentName = (departmentId: string) => {
                                             <Text style={styles.infoValue}>{selectedStudent.personalInfo?.cccdIssuePlace || 'Chưa cập nhật'}</Text>
                                         </View>
                                         <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Đối tượng:</Text>
-                                            <Text style={styles.infoValue}>{selectedStudent.personalInfo?.object || 'Chưa cập nhật'}</Text>
-                                        </View>
-                                        <View style={styles.infoRow}>
                                             <Text style={styles.infoLabel}>Diện chính sách:</Text>
                                             <Text style={styles.infoValue}>{selectedStudent.personalInfo?.policyType || 'Không'}</Text>
-                                        </View>
-                                        <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Ngày vào Đoàn:</Text>
-                                            <Text style={styles.infoValue}>{selectedStudent.personalInfo?.unionJoinDate || 'Chưa cập nhật'}</Text>
-                                        </View>
-                                        <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Ngày vào Đảng:</Text>
-                                            <Text style={styles.infoValue}>{selectedStudent.personalInfo?.partyJoinDate || 'Chưa cập nhật'}</Text>
                                         </View>
                                         <View style={styles.infoRow}>
                                             <Text style={styles.infoLabel}>Điện thoại:</Text>
@@ -702,46 +825,22 @@ const getDepartmentName = (departmentId: string) => {
                                         </View>
                                         <View style={styles.infoRow}>
                                             <Text style={styles.infoLabel}>Email:</Text>
-                                            <Text style={styles.infoValue}>{selectedStudent.email}</Text>
+                                            <Text style={styles.infoValue}>{selectedStudent.email || 'Chưa cập nhật'}</Text>
                                         </View>
                                         <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Địa chỉ liên hệ:</Text>
+                                            <Text style={styles.infoLabel}>Địa chỉ:</Text>
                                             <Text style={styles.infoValue}>{selectedStudent.address || 'Chưa cập nhật'}</Text>
-                                        </View>
-                                        <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Nơi sinh:</Text>
-                                            <Text style={styles.infoValue}>{selectedStudent.placeOfBirth || 'Chưa cập nhật'}</Text>
-                                        </View>
-                                        <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Hộ khẩu thường trú:</Text>
-                                            <Text style={styles.infoValue}>{selectedStudent.personalInfo?.permanentResidence || 'Chưa cập nhật'}</Text>
-                                        </View>
-                                        <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Tên ngân hàng:</Text>
-                                            <Text style={styles.infoValue}>{selectedStudent.personalInfo?.bankName || 'Chưa cập nhật'}</Text>
-                                        </View>
-                                        <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Chi nhánh:</Text>
-                                            <Text style={styles.infoValue}>{selectedStudent.personalInfo?.bankBranch || 'Chưa cập nhật'}</Text>
-                                        </View>
-                                        <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Chủ tài khoản:</Text>
-                                            <Text style={styles.infoValue}>{selectedStudent.personalInfo?.accountHolder || 'Chưa cập nhật'}</Text>
-                                        </View>
-                                        <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Số tài khoản:</Text>
-                                            <Text style={styles.infoValue}>{selectedStudent.personalInfo?.accountNumber || 'Chưa cập nhật'}</Text>
                                         </View>
                                     </Card.Content>
                                 </Card>
 
-                                {/* Thông tin gia đình */}
+                                {/* 3. Thông tin gia đình */}
                                 <Card style={styles.infoCard}>
-                                    <Card.Title title="👨‍👩‍👧‍👦 Quan hệ gia đình" />
+                                    <Card.Title title="👨‍👩‍👦 Thông tin gia đình" />
                                     <Card.Content>
-                                        <Text style={styles.sectionTitle}>Cha</Text>
+                                        <Text style={[styles.sectionTitle, { color: '#007AFF' }]}>Thông tin Cha</Text>
                                         <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Họ tên:</Text>
+                                            <Text style={styles.infoLabel}>Họ và tên:</Text>
                                             <Text style={styles.infoValue}>{selectedStudent.familyInfo?.father?.name || 'Chưa cập nhật'}</Text>
                                         </View>
                                         <View style={styles.infoRow}>
@@ -753,33 +852,13 @@ const getDepartmentName = (departmentId: string) => {
                                             <Text style={styles.infoValue}>{selectedStudent.familyInfo?.father?.occupation || 'Chưa cập nhật'}</Text>
                                         </View>
                                         <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Quốc tịch:</Text>
-                                            <Text style={styles.infoValue}>{selectedStudent.familyInfo?.father?.nationality || 'Việt Nam'}</Text>
-                                        </View>
-                                        <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Dân tộc:</Text>
-                                            <Text style={styles.infoValue}>{selectedStudent.familyInfo?.father?.ethnicity || 'Kinh'}</Text>
-                                        </View>
-                                        <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Tôn giáo:</Text>
-                                            <Text style={styles.infoValue}>{selectedStudent.familyInfo?.father?.religion || 'Không'}</Text>
-                                        </View>
-                                        <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Cơ quan công tác:</Text>
-                                            <Text style={styles.infoValue}>{selectedStudent.familyInfo?.father?.workplace || 'Chưa cập nhật'}</Text>
-                                        </View>
-                                        <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Chức vụ:</Text>
-                                            <Text style={styles.infoValue}>{selectedStudent.familyInfo?.father?.position || 'Chưa cập nhật'}</Text>
-                                        </View>
-                                        <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Số điện thoại:</Text>
+                                            <Text style={styles.infoLabel}>Điện thoại:</Text>
                                             <Text style={styles.infoValue}>{selectedStudent.familyInfo?.father?.phone || 'Chưa cập nhật'}</Text>
                                         </View>
 
-                                        <Text style={[styles.sectionTitle, styles.motherTitle]}>Mẹ</Text>
+                                        <Text style={[styles.sectionTitle, { marginTop: 16, color: '#e83e8c' }]}>Thông tin Mẹ</Text>
                                         <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Họ tên:</Text>
+                                            <Text style={styles.infoLabel}>Họ và tên:</Text>
                                             <Text style={styles.infoValue}>{selectedStudent.familyInfo?.mother?.name || 'Chưa cập nhật'}</Text>
                                         </View>
                                         <View style={styles.infoRow}>
@@ -791,137 +870,122 @@ const getDepartmentName = (departmentId: string) => {
                                             <Text style={styles.infoValue}>{selectedStudent.familyInfo?.mother?.occupation || 'Chưa cập nhật'}</Text>
                                         </View>
                                         <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Quốc tịch:</Text>
-                                            <Text style={styles.infoValue}>{selectedStudent.familyInfo?.mother?.nationality || 'Việt Nam'}</Text>
-                                        </View>
-                                        <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Dân tộc:</Text>
-                                            <Text style={styles.infoValue}>{selectedStudent.familyInfo?.mother?.ethnicity || 'Kinh'}</Text>
-                                        </View>
-                                        <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Tôn giáo:</Text>
-                                            <Text style={styles.infoValue}>{selectedStudent.familyInfo?.mother?.religion || 'Không'}</Text>
-                                        </View>
-                                        <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Cơ quan công tác:</Text>
-                                            <Text style={styles.infoValue}>{selectedStudent.familyInfo?.mother?.workplace || 'Chưa cập nhật'}</Text>
-                                        </View>
-                                        <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Chức vụ:</Text>
-                                            <Text style={styles.infoValue}>{selectedStudent.familyInfo?.mother?.position || 'Chưa cập nhật'}</Text>
-                                        </View>
-                                        <View style={styles.infoRow}>
-                                            <Text style={styles.infoLabel}>Số điện thoại:</Text>
+                                            <Text style={styles.infoLabel}>Điện thoại:</Text>
                                             <Text style={styles.infoValue}>{selectedStudent.familyInfo?.mother?.phone || 'Chưa cập nhật'}</Text>
                                         </View>
                                     </Card.Content>
                                 </Card>
-
-                                <Button
-                                    mode="contained"
-                                    onPress={() => setDetailModalVisible(false)}
-                                    style={styles.closeButton}
-                                >
-                                    Đóng
-                                </Button>
                             </>
                         )}
-                        <View style={styles.footer} />
+                        
+                        {/* 4. Nút đóng an toàn, che mọi lỗi dư thừa */}
+                        <View style={{ paddingHorizontal: 16, marginTop: 24, marginBottom: 30 }}>
+                            <Button 
+                                mode="contained" 
+                                onPress={() => setDetailModalVisible(false)}
+                                style={{ backgroundColor: '#007AFF', borderRadius: 8, paddingVertical: 4 }}
+                                labelStyle={{ fontSize: 16, fontWeight: 'bold' }}
+                            >
+                                Đóng
+                            </Button>
+                        </View>
+                        
                     </ScrollView>
                 </View>
             </Modal>
 
-            {/* Modal sửa thông tin */}
-            <Portal>
-                <Dialog visible={editModalVisible} onDismiss={() => setEditModalVisible(false)}>
-                    <Dialog.Title>Sửa thông tin sinh viên</Dialog.Title>
-                    <Dialog.ScrollArea>
-                        <ScrollView>
+            {/* Modal chỉnh sửa sinh viên */}
+            <Modal
+                animationType="slide"
+                transparent
+                visible={editModalVisible}
+                onRequestClose={() => setEditModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <ScrollView style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Sửa thông tin sinh viên</Text>
+                            <TouchableOpacity onPress={() => setEditModalVisible(false)}>
+                                <Ionicons name="close" size={28} color="#333" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={{ padding: 16 }}>
                             <TextInput
                                 label="Họ và tên"
                                 value={editForm.fullName}
                                 onChangeText={(text) => setEditForm({ ...editForm, fullName: text })}
+                                style={{ marginBottom: 12 }}
                                 mode="outlined"
-                                style={styles.editInput}
-                            />
-                            <TextInput
-                                label="Ngày sinh"
-                                value={editForm.dateOfBirth}
-                                onChangeText={(text) => setEditForm({ ...editForm, dateOfBirth: text })}
-                                mode="outlined"
-                                style={styles.editInput}
-                                placeholder="DD/MM/YYYY"
-                            />
-                            <TextInput
-                                label="Nơi sinh"
-                                value={editForm.placeOfBirth}
-                                onChangeText={(text) => setEditForm({ ...editForm, placeOfBirth: text })}
-                                mode="outlined"
-                                style={styles.editInput}
-                            />
-                            <TextInput
-                                label="Lớp"
-                                value={editForm.class}
-                                onChangeText={(text) => setEditForm({ ...editForm, class: text })}
-                                mode="outlined"
-                                style={styles.editInput}
                             />
                             <TextInput
                                 label="Số điện thoại"
                                 value={editForm.phone}
                                 onChangeText={(text) => setEditForm({ ...editForm, phone: text })}
-                                mode="outlined"
-                                style={styles.editInput}
                                 keyboardType="phone-pad"
+                                style={{ marginBottom: 12 }}
+                                mode="outlined"
                             />
                             <TextInput
-                                label="Địa chỉ"
+                                label="Ngày sinh"
+                                value={editForm.dateOfBirth}
+                                // Nhập tay dạng chuỗi vì Model Backend của bạn đang để String
+                                onChangeText={(text) => setEditForm({ ...editForm, dateOfBirth: text })} 
+                                placeholder="DD/MM/YYYY (VD: 15/08/2003)"
+                                style={{ marginBottom: 12 }}
+                                mode="outlined"
+                            />
+                            <TextInput
+                                label="Lớp học"
+                                value={editForm.class}
+                                onChangeText={(text) => setEditForm({ ...editForm, class: text })}
+                                style={{ marginBottom: 12 }}
+                                mode="outlined"
+                            />
+                            <TextInput
+                                label="Khóa học (VD: Khóa 23)"
+                                value={editForm.courseYear}
+                                onChangeText={(text) => setEditForm({ ...editForm, courseYear: text })}
+                                style={{ marginBottom: 12 }}
+                                mode="outlined"
+                            />
+                            <TextInput
+                                label="Địa chỉ liên hệ"
                                 value={editForm.address}
                                 onChangeText={(text) => setEditForm({ ...editForm, address: text })}
-                                mode="outlined"
-                                style={styles.editInput}
                                 multiline
+                                numberOfLines={3}
+                                style={{ marginBottom: 16 }}
+                                mode="outlined"
                             />
-                            <View style={styles.statusSelector}>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.statusOption,
-                                        editForm.status === 'active' && styles.statusOptionActive,
-                                    ]}
+
+                            <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 8 }}>Trạng thái:</Text>
+                            <View style={{ flexDirection: 'row', marginBottom: 20 }}>
+                                <Chip
+                                    selected={editForm.status === 'active'}
                                     onPress={() => setEditForm({ ...editForm, status: 'active' })}
+                                    style={{ marginRight: 12 }}
                                 >
-                                    <Ionicons
-                                        name={editForm.status === 'active' ? 'checkmark-circle' : 'ellipse-outline'}
-                                        size={20}
-                                        color={editForm.status === 'active' ? '#28a745' : '#999'}
-                                    />
-                                    <Text>Đang học</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.statusOption,
-                                        editForm.status === 'inactive' && styles.statusOptionInactive,
-                                    ]}
+                                    Đang học
+                                </Chip>
+                                <Chip
+                                    selected={editForm.status === 'inactive'}
                                     onPress={() => setEditForm({ ...editForm, status: 'inactive' })}
                                 >
-                                    <Ionicons
-                                        name={editForm.status === 'inactive' ? 'checkmark-circle' : 'ellipse-outline'}
-                                        size={20}
-                                        color={editForm.status === 'inactive' ? '#dc3545' : '#999'}
-                                    />
-                                    <Text>Nghỉ học</Text>
-                                </TouchableOpacity>
+                                    Nghỉ học
+                                </Chip>
                             </View>
-                        </ScrollView>
-                    </Dialog.ScrollArea>
-                    <Dialog.Actions>
-                        <Button onPress={() => setEditModalVisible(false)}>Hủy</Button>
-                        <Button onPress={handleUpdateStudent}>Cập nhật</Button>
-                    </Dialog.Actions>
-                </Dialog>
-            </Portal>
 
-            {/* Modal yêu cầu cập nhật */}
+                            <Button mode="contained" onPress={handleUpdateStudent} style={{ backgroundColor: '#007AFF', padding: 4 }}>
+                                Lưu Thay Đổi
+                            </Button>
+                        </View>
+                        <View style={{ height: 40 }} />
+                    </ScrollView>
+                </View>
+            </Modal>
+
+            {/* Modal hiển thị danh sách yêu cầu cập nhật */}
             <Modal
                 animationType="slide"
                 transparent
@@ -929,63 +993,48 @@ const getDepartmentName = (departmentId: string) => {
                 onRequestClose={() => setRequestModalVisible(false)}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
+                    <View style={[styles.modalContent, { maxHeight: '80%' }]}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Yêu cầu cập nhật thông tin</Text>
+                            <Text style={styles.modalTitle}>Yêu cầu cập nhật ({pendingRequests.length})</Text>
                             <TouchableOpacity onPress={() => setRequestModalVisible(false)}>
                                 <Ionicons name="close" size={28} color="#333" />
                             </TouchableOpacity>
                         </View>
 
-                        <ScrollView>
-                            {pendingRequests.length === 0 ? (
-                                <View style={styles.emptyContainer}>
-                                    <Ionicons name="checkmark-circle-outline" size={64} color="#28a745" />
-                                    <Text style={styles.emptyText}>Không có yêu cầu nào</Text>
+                        <ScrollView style={{ padding: 12 }}>
+                            {pendingRequests.map((req) => (
+                                <Card key={req._id} style={{ marginBottom: 12, elevation: 2 }}>
+                                    <Card.Content>
+                                        <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{req.studentName}</Text>
+                                        <Text style={{ color: '#666', marginVertical: 4 }}>MSSV: {req.studentId}</Text>
+                                        
+                                        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12 }}>
+                                            <Button 
+                                                mode="outlined" 
+                                                textColor="#FF3B30" 
+                                                onPress={() => handleRejectRequest(req)}
+                                                style={{ marginRight: 8, borderColor: '#FF3B30' }}
+                                            >
+                                                Từ chối
+                                            </Button>
+                                            <Button 
+                                                mode="contained" 
+                                                buttonColor="#34C759" 
+                                                onPress={() => handleApproveRequest(req)}
+                                            >
+                                                Duyệt
+                                            </Button>
+                                        </View>
+                                    </Card.Content>
+                                </Card>
+                            ))}
+
+                            {pendingRequests.length === 0 && (
+                                <View style={{ alignItems: 'center', marginVertical: 40 }}>
+                                    <Ionicons name="checkmark-circle-outline" size={64} color="#34C759" />
+                                    <Text style={{ marginTop: 8, color: '#666' }}>Không có yêu cầu nào đang chờ xử lý</Text>
                                 </View>
-                            ) : (
-                                pendingRequests.map((request) => (
-                                    <Card key={request._id} style={styles.requestCard}>
-                                        <Card.Content>
-                                            <View style={styles.requestHeader}>
-                                                <View>
-                                                    <Text style={styles.requestStudent}>{request.studentName}</Text>
-                                                    <Text style={styles.requestId}>MSSV: {request.studentId}</Text>
-                                                </View>
-                                                <Chip style={styles.requestPending}>
-                                                    Chờ duyệt
-                                                </Chip>
-                                            </View>
-                                            <View style={styles.requestFields}>
-                                                <Text style={styles.requestLabel}>Các trường cần cập nhật:</Text>
-                                                {request.fields.map((field, index) => (
-                                                    <View key={index} style={styles.requestFieldTag}>
-                                                        <Text style={styles.requestFieldText}>{field}</Text>
-                                                    </View>
-                                                ))}
-                                            </View>
-                                            <View style={styles.requestActions}>
-                                                <Button
-                                                    mode="outlined"
-                                                    onPress={() => handleRejectRequest(request)}
-                                                    style={styles.requestReject}
-                                                    labelStyle={{ color: '#dc3545' }}
-                                                >
-                                                    Từ chối
-                                                </Button>
-                                                <Button
-                                                    mode="contained"
-                                                    onPress={() => handleApproveRequest(request)}
-                                                    style={styles.requestApprove}
-                                                >
-                                                    Duyệt
-                                                </Button>
-                                            </View>
-                                        </Card.Content>
-                                    </Card>
-                                ))
                             )}
-                            <View style={styles.footer} />
                         </ScrollView>
                     </View>
                 </View>

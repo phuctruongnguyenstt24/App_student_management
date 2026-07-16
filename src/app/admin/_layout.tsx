@@ -11,6 +11,7 @@ export default function AdminLayout() {
       <Stack.Screen name="schedule" options={{ title: 'Quản lý lịch học' }} />
       <Stack.Screen name="FeedbackManagementScreen" options={{ title: 'Quản lý Góp ý' }} />
       <Stack.Screen name="mng_frameworkprogram" options={{ title: 'Quản lý Chương trình khung' }} />
+      <Stack.Screen name="student-achievements" options={{ title: 'Quản lý thành tích' }} />
     </Stack>
   );
 }

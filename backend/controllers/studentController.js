@@ -176,23 +176,30 @@ const getStudentById = async (req, res) => {
     });
   }
 };
-// 1. Lấy toàn bộ danh sách sinh viên (Có hỗ trợ bóc tách điểm theo học kỳ)
+// 1. Lấy danh sách sinh viên (Có hỗ trợ lọc theo LỚP và bóc tách điểm theo học kỳ)
 const getAllStudents = async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ success: false, message: 'Bạn không có quyền xem danh sách này' });
     }
 
-    const { semesterNumber } = req.query; // Frontend gửi semesterNumber lên qua URL
+    const { semesterNumber, className } = req.query; // Nhận thêm className từ Frontend gửi lên
 
-    // Dùng .lean() để trả về một Object JSON thuần, giúp ta dễ dàng gán thêm dữ liệu
-    const students = await User.find({ role: 'student' }).select('-password').lean();
+    // Tạo điều kiện tìm kiếm mặc định
+    const query = { role: 'student' };
 
-    // Map lại danh sách sinh viên để chắt lọc đúng điểm của học kỳ được chọn
+    // Nếu Frontend có gửi tên lớp lên -> Thêm vào điều kiện lọc
+    if (className) {
+      query.class = className; 
+    }
+
+    // Truy vấn dữ liệu theo bộ lọc
+    const students = await User.find(query).select('-password').lean();
+
+    // Map lại danh sách sinh viên để chắt lọc đúng điểm của học kỳ được chọn (giữ nguyên logic cũ của bro)
     const formattedStudents = students.map(student => {
-      let currentSemesterPoint = 0; // Mặc định là 0 nếu chưa chấm
+      let currentSemesterPoint = 0;
 
-      // Nếu có query học kỳ và sinh viên đã có mảng điểm
       if (semesterNumber && student.trainingPoints && Array.isArray(student.trainingPoints)) {
         const found = student.trainingPoints.find(
           (tp) => tp.semesterNumber === Number(semesterNumber)
@@ -201,13 +208,11 @@ const getAllStudents = async (req, res) => {
           currentSemesterPoint = found.point;
         }
       } else if (student.trainingPoint !== undefined) {
-        // Fallback: Lỡ có data cũ chưa kịp chuyển sang mảng
         currentSemesterPoint = student.trainingPoint;
       }
 
       return {
         ...student,
-        // Gán lại đúng tên biến trainingPoint để Frontend không bị lỗi
         trainingPoint: currentSemesterPoint 
       };
     });
@@ -279,11 +284,34 @@ const updateTrainingPoint = async (req, res) => {
     res.status(500).json({ success: false, message: 'Lỗi server: ' + error.message });
   }
 };
+// Lấy danh sách toàn bộ các lớp duy nhất (không trùng lặp)
+const getUniqueClasses = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Bạn không có quyền thực hiện hành động này' });
+    }
+
+    // Dùng lệnh .distinct() để tự động gom nhóm tên lớp duy nhất của sinh viên
+    const classes = await User.distinct('class', { role: 'student' });
+
+    // Lọc bỏ các giá trị rỗng hoặc null nếu có data rác
+    const validClasses = classes.filter(c => c && c.trim() !== '');
+
+    res.json({
+      success: true,
+      classes: validClasses
+    });
+  } catch (error) {
+    console.error('Get unique classes error:', error);
+    res.status(500).json({ success: false, message: 'Lỗi server: ' + error.message });
+  }
+};
 
 module.exports = {
   updateStudent,
   updateStudentProfile,
   getStudentById,
   getAllStudents,      // <-- Export hàm này
-  updateTrainingPoint  // <-- Export hàm này
+  updateTrainingPoint,  // <-- Export hàm này
+  getUniqueClasses      // <-- Export hàm này 
 };

@@ -6,11 +6,15 @@ const {
   updateStudent,
   updateStudentProfile,
   getStudentById,
-  getAllStudents,       // <-- 1. Import thêm hàm lấy danh sách
-  updateTrainingPoint   // <-- 2. Import thêm hàm chấm điểm
+  getAllStudents,       
+  updateTrainingPoint,  
+  getUniqueClasses      // <-- 1. Import thêm hàm lấy danh sách lớp ở đây
 } = require('../controllers/studentController');
 
 // ================= ADMIN ROUTES =================
+
+// API: Lấy danh sách các lớp duy nhất (BẮT BUỘC ĐỂ TRÊN CÙNG)
+router.get('/students/classes', protect, isAdmin, getUniqueClasses); // <-- 2. Thêm route này vào đây
 
 // API: Lấy danh sách tất cả sinh viên (BẮT BUỘC ĐỂ TRÊN CÙNG)
 router.get('/students/all', protect, isAdmin, getAllStudents);

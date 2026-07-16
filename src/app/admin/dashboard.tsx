@@ -8,6 +8,7 @@ import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from '../../a_styles/style_dashboard';
 
+
 export default function AdminDashboard() {
   const {user} = useAuth();
   const [userName, setUserName] = useState('');
@@ -172,7 +173,6 @@ export default function AdminDashboard() {
               <Text style={styles.menuDesc}>Góp ý sinh viên</Text>
             </TouchableOpacity>
 
-            {/* 🚀 ĐÃ FIX CONFLICT: Nút Quản lý chương trình khung */}
             <TouchableOpacity
               style={styles.menuCard}
               onPress={() => router.push('/admin/mng_frameworkprogram' as any)}
@@ -184,7 +184,6 @@ export default function AdminDashboard() {
               <Text style={styles.menuDesc}>Chương trình khung</Text>
             </TouchableOpacity>
 
-            {/* 🚀 ĐÃ FIX CONFLICT: Nút Điểm rèn luyện */}
             <TouchableOpacity
               style={styles.menuCard}
               onPress={() => router.push('/admin/training-points')}
@@ -196,8 +195,20 @@ export default function AdminDashboard() {
               <Text style={styles.menuDesc}>Chấm điểm cho sinh viên</Text>   
             </TouchableOpacity>
 
+            <TouchableOpacity
+              style={styles.menuCard}
+              onPress={() => router.push({ pathname: '/admin/student-achievements' as any })} 
+            >
+              <View style={styles.menuIconWrapper}>
+                <Ionicons name="trophy-outline" size={32} color="#f5a623" />
+              </View>
+              <Text style={styles.menuTitle}>Quản lý thành tích</Text>
+              <Text style={styles.menuDesc}>Nhập điểm và xem xếp loại sinh viên</Text>
+            </TouchableOpacity>
           </View>
+          
         </ScrollView>
+
 
         {/* Profile Menu Popup */}
         {showProfileMenu && (

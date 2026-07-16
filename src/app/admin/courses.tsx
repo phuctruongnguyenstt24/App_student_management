@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Modal, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ActivityIndicator, Chip } from 'react-native-paper';
+import { ActivityIndicator } from 'react-native-paper';
 import { styles } from '../../a_styles/style_courses';
 import { API_URL } from '../../config/api';
 import { closeAttendanceSession, getAttendanceSessions, upsertAttendanceSession, type AttendanceSession } from '../../utils/attendanceStorage';
@@ -289,43 +289,63 @@ export default function CoursesScreen() {
 
   // ============= COURSE CRUD =============
   const handleSaveCourse = async () => {
-    if (!editingCourse && (!courseCode || !courseName || !credits)) {
-      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin');
+    if (!courseCode.trim() || !courseName.trim() || !credits.trim()) {
+      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin bắt buộc (Mã môn, Tên môn, Số tín chỉ)');
       return;
     }
-    if (credits && (isNaN(Number(credits)) || Number(credits) <= 0)) {
+    if (isNaN(Number(credits)) || Number(credits) <= 0) {
       Alert.alert('Lỗi', 'Số tín chỉ phải là số nguyên dương');
       return;
     }
 
     try {
       const token = await AsyncStorage.getItem('token');
-      const courseData: any = editingCourse ? {} : { courseCode, courseName, credits: Number(credits), department, description, semester };
-      if (editingCourse) {
-        if (courseCode.trim()) courseData.courseCode = courseCode;
-        if (courseName.trim()) courseData.courseName = courseName;
-        if (credits.trim()) courseData.credits = Number(credits);
-        if (department.trim()) courseData.department = department;
-        if (description.trim()) courseData.description = description;
-        if (semester.trim()) courseData.semester = semester;
+
+      // Debug: decode token payload (base64 middle part)
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          console.log('[Course] Token payload:', payload);
+        } catch (e) {
+          console.log('[Course] Could not decode token');
+        }
+      } else {
+        console.log('[Course] No token found!');
       }
 
+      const courseData = {
+        courseCode: courseCode.trim(),
+        courseName: courseName.trim(),
+        credits: Number(credits),
+        department: department.trim(),
+        description: description.trim(),
+        semester: semester.trim(),
+      };
+
       const url = editingCourse ? `${API_URL}/courses/${editingCourse._id}` : `${API_URL}/courses`;
+      const method = editingCourse ? 'PUT' : 'POST';
+
+      console.log(`[Course] ${method} ${url}`, courseData);
+
       const response = await fetch(url, {
-        method: editingCourse ? 'PUT' : 'POST',
+        method,
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(courseData),
       });
+
       const data = await response.json();
+      console.log('[Course] Response:', data);
+
       if (data.success) {
         Alert.alert('Thành công', editingCourse ? 'Cập nhật thành công' : 'Thêm thành công');
         setModalVisible(false);
         resetCourseForm();
         fetchData();
       } else {
-        Alert.alert('Lỗi', data.message);
+        Alert.alert('Lỗi', data.message || 'Không thể lưu môn học');
       }
     } catch (error) {
+      console.error('[Course] Save error:', error);
       Alert.alert('Lỗi', 'Không thể kết nối đến server');
     }
   };
@@ -520,9 +540,9 @@ export default function CoursesScreen() {
                 <View style={styles.facultyInfo}>
                   {/* Dòng trên */}
                   <View style={styles.facultyTop}>
-                    <Chip style={styles.codeChip}>
-                      {faculty.code}
-                    </Chip>
+                    <View style={styles.codeChip}>
+                      <Text style={{ color: '#fff', fontWeight: '600', fontSize: 13 }}>{faculty.code}</Text>
+                    </View>
 
                     <View style={styles.facultyActions}>
                       <TouchableOpacity
@@ -579,17 +599,17 @@ export default function CoursesScreen() {
                   .map((dept) => (
                     <View key={dept._id} style={styles.departmentItem}>
                       <View style={styles.departmentInfo}>
-                        <Ionicons
+                        <Text><Ionicons
                           name="bookmark-outline"
                           size={14}
                           color="#666"
-                        />
+                        /></Text>
                         <Text style={styles.departmentName}>
                           {dept.name}
                         </Text>
-                        <Chip style={styles.smallChip}>
-                          {dept.code}
-                        </Chip>
+                        <View style={styles.smallChip}>
+                          <Text style={{ fontSize: 11, color: '#555' }}>{dept.code}</Text>
+                        </View>
                       </View>
 
                       <View style={styles.deptActions}>
@@ -729,7 +749,7 @@ export default function CoursesScreen() {
 
           {courses.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Ionicons name="book-outline" size={64} color="#ccc" />
+              <Text><Ionicons name="book-outline" size={64} color="#ccc" /></Text>
               <Text style={styles.emptyText}>Chưa có môn học</Text>
               <Text style={styles.emptySubText}>Nhấn + để thêm</Text>
             </View>
@@ -765,15 +785,15 @@ export default function CoursesScreen() {
                   <Text style={styles.courseName}>{course.courseName}</Text>
                   <View style={styles.courseInfo}>
                     <View style={styles.infoItem}>
-                      <Ionicons name="star-outline" size={14} color="#666" />
+                      <Text><Ionicons name="star-outline" size={14} color="#666" /></Text>
                       <Text style={styles.infoText}>{course.credits} TC</Text>
                     </View>
-                    {course.department && (
+                    {course.department ? (
                       <View style={styles.infoItem}>
-                        <Ionicons name="business-outline" size={14} color="#666" />
+                        <Text><Ionicons name="business-outline" size={14} color="#666" /></Text>
                         <Text style={styles.infoText}>{course.department}</Text>
                       </View>
-                    )}
+                    ) : null}
                   </View>
                   {course.description && (
                     <Text style={styles.courseDescription} numberOfLines={2}>{course.description}</Text>
