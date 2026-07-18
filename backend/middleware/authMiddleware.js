@@ -9,10 +9,10 @@ const protect = async (req, res, next) => {
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       token = req.headers.authorization.split(' ')[1];
       
-      // 🔥 QUAN TRỌNG: Clean token
+      // Clean token
       token = token.trim();
-      console.log('AUTH HEADER:', req.headers.authorization);
-      // 🔥 Kiểm tra token có hợp lệ không (có đủ 3 phần không)
+      
+      // Kiểm tra token có hợp lệ không (có đủ 3 phần không)
       const parts = token.split('.');
       if (parts.length !== 3) {
         console.error('❌ Invalid token format: wrong number of parts');
@@ -22,7 +22,6 @@ const protect = async (req, res, next) => {
         });
       }
 
-      // Log để debug
       console.log('🔑 Token received, length:', token.length);
       console.log('🔑 Token preview:', token.substring(0, 30) + '...');
 
@@ -49,9 +48,7 @@ const protect = async (req, res, next) => {
     }
   } catch (error) {
     console.error('❌ Auth middleware error:', error.message);
-    console.error('❌ Token received:', token ? token.substring(0, 50) : 'No token');
     
-    // Xử lý chi tiết các loại lỗi
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({
         success: false,
@@ -111,4 +108,68 @@ const isStudent = async (req, res, next) => {
   next();
 };
 
-module.exports = { protect, isAdmin, isStudent };
+// Middleware kiểm tra quyền admin hoặc student (cho phép cả 2)
+const isAdminOrStudent = async (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Chưa xác thực người dùng'
+    });
+  }
+
+  if (req.user.role !== 'admin' && req.user.role !== 'student') {
+    return res.status(403).json({
+      success: false,
+      message: 'Bạn không có quyền truy cập chức năng này'
+    });
+  }
+
+  next();
+};
+
+// Middleware kiểm tra quyền truy cập tài nguyên
+const checkOwnership = (model) => {
+  return async (req, res, next) => {
+    try {
+      const resource = await model.findById(req.params.id);
+      
+      if (!resource) {
+        return res.status(404).json({
+          success: false,
+          message: 'Không tìm thấy tài nguyên'
+        });
+      }
+
+      // Nếu là admin, cho phép truy cập
+      if (req.user.role === 'admin') {
+        req.resource = resource;
+        return next();
+      }
+
+      // Kiểm tra sở hữu
+      if (resource.userId && resource.userId.toString() === req.user.id) {
+        req.resource = resource;
+        return next();
+      }
+
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền truy cập tài nguyên này'
+      });
+    } catch (error) {
+      console.error('Check ownership error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Lỗi server'
+      });
+    }
+  };
+};
+
+module.exports = { 
+  protect, 
+  isAdmin, 
+  isStudent, 
+  isAdminOrStudent,
+  checkOwnership 
+};

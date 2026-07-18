@@ -8,6 +8,7 @@ const fs = require('fs');
 dotenv.config();
 
 const authRoutes = require('./routes/authRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const facultyRoutes = require('./routes/facultyRoutes');
 const departmentRoutes = require('./routes/departmentRoutes');
 const courseRoutes = require('./routes/courses');
@@ -15,13 +16,13 @@ const attendanceRoutes = require('./routes/attendanceRoutes');
 const updateRequestRoutes = require('./routes/updateRequestRoutes');
 const studentRoutes = require('./routes/studentRoutes');
 const scheduleRoutes = require('./routes/scheduleRoutes');
-
 const newsRoutes = require("./routes/newsRoutes");
 const feedbackRoutes = require('./routes/feedbackRoutes');
 const curriculumRoutes = require('./routes/curriculumRoutes'); 
-
-
 const gradeRoutes = require('./routes/gradeRoutes');
+
+// Import middleware
+const { protect } = require('./middleware/authMiddleware');
 
 const app = express();
 
@@ -45,33 +46,15 @@ app.use(express.urlencoded({ extended: true }));
 // ✅ Serve static files (cho avatar)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Logging middleware
 app.use((req, res, next) => {
   console.log(`📡 ${req.method} ${req.url}`);
   next();
 });
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/faculties', facultyRoutes);
-app.use('/api/departments', departmentRoutes);
-app.use('/api/courses', courseRoutes);
-app.use('/api/attendance', attendanceRoutes);
-app.use('/api', updateRequestRoutes);
-app.use('/api', studentRoutes);
-app.use('/api/schedules', scheduleRoutes);
-
-app.use("/api/news", newsRoutes);
-app.use('/api/feedback', feedbackRoutes);
-app.use('/api/curriculum', curriculumRoutes);
-
-
- 
-
-
-// Gắn vào đường dẫn /api/grades
-app.use('/api/grades', gradeRoutes);
-
-// Test
+// ============================================
+// ✅ CÁC ROUTE PUBLIC (Không cần auth)
+// ============================================
 app.get('/api/test', (req, res) => {
   res.json({
     success: true,
@@ -79,7 +62,39 @@ app.get('/api/test', (req, res) => {
   });
 });
 
+// ============================================
+// ✅ ROUTES - Mỗi route tự quản lý auth riêng
+// ============================================
+
+// Auth routes (có route public login)
+app.use('/api/auth', authRoutes);
+
+// Admin management (yêu cầu admin)
+app.use('/api/admin', adminRoutes);
+
+// Faculty, Department (có thể yêu cầu auth tùy theo route)
+app.use('/api/faculties', facultyRoutes);
+app.use('/api/departments', departmentRoutes);
+
+// Các routes khác
+app.use('/api/courses', courseRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api', updateRequestRoutes);
+app.use('/api', studentRoutes);
+app.use('/api/schedules', scheduleRoutes);
+app.use("/api/news", newsRoutes);
+app.use('/api/feedback', feedbackRoutes);
+app.use('/api/curriculum', curriculumRoutes);
+app.use('/api/grades', gradeRoutes);
+
+// ============================================
+// ❌ XÓA middleware auth global này
+// ============================================
+// app.use(async (req, res, next) => { ... }); // ĐÃ XÓA
+
+// ============================================
 // ✅ Error handling middleware
+// ============================================
 app.use((err, req, res, next) => {
   console.error('❌ Error:', err.message);
   res.status(err.status || 500).json({
@@ -88,7 +103,9 @@ app.use((err, req, res, next) => {
   });
 });
 
+// ============================================
 // CONNECT DB → START SERVER
+// ============================================
 async function startServer() {
   try {
     console.log('⏳ Connecting MongoDB...');
@@ -102,6 +119,7 @@ async function startServer() {
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📁 Uploads directory: ${uploadDir}`);
+      console.log(`📋 Environment: ${process.env.NODE_ENV || 'development'}`);
     });
 
   } catch (err) {

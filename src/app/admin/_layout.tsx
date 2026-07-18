@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 export default function AdminLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="admin-management" options={{ title: 'Admin' }} />
       <Stack.Screen name="dashboard" options={{ title: 'Admin Dashboard' }} />
       <Stack.Screen name="create-student" options={{ title: 'Tạo tài khoản sinh viên' }} />
       <Stack.Screen name="student-management" options={{ title: 'Danh sách tài khoản sinh viên' }} />

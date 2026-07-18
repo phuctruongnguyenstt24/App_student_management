@@ -9,7 +9,6 @@ const getAuthHeaders = async (): Promise<Record<string, string>> => {
   try {
     const token = await AsyncStorage.getItem('userToken');
 
-    // Nếu có token → gửi Authorization
     if (token) {
       return {
         'Content-Type': 'application/json',
@@ -17,7 +16,6 @@ const getAuthHeaders = async (): Promise<Record<string, string>> => {
       };
     }
 
-    // Không có token → chỉ gửi Content-Type
     return {
       'Content-Type': 'application/json'
     };
@@ -32,55 +30,63 @@ const getAuthHeaders = async (): Promise<Record<string, string>> => {
  * 👉 Tự động lấy API URL tùy theo môi trường
  */
 export const getApiUrl = (): string => {
-
-  // 🌐 Nếu chạy WEB
+  // 🌐 WEB
   if (Platform.OS === 'web') {
     if (typeof window !== 'undefined') {
       const hostname = window?.location?.hostname || 'localhost';
-
-      // Nếu deploy server thật → dùng hostname
       if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
         return `http://${hostname}:5000/api`;
       }
-
-      // Local
       return `http://localhost:5000/api`;
     }
-
     return 'http://localhost:5000/api';
   }
 
-  // 📱 Nếu chạy trên Expo (lấy IP máy dev)
+  // 📱 EXPO GO - Cách 1: Lấy từ expoConfig
   try {
     const hostUri = Constants.expoConfig?.hostUri;
+    console.log('[DEBUG] hostUri từ expoConfig:', hostUri);
+    
     if (hostUri) {
       const ip = hostUri.split(':')[0];
-
-      // Nếu là IP hợp lệ → dùng
+      console.log('[DEBUG] IP từ expoConfig:', ip);
+      
       if (ip && ip.match(/^(\d{1,3}\.){3}\d{1,3}$/)) {
-        return `http://${ip}:5000/api`;
-      }
-    }
-  } catch (error) { }
-
-  // 🔁 Fallback cách 2 (Expo cũ)
-  try {
-    const manifest = Constants.manifest || Constants.__unsafeNoWarnManifest;
-    if (manifest?.hostUri) {
-      const ip = manifest.hostUri.split(':')[0];
-
-      if (ip && ip.match(/^(\d{1,3}\.){3}\d{1,3}$/)) {
-        return `http://${ip}:5000/api`;
+        const url = `http://${ip}:5000/api`;
+        console.log('[DEBUG] URL từ expoConfig:', url);
+        return url;
       }
     }
   } catch (error) {
-    console.warn('Không thể lấy IP từ manifest:', error);
+    console.error('[DEBUG] Lỗi lấy hostUri từ expoConfig:', error);
   }
 
-  
-  // IP mặc định (thay bằng IP của máy tính bạn)
-  return 'http://172.16.51.134/api';
+  // 📱 EXPO GO - Cách 2: Lấy từ manifest (Expo cũ)
+  try {
+    const manifest = Constants.manifest || Constants.__unsafeNoWarnManifest;
+    console.log('[DEBUG] manifest:', manifest);
+    
+    if (manifest?.hostUri) {
+      const ip = manifest.hostUri.split(':')[0];
+      console.log('[DEBUG] IP từ manifest:', ip);
+      
+      if (ip && ip.match(/^(\d{1,3}\.){3}\d{1,3}$/)) {
+        const url = `http://${ip}:5000/api`;
+        console.log('[DEBUG] URL từ manifest:', url);
+        return url;
+      }
+    }
+  } catch (error) {
+    console.error('[DEBUG] Lỗi lấy manifest:', error);
+  }
 
+  // ⚠️ IP MẶC ĐỊNH - Cập nhật IP hiện tại của máy tính bạn
+  // Cách tìm IP: 
+  // - Windows: cmd -> ipconfig -> tìm IPv4
+  // - Mac/Linux: ifconfig | grep inet
+  const defaultIp = '192.168.1.100'; // 👈 THAY BẰNG IP CỦA BẠN
+  console.log('[DEBUG] Dùng IP mặc định:', defaultIp);
+  return `http://${defaultIp}:5000/api`;
 };
 
 /**
@@ -90,8 +96,6 @@ export const API_URL = getApiUrl();
 
 // Debug xem đang dùng URL nào
 console.log('[API] Using API_URL:', API_URL);
-
-
 
 // ================= API CALL =================
 
@@ -189,7 +193,6 @@ export const fetchAllCourses = async () => {
  */
 export const fetchCurriculums = async () => {
   try {
-    // ⚠️ phải dùng đúng key userToken
     const token = await AsyncStorage.getItem("userToken");
 
     const response = await fetch(`${API_URL}/curriculum`, {
@@ -200,13 +203,11 @@ export const fetchCurriculums = async () => {
       }
     });
 
-    // Nếu server lỗi → không parse JSON (tránh lỗi dấu <)
     if (!response.ok) {
       throw new Error(`Lỗi Server: ${response.status}`);
     }
 
     const data = await response.json();
-
     return { success: true, data };
 
   } catch (error: any) {
