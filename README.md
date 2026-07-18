@@ -78,3 +78,12 @@ npm run android
 
 # chỉnh ẩn hiện icon đường dẫn footer trong file _layout.tsx
 options={{href: null,}} ==> để ẩn tab đó đi
+
+# api.ts
+Trong hàm getApiUrl dòng return cuối cùng:
+// 🏭 App thật (release build) — không có Expo dev server
+// ⚠️ Thay bằng IP/domain thật của server backend (phải có port :5000)
+// kiểm tra bằng lệnh ipconfig và thấy IP WiFi hiện tại của bạn Ip cục wifi Của hưng => 'http://172.16.51.134:5000/api';
+return 'http://192.168.1.100:5000/api';
+
+==> Nên Chạy ipconfig trong cmd sẽ thấy IP WiFi hiện tại của bạn Ip cục wifi mà bạn đang kết nối...

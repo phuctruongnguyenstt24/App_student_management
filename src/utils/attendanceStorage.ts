@@ -64,7 +64,7 @@ export const getAttendanceSessions = async (): Promise<AttendanceSession[]> => {
       if (res.ok) {
         const json = await res.json();
         if (json.success) {
-          const sessions = (json.data || []).map(mapServerSession);
+          const sessions: AttendanceSession[] = (json.data || []).map(mapServerSession);
           console.log(`[Attendance] Fetched ${sessions.length} sessions from server (active: ${sessions.filter((s) => s.status === 'active').length})`);
           // Đồng bộ cache cục bộ
           await AsyncStorage.setItem(ATTENDANCE_SESSIONS_KEY, JSON.stringify(sessions));

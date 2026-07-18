@@ -30,6 +30,9 @@ const getAuthHeaders = async (): Promise<Record<string, string>> => {
 
 /**
  * 👉 Tự động lấy API URL tùy theo môi trường
+ *
+ * - Expo Go (dev):   lấy IP máy tính từ hostUri → http://<IP>:5000/api
+ * - App thật (release): không có hostUri → dùng IP/domain cố định bên dưới
  */
 export const getApiUrl = (): string => {
 
@@ -50,7 +53,7 @@ export const getApiUrl = (): string => {
     return 'http://localhost:5000/api';
   }
 
-  // 📱 Nếu chạy trên Expo (lấy IP máy dev)
+  // 📱 Nếu chạy trên Expo Go (dev server) → lấy IP máy tính tự động
   try {
     const hostUri = Constants.expoConfig?.hostUri;
     if (hostUri) {
@@ -63,7 +66,7 @@ export const getApiUrl = (): string => {
     }
   } catch (error) { }
 
-  // 🔁 Fallback cách 2 (Expo cũ)
+  // 🔁 Fallback cách 2 (Expo SDK cũ)
   try {
     const manifest = Constants.manifest || Constants.__unsafeNoWarnManifest;
     if (manifest?.hostUri) {
@@ -77,9 +80,10 @@ export const getApiUrl = (): string => {
     console.warn('Không thể lấy IP từ manifest:', error);
   }
 
-  
-  // IP mặc định (thay bằng IP của máy tính bạn)
-  return 'http://172.16.51.134/api';
+  // 🏭 App thật (release build) — không có Expo dev server
+  // ⚠️ Thay bằng IP/domain thật của server backend (phải có port :5000)
+  //  kiểm tra bằng lệnh ipconfig và thấy IP WiFi hiện tại của bạn
+  return 'http://192.168.1.100:5000/api';
 
 };
 

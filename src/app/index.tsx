@@ -1,12 +1,9 @@
 import * as Device from 'expo-device';
 import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { HintRow } from '@/components/hint-row';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { Redirect } from "expo-router";
 
 function getDevMenuHint() {
   if (Platform.OS === 'web') {
@@ -27,46 +24,10 @@ function getDevMenuHint() {
   );
 }
 
+//Tự động Redirect sang trang login khi vào HomeScreen() mặc định của app
 export default function HomeScreen() {
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          
-          <ThemedText type="title" style={styles.title}>
-            STUDENT LEARNING MANAGEMENT SYSTEM
-          </ThemedText>
-          <ThemedText type="subtitle" style={styles.subtitle}>
-            Manage courses, track progress, and achieve your academic goals
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="📚 My Courses"
-            hint={<ThemedText type="code">View enrolled courses</ThemedText>}
-          />
-          <HintRow 
-            title="📊 Progress" 
-            hint={<ThemedText type="code">Track learning analytics</ThemedText>} 
-          />
-          <HintRow
-            title="📝 Assignments"
-            hint={<ThemedText type="code">Upcoming deadlines</ThemedText>}
-          />
-          <HintRow
-            title="🎯 Goals"
-            hint={<ThemedText type="code">Set learning objectives</ThemedText>}
-          />
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          Dashboard Overview
-        </ThemedText>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+    <Redirect href="../login" />
   );
 }
 
