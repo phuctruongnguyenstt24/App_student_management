@@ -37,7 +37,6 @@ export default function AdminTrainingPointsScreen() {
       });
       
       const text = await response.text();
-      // console.log("📦 Dữ liệu thô từ /curriculum:", text);
 
       let data;
       try {

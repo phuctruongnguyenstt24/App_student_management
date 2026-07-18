@@ -48,7 +48,7 @@ export default function ProfileScreen() {
             id: 3,
             icon: "document-text-outline",
             title: "Điều khoản và chính sách sử dụng",
-           onPress: () => router.push("/tabs/screens-for-profile/TermsScreen"),
+            onPress: () => router.push("/tabs/screens-for-profile/TermsScreen"),
         },
         {
             id: 4,
@@ -286,17 +286,7 @@ export default function ProfileScreen() {
                                 style={styles.avatar}
                             />
                         </View>
-                        <TouchableOpacity
-                            style={styles.editButton}
-                            onPress={pickImage}
-                            disabled={isUploading}
-                        >
-                            {isUploading ? (
-                                <ActivityIndicator size="small" color="#fff" />
-                            ) : (
-                                <Ionicons name="camera-outline" size={20} color="#fff" />
-                            )}
-                        </TouchableOpacity>
+
                     </View>
 
                     <Text style={styles.studentName}>{studentName}</Text>

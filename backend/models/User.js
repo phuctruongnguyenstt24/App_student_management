@@ -24,8 +24,8 @@ const userSchema = new mongoose.Schema({
     sparse: true,
     trim: true,
     uppercase: true,
-    match: [/^[A-Z0-9]{5,20}$/, 'Mã số sinh viên không hợp lệ'],
-    default: null
+    match: [/^[A-Z0-9]{5,20}$/, 'Mã số sinh viên không hợp lệ']
+     
   },
   facultyId: {
     type: mongoose.Schema.Types.ObjectId,

@@ -303,7 +303,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#0B66D6",
     borderRadius: 8,
     paddingHorizontal: 18,
-    paddingVertical: 10,
+    paddingVertical: 24,
+    marginLeft:10,
+  
   },
 
   buttonDisabled: {

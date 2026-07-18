@@ -1,6 +1,6 @@
 // src/contexts/AuthContext.tsx
-import { API_URL } from '@/config/api'; //Import hàm gọi API tới backend. 
-import AsyncStorage from '@react-native-async-storage/async-storage'; //AsyncStorage: Dùng để lưu dữ liệu vào bộ nhớ điện thoại. ==> Khi tắt app mở lại vẫn còn.
+import { API_URL } from '@/config/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 // Cập nhật interface User với đầy đủ các trường từ CSDL
@@ -88,7 +88,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  isLoading: boolean; // Thêm isLoading vào interface
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
@@ -100,23 +100,78 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true); // Thêm state isLoading
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Hàm lấy thông tin user đầy đủ từ API
+  // Hàm lấy thông tin user đầy đủ từ API - FIXED
   const fetchFullUserProfile = async (userId: string): Promise<User | null> => {
     try {
       const token = await AsyncStorage.getItem('token');
-      const response = await fetch(`${API_URL}/users/${userId}/profile`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        return data.user || data;
+      if (!token) {
+        console.warn('No token available for profile fetch');
+        return null;
       }
-      return null;
+
+      // Try the correct endpoint - OPTION 1: /users/profile (uses token)
+      try {
+        const response = await fetch(`${API_URL}/users/profile`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ Profile fetched successfully via /users/profile');
+          return data.user || data;
+        }
+      } catch (error) {
+        console.warn('Fetch via /users/profile failed:', error);
+      }
+
+      // OPTION 2: Try /users/:id (without /profile)
+      try {
+        const response = await fetch(`${API_URL}/users/${userId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ Profile fetched successfully via /users/:id');
+          return data.user || data;
+        }
+      } catch (error) {
+        console.warn('Fetch via /users/:id failed:', error);
+      }
+
+      // OPTION 3: Try the original endpoint but handle 404 gracefully
+      try {
+        const response = await fetch(`${API_URL}/users/${userId}/profile`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ Profile fetched successfully via /users/:id/profile');
+          return data.user || data;
+        } else if (response.status === 404) {
+          // Profile not found - this is fine for admin users
+          console.log('ℹ️ Profile not found for user (this is normal for admins)');
+          return null;
+        } else {
+          console.warn(`Profile fetch failed with status: ${response.status}`);
+          return null;
+        }
+      } catch (error) {
+        console.warn('Fetch via /users/:id/profile failed:', error);
+        return null;
+      }
     } catch (error) {
       console.warn('Fetch full profile failed:', error);
       return null;
@@ -126,26 +181,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const loadUser = async () => {
       try {
-        setIsLoading(true); // Bắt đầu loading
+        setIsLoading(true);
         const savedUser = await AsyncStorage.getItem('user');
+        const savedToken = await AsyncStorage.getItem('token');
+        
+        if (savedToken) {
+          setToken(savedToken);
+        }
+        
         if (savedUser) {
           const parsedUser = JSON.parse(savedUser);
           setUser(parsedUser);
           
-          // Nếu có userId, lấy thông tin đầy đủ
-          if (parsedUser.id || parsedUser._id) {
+          // Only fetch full profile if user is NOT an admin
+          // or if we have a valid userId
+          if (parsedUser.role !== 'admin' && (parsedUser.id || parsedUser._id)) {
             const userId = parsedUser.id || parsedUser._id;
             const fullProfile = await fetchFullUserProfile(userId);
             if (fullProfile) {
               setUser(fullProfile);
               await AsyncStorage.setItem('user', JSON.stringify(fullProfile));
             }
+          } else if (parsedUser.role === 'admin') {
+            console.log('ℹ️ Admin user - skipping profile fetch');
           }
         }
       } catch (error) {
         console.warn('Auth load user failed:', error);
       } finally {
-        setIsLoading(false); // Kết thúc loading
+        setIsLoading(false);
       }
     };
 
@@ -154,7 +218,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string): Promise<User> => {
     try {
-      setIsLoading(true); // Bắt đầu loading khi login
+      setIsLoading(true);
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: {
@@ -171,34 +235,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       let loggedUser: User = data.user;
       
-      // Lấy thông tin đầy đủ của user
-      if (loggedUser.id || loggedUser._id) {
+      // Store token first
+      if (data.token) {
+        await AsyncStorage.setItem('token', data.token);
+        setToken(data.token);
+      }
+      
+      // Only fetch full profile for non-admin users
+      if (loggedUser.role !== 'admin' && (loggedUser.id || loggedUser._id)) {
         const userId = loggedUser.id || loggedUser._id;
         const fullProfile = await fetchFullUserProfile(userId);
         if (fullProfile) {
           loggedUser = { ...loggedUser, ...fullProfile };
         }
+      } else if (loggedUser.role === 'admin') {
+        console.log('ℹ️ Admin user logged in - skipping profile fetch');
       }
       
       await AsyncStorage.setItem('user', JSON.stringify(loggedUser));
-      if (data.token) {
-        await AsyncStorage.setItem('token', data.token);
-      }
       setUser(loggedUser);
       return loggedUser;
     } finally {
-      setIsLoading(false); // Kết thúc loading
+      setIsLoading(false);
     }
   };
 
   const logout = async () => {
     try {
-      setIsLoading(true); // Bắt đầu loading khi logout
+      setIsLoading(true);
       setUser(null);
+      setToken(null);
       await AsyncStorage.removeItem('user');
       await AsyncStorage.removeItem('token');
     } finally {
-      setIsLoading(false); // Kết thúc loading
+      setIsLoading(false);
     }
   };
 
@@ -214,9 +284,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Hàm refresh để lấy lại thông tin user mới nhất
   const refreshUser = async () => {
-    if (user && (user.id || user._id)) {
+    if (!user) return;
+    
+    // Skip refresh for admin users
+    if (user.role === 'admin') {
+      console.log('ℹ️ Admin user - skipping refresh');
+      return;
+    }
+    
+    if (user.id || user._id) {
       try {
-        setIsLoading(true); // Bắt đầu loading khi refresh
+        setIsLoading(true);
         const userId = user.id || user._id;
         const fullProfile = await fetchFullUserProfile(userId);
         if (fullProfile) {
@@ -224,7 +302,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await AsyncStorage.setItem('user', JSON.stringify(fullProfile));
         }
       } finally {
-        setIsLoading(false); // Kết thúc loading
+        setIsLoading(false);
       }
     }
   };
@@ -243,3 +321,12 @@ export function useAuth() {
   }
   return context;
 }
+
+export const getAuthToken = async () => {
+  try {
+    return await AsyncStorage.getItem('token');
+  } catch (error) {
+    console.error('Error getting token:', error);
+    return null;
+  }
+};

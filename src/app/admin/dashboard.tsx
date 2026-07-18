@@ -108,6 +108,19 @@ export default function AdminDashboard() {
           </View>
 
           <View style={styles.menuGrid}>
+
+
+               <TouchableOpacity
+              style={styles.menuCard}
+              onPress={() => router.push('/admin/admin-management')}
+            >
+              <View style={styles.menuIconWrapper}>
+                <Ionicons name="person-add-outline" size={32} color="#2fba42" />
+              </View>
+              <Text style={styles.menuTitle}>Quản lí tài khoản Admin</Text>
+              <Text style={styles.menuDesc}>Tạo tài khoản Admin</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.menuCard}
               onPress={() => router.push('/admin/create-student')}
