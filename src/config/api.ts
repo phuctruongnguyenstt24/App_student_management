@@ -79,7 +79,7 @@ export const getApiUrl = (): string => {
 
   
   // IP mặc định (thay bằng IP của máy tính bạn)
-  return 'http://172.16.51.134/api';
+  return 'http://192.168.1.7:5000/api';  
 
 };
 

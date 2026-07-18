@@ -180,7 +180,7 @@ export default function AdminDashboard() {
               <View style={styles.menuIconWrapper}>
                 <Ionicons name="library-outline" size={32} color="#16d6e0" />
               </View>
-              <Text style={styles.menuTitle}>Quản lý Chương trình khung</Text>
+              <Text style={styles.menuTitle}>Quản lý chương trình khung</Text>
               <Text style={styles.menuDesc}>Chương trình khung</Text>
             </TouchableOpacity>
 

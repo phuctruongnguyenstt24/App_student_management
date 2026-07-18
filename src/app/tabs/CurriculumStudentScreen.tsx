@@ -38,6 +38,8 @@ interface Semester {
   totalCredits?: number;
 }
 
+
+
 const CurriculumStudentScreen = () => {
   const { user } = useAuth();
   const [semesters, setSemesters] = useState<Semester[]>([]);
