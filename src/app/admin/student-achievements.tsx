@@ -10,16 +10,11 @@ export default function StudentAchievements() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [submittingId, setSubmittingId] = useState<string | null>(null);
-    const [modalVisible, setModalVisible] = useState(false); // Modal nhập điểm
+    const [modalVisible, setModalVisible] = useState(false);
 
-    // ==========================================
-    // 1. STATE DỮ LIỆU GỐC & LỌC 6 CẤP BẬC
-    // ==========================================
     const [allRawStudents, setAllRawStudents] = useState<any[]>([]);
-
     const [faculties, setFaculties] = useState<any[]>([]);
     const [selectedFaculty, setSelectedFaculty] = useState<any>(null);
-
     const [departments, setDepartments] = useState<any[]>([]);
     const [selectedDepartment, setSelectedDepartment] = useState<any>(null);
 
@@ -32,20 +27,13 @@ export default function StudentAchievements() {
     const [selectedCourse, setSelectedCourse] = useState<any>(null);
     const [selectedClass, setSelectedClass] = useState<string | null>(null);
 
-    // State quản lý Modal chung cho tất cả Dropdown
     const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
-    // ==========================================
-    // 2. STATE HIỂN THỊ SINH VIÊN & NHẬP ĐIỂM
-    // ==========================================
     const [studentsData, setStudentsData] = useState<any[]>([]);
     const [selectedStudent, setSelectedStudent] = useState<any>(null);
     const [midtermScore, setMidtermScore] = useState('');
     const [finalScore, setFinalScore] = useState('');
 
-    // ==========================================
-    // 3. LIFECYCLE & API FETCHING
-    // ==========================================
     useEffect(() => {
         loadInitialData();
     }, []);
@@ -58,7 +46,7 @@ export default function StudentAchievements() {
 
             const [facultiesRes, studentsRes, curriculumRes] = await Promise.all([
                 fetch(`${API_URL}/faculties`, { headers: { Authorization: `Bearer ${token}` } }),
-                fetch(`${API_URL}/students/all`, { headers: { Authorization: `Bearer ${token}` } }), // Dùng API students/all giống file mẫu
+                fetch(`${API_URL}/students/all`, { headers: { Authorization: `Bearer ${token}` } }),
                 fetch(`${API_URL}/curriculum`, { headers: { Authorization: `Bearer ${token}` } })
             ]);
 
@@ -69,7 +57,6 @@ export default function StudentAchievements() {
             if (facData.success) setFaculties(facData.faculties || []);
             if (stdData.success) setAllRawStudents(stdData.students || []);
 
-            // Xử lý data curriculum
             let semesterList = [];
             if (Array.isArray(curData)) semesterList = curData;
             else if (curData && Array.isArray(curData.data)) semesterList = curData.data;
@@ -77,7 +64,6 @@ export default function StudentAchievements() {
             if (semesterList.length > 0) {
                 setCurriculumList(semesterList.sort((a: any, b: any) => a.semesterNumber - b.semesterNumber));
             }
-
         } catch (error) {
             Alert.alert("Lỗi", "Không thể tải dữ liệu nền.");
         } finally {
@@ -102,7 +88,6 @@ export default function StudentAchievements() {
         fetchDepartments();
     }, [selectedFaculty]);
 
-    // LẤY LỚP HỌC (ĐÃ FIX LỖI): Lấy tự động từ danh sách Sinh viên thuộc Ngành
     const availableClasses = useMemo(() => {
         if (!selectedDepartment) return [];
         const baseStudents = allRawStudents.filter(s => s.departmentId === selectedDepartment._id);
@@ -110,7 +95,6 @@ export default function StudentAchievements() {
         return Array.from(classSet).sort();
     }, [allRawStudents, selectedDepartment]);
 
-    // Khi ĐỦ 6 BỘ LỌC -> Lấy điểm từ API
     useEffect(() => {
         if (selectedFaculty && selectedDepartment && selectedYear && selectedSemester && selectedCourse && selectedClass) {
             loadGradesAndMerge();
@@ -120,7 +104,7 @@ export default function StudentAchievements() {
     }, [selectedFaculty, selectedDepartment, selectedYear, selectedSemester, selectedCourse, selectedClass, allRawStudents]);
 
     // ==========================================
-    // 4. LOGIC XỬ LÝ DỮ LIỆU ĐIỂM
+    // TRỘN ĐIỂM CỰC MẠNH (Đã nâng cấp)
     // ==========================================
     const loadGradesAndMerge = async () => {
         setLoading(true);
@@ -142,9 +126,10 @@ export default function StudentAchievements() {
             const rawGrades = gradesResult.success ? (gradesResult.data || []) : [];
 
             const processedStudents = targetStudents.map((student: any) => {
+                // So khớp đa điều kiện để không bao giờ miss điểm
                 const foundGrade = rawGrades.find((g: any) =>
-                    g.student?.studentId === student.studentId &&
-                    (g.course?.courseCode === selectedCourse.code || g.course?.courseCode === selectedCourse.courseCode)
+                    (g.student?.studentId === student.studentId || g.student?._id === student._id) &&
+                    (g.course?.courseCode === selectedCourse.code || g.course?.code === selectedCourse.code || g.courseCode === selectedCourse.code)
                 );
 
                 if (foundGrade) return { ...foundGrade, student: student };
@@ -167,7 +152,7 @@ export default function StudentAchievements() {
     };
 
     // ==========================================
-    // 5. LƯU ĐIỂM XUỐNG BACKEND
+    // 5. LƯU ĐIỂM (Đã nâng cấp Fix UI Tức thì)
     // ==========================================
     const handleSaveGrade = async () => {
         if (!selectedStudent || !selectedCourse || !selectedSemester || !selectedYear) return;
@@ -181,41 +166,61 @@ export default function StudentAchievements() {
             return;
         }
 
+        const finalCourseCode = (selectedCourse.code || selectedCourse.courseCode || selectedCourse._id || '').toString().trim();
+
+        // 🛑 CHỐT CHẶN: Chặn mã môn ảo tự sinh (M17...)
+        if (finalCourseCode.startsWith('M1') && finalCourseCode.length > 10) {
+            Alert.alert(
+                "Lỗi Mã Môn Học",
+                "Môn học này đang sử dụng mã tạm thời. Vui lòng vào mục 'Chương trình khung' bấm 'Đồng bộ' môn học chuẩn trước khi nhập điểm."
+            );
+            return;
+        }
+
         try {
             setSubmittingId(selectedStudent.studentId);
             const token = await AsyncStorage.getItem('token');
             const semesterCode = `HK${selectedSemester.semesterNumber}-${selectedYear}`;
 
+            const payload = {
+                studentCode: selectedStudent.studentId,
+                courseCode: finalCourseCode,
+                semester: semesterCode,
+                midtermScore: mScore,
+                finalScore: fScore
+            };
+
+            // 👉 CẬP NHẬT GIAO DIỆN NGAY LẬP TỨC (Optimistic UI)
+            setStudentsData(prevData => prevData.map(item => {
+                if (item.student?.studentId === selectedStudent.studentId) {
+                    return { ...item, midtermScore: mScore, finalScore: fScore };
+                }
+                return item;
+            }));
+
             const res = await fetch(`${API_URL}/grades/admin`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                body: JSON.stringify({
-                    studentCode: selectedStudent.studentId,
-                    courseCode: selectedCourse.code || selectedCourse.courseCode,
-                    semester: semesterCode,
-                    midtermScore: mScore,
-                    finalScore: fScore
-                })
+                body: JSON.stringify(payload)
             });
             const result = await res.json();
 
-            if (result.success) {
+            if (result.success || res.ok) {
                 Alert.alert("Thành công", `Đã lưu điểm cho ${selectedStudent.fullName}!`);
                 setModalVisible(false);
-                loadGradesAndMerge(); // Refresh lại danh sách điểm
+                // Không cần gọi loadGradesAndMerge() ở đây nữa vì UI đã cập nhật ngay ở trên rồi
             } else {
-                Alert.alert("Lỗi Backend", result.message);
+                Alert.alert("Lỗi Backend", result.message || "Không tìm thấy mã môn học");
+                loadGradesAndMerge(); // Nếu lỗi thì load lại điểm cũ để undo cái cập nhật ảo ở trên
             }
         } catch (error) {
-            Alert.alert("Lỗi", "Không thể lưu điểm");
+            Alert.alert("Lỗi", "Không thể lưu điểm. Vui lòng kiểm tra mạng.");
+            loadGradesAndMerge(); // Phục hồi lại dữ liệu cũ nếu rớt mạng
         } finally {
             setSubmittingId(null);
         }
     };
 
-    // ==========================================
-    // 6. RENDER MODAL CHỌN LỌC CHUNG
-    // ==========================================
     const renderFilterModal = () => {
         let data: any[] = [];
         let title = '';
@@ -457,9 +462,7 @@ export default function StudentAchievements() {
     );
 }
 
-// ==========================================
-// CSS STYLES TOÀN TẬP
-// ==========================================
+
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#f4f6f9' },
     header: { flexDirection: 'row', justifyContent: 'space-between', padding: 16, backgroundColor: '#fff', alignItems: 'center', elevation: 2 },
