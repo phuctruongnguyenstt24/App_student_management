@@ -81,10 +81,8 @@ export const getApiUrl = (): string => {
   }
 
   // ⚠️ IP MẶC ĐỊNH - Cập nhật IP hiện tại của máy tính bạn
-  // Cách tìm IP: 
-  // - Windows: cmd -> ipconfig -> tìm IPv4
-  // - Mac/Linux: ifconfig | grep inet
-  const defaultIp = '192.168.1.100'; // 👈 THAY BẰNG IP CỦA BẠN
+  // Đã giữ lại IP 192.168.1.7 từ nhánh local của bạn
+  const defaultIp = '192.168.1.7'; 
   console.log('[DEBUG] Dùng IP mặc định:', defaultIp);
   return `http://${defaultIp}:5000/api`;
 };

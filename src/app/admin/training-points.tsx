@@ -37,6 +37,7 @@ export default function AdminTrainingPointsScreen() {
       });
       
       const text = await response.text();
+
       let data;
       try {
         data = JSON.parse(text);
@@ -65,7 +66,7 @@ export default function AdminTrainingPointsScreen() {
     }
   };
 
- // 1.5. GỌI API LẤY DANH SÁCH KHOA
+  // 1.5. GỌI API LẤY DANH SÁCH KHOA
   const fetchFaculties = async () => {
     try {
       const token = await AsyncStorage.getItem('token');

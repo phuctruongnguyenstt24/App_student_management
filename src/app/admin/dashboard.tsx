@@ -112,7 +112,7 @@ export default function AdminDashboard() {
 
                <TouchableOpacity
               style={styles.menuCard}
-              onPress={() => router.push('/admin/admin-management')}
+              onPress={() => router.push('/admin/admin-management' as any)}
             >
               <View style={styles.menuIconWrapper}>
                 <Ionicons name="person-add-outline" size={32} color="#2fba42" />

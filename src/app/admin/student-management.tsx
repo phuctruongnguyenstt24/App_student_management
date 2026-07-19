@@ -162,6 +162,9 @@ export default function StudentManagementScreen() {
         return uniqueClasses.sort();
     }, [students, selectedFacultyFilter]);
 
+    // Kiểm tra xem người dùng có đang tìm kiếm tự do ở màn hình chính không
+    const isSearchingGlobal = selectedClass === 'All' && searchQuery.trim() !== '';
+
     const loadData = async () => {
         setIsLoading(true);
         try {
@@ -274,22 +277,37 @@ export default function StudentManagementScreen() {
     };
 
     const filterData = () => {
-        let result = students;
+        // Đảm bảo result luôn là mảng an toàn
+        let result = students || [];
 
+        // 1. Lọc theo lớp nếu đang chọn một lớp cụ thể
         if (selectedClass !== 'All') {
             result = result.filter((student) => student.class === selectedClass);
         }
 
+        // 2. Lọc theo từ khóa tìm kiếm (Tên, MSSV, Email)
         if (searchQuery.trim() !== '') {
-            const query = searchQuery.toLowerCase();
-            result = result.filter(
-                (student) =>
-                    student.fullName.toLowerCase().includes(query) ||
-                    student.studentId.toLowerCase().includes(query) ||
-                    student.email.toLowerCase().includes(query)
-            );
+            // Hàm hỗ trợ loại bỏ dấu tiếng Việt để tìm kiếm dễ dàng hơn
+            const removeVietnameseTones = (str: string) => {
+                return str
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/đ/g, 'd').replace(/Đ/g, 'D');
+            };
+
+            const query = removeVietnameseTones(searchQuery.toLowerCase().trim());
+            
+            result = result.filter((student) => {
+                // Ép kiểu String() an toàn cho mọi trường dữ liệu trước khi xử lý
+                const name = removeVietnameseTones(String(student.fullName || '').toLowerCase());
+                const id = removeVietnameseTones(String(student.studentId || '').toLowerCase());
+                const email = removeVietnameseTones(String(student.email || '').toLowerCase());
+                
+                return name.includes(query) || id.includes(query) || email.includes(query);
+            });
         }
 
+        // Cập nhật lại danh sách hiển thị[cite: 2]
         setFilteredStudents(result);
     };
 
@@ -504,8 +522,11 @@ export default function StudentManagementScreen() {
             {/* Thống kê */}
             <View style={styles.statsContainer}>
                 <TouchableOpacity 
-                    style={[styles.statCard, selectedClass === 'All' && { borderColor: '#007AFF', borderWidth: 1 }]}
-                    onPress={() => setSelectedClass('All')}
+                    style={[styles.statCard, selectedClass === 'All' && searchQuery.trim() === '' && { borderColor: '#007AFF', borderWidth: 1 }]}
+                    onPress={() => {
+                        setSelectedClass('All');
+                        setSearchQuery('');
+                    }}
                 >
                     <Text style={styles.statNumber}>{students.length}</Text>
                     <Text style={styles.statLabel}>Tổng SV</Text>
@@ -536,17 +557,17 @@ export default function StudentManagementScreen() {
                 </TouchableOpacity>
             </View>
 
-            {/* Search */}
+            {/* Search - Thay đổi gợi ý nhập liệu cho rõ ràng */}
             <Searchbar
-                placeholder={selectedClass === 'All' ? "Tìm kiếm..." : `Tìm sinh viên lớp ${selectedClass}...`}
+                placeholder={selectedClass === 'All' ? "Tìm kiếm tên hoặc MSSV..." : `Tìm sinh viên lớp ${selectedClass}...`}
                 onChangeText={handleSearch}
                 value={searchQuery}
                 style={styles.searchBar}
                 iconColor="#007AFF"
             />
 
-            {/* LOGIC HIỂN THỊ CHÍNH (Đã được chia 2 trường hợp) */}
-            {selectedClass === 'All' ? (
+            {/* LOGIC HIỂN THỊ CHÍNH (Đã sửa lỗi để kết hợp tìm kiếm) */}
+            {(selectedClass === 'All' && !isSearchingGlobal) ? (
                 /* --- TRƯỜNG HỢP 1: HIỂN THỊ BỘ LỌC KHOA & DANH SÁCH LỚP --- */
                 <View style={styles.listContainer}>
                     {/* Bộ lọc Khoa */}
@@ -606,9 +627,9 @@ export default function StudentManagementScreen() {
                                     >
                                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                                             <Ionicons name="school" size={28} color="#007AFF" />
-                                            <View>
+                                            <View style={{ flex: 1 }}>
                                                 <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1a1a2e' }}>Lớp {cls}</Text>
-                                                <Text style={{ fontSize: 13, color: '#666', marginTop: 2 }}>{facName} • {studentCount} sinh viên</Text>
+                                                <Text style={{ fontSize: 13, color: '#666', marginTop: 2 }} numberOfLines={1}>{facName} • {studentCount} sinh viên</Text>
                                             </View>
                                         </View>
                                         <Ionicons name="chevron-forward" size={24} color="#ccc" />
@@ -620,15 +641,23 @@ export default function StudentManagementScreen() {
                     </ScrollView>
                 </View>
             ) : (
-                /* --- TRƯỜNG HỢP 2: HIỂN THỊ DANH SÁCH SINH VIÊN TRONG LỚP --- */
+                /* --- TRƯỜNG HỢP 2: HIỂN THỊ DANH SÁCH SINH VIÊN TRONG LỚP HOẶC KẾT QUẢ TÌM KIẾM TOÀN CỤC --- */
                 <View style={styles.listContainer}>
-                    {/* Thanh tiêu đề lớp */}
+                    {/* Thanh tiêu đề lớp hoặc tiêu đề Tìm kiếm */}
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#E8E8E8' }}>
-                        <TouchableOpacity onPress={() => setSelectedClass('All')} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <TouchableOpacity 
+                            onPress={() => {
+                                setSelectedClass('All');
+                                setSearchQuery(''); // Xóa chữ đã gõ để quay về màn hình danh sách lớp ban đầu
+                            }} 
+                            style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                        >
                             <Ionicons name="arrow-back" size={20} color="#007AFF" />
                             <Text style={{ fontSize: 14, color: '#007AFF', fontWeight: '500' }}>Quay lại</Text>
                         </TouchableOpacity>
-                        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1a1a2e', marginLeft: 'auto' }}>Lớp {selectedClass}</Text>
+                        <Text style={{ fontSize: 17, fontWeight: 'bold', color: '#1a1a2e', marginLeft: 'auto' }}>
+                            {isSearchingGlobal ? `Kết quả tìm: "${searchQuery}"` : `Lớp ${selectedClass}`}
+                        </Text>
                     </View>
 
                     {/* Danh sách sinh viên */}
@@ -640,15 +669,17 @@ export default function StudentManagementScreen() {
                                         <View style={styles.studentInfo}>
                                             <View style={styles.avatar}>
                                                 <Text style={styles.avatarText}>
-                                                    {student.fullName.charAt(0)}
+                                                    {(student.fullName || 'S').charAt(0)}
                                                 </Text>
                                             </View>
                                             
                                             <View style={styles.studentTextContainer}>
-                                                {/* ĐÃ BỎ numberOfLines={1} ĐỂ TÊN ĐƯỢC XUỐNG DÒNG */}
                                                 <Text style={styles.studentName}>{student.fullName}</Text>
-                                                
                                                 <Text style={styles.studentId}>MSSV: {student.studentId}</Text>
+                                                {/* Hiển thị thêm lớp của SV nếu đang tìm kiếm toàn cục */}
+                                                {isSearchingGlobal && (
+                                                    <Text style={{ fontSize: 12, color: '#666', marginTop: 2 }}>Lớp: {student.class}</Text>
+                                                )}
                                             </View>
                                         </View>
 
@@ -695,7 +726,7 @@ export default function StudentManagementScreen() {
                         {filteredStudents.length === 0 && (
                             <View style={styles.emptyContainer}>
                                 <Ionicons name="people-outline" size={64} color="#ccc" />
-                                <Text style={styles.emptyText}>Chưa có sinh viên nào</Text>
+                                <Text style={styles.emptyText}>Không tìm thấy sinh viên nào phù hợp</Text>
                             </View>
                         )}
                         <View style={styles.footer} />
@@ -878,7 +909,7 @@ export default function StudentManagementScreen() {
                             </>
                         )}
                         
-                        {/* 4. Nút đóng an toàn, che mọi lỗi dư thừa */}
+                        {/* 4. Nút đóng an toàn */}
                         <View style={{ paddingHorizontal: 16, marginTop: 24, marginBottom: 30 }}>
                             <Button 
                                 mode="contained" 
@@ -929,7 +960,6 @@ export default function StudentManagementScreen() {
                             <TextInput
                                 label="Ngày sinh"
                                 value={editForm.dateOfBirth}
-                                // Nhập tay dạng chuỗi vì Model Backend của bạn đang để String
                                 onChangeText={(text) => setEditForm({ ...editForm, dateOfBirth: text })} 
                                 placeholder="DD/MM/YYYY (VD: 15/08/2003)"
                                 style={{ marginBottom: 12 }}
