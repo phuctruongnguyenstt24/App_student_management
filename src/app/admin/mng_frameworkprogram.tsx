@@ -644,16 +644,7 @@ const CurriculumManagementScreen = () => {
           <Text style={styles.headerSubtitle}>Kỹ thuật phần mềm - Đại học chính quy</Text>
 
           <View style={styles.headerButtons}>
-            <TouchableOpacity
-              style={styles.addSemesterButton}
-              onPress={(): void => {
-                setSemesterModal({ visible: true, mode: 'add', semester: null });
-                setSemesterNumber('');
-              }}
-            >
-              <Ionicons name="add-circle" size={20} color="white" />
-              <Text style={styles.addSemesterText}>Thêm học kỳ</Text>
-            </TouchableOpacity>
+      
             <TouchableOpacity
               style={[styles.addSemesterButton, styles.syncAllButton]}
               onPress={syncFromCourses}
