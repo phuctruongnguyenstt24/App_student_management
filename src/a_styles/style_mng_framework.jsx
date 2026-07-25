@@ -369,4 +369,142 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
+  // ================= MODAL THÊM / SỬA =================
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)', // Nền tối mờ, focus vào modal
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalContent: {
+    width: '100%',
+    maxHeight: '90%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20, // Bo góc lớn hiện đại
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
+    elevation: 8,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#1E293B',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#64748B',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  modalInput: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    height: 52,
+    fontSize: 15,
+    color: '#334155',
+    marginBottom: 16,
+  },
+  modalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  modalInputHalf: {
+    width: '48%', // Chia đôi màn hình chừa khoảng trống ở giữa
+  },
+  pickerWrapper: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    marginBottom: 16,
+    overflow: 'hidden', // Bắt buộc để Picker không bị lòi ra ngoài viền bo góc
+    justifyContent: 'center',
+    height: 52,
+  },
+  picker: {
+    width: '100%',
+    color: '#334155',
+    height: 52,
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top', // Giúp text bắt đầu từ trên cùng
+    paddingTop: 16,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  modalButton: {
+    flex: 1,
+    height: 52,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#F1F5F9',
+    marginRight: 8,
+  },
+  cancelButtonText: {
+    color: '#64748B',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  confirmButton: {
+    backgroundColor: '#10B981', // Màu xanh đồng bộ với nút dấu cộng ở Header
+    marginLeft: 8,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  confirmButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  // ================= STYLE HỌC KỲ =================
+  semesterGroupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    marginTop: 20,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#8B5CF6',
+  },
+  semesterGroupTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#475569',
+    marginLeft: 8,
+    flex: 1,
+  },
+  semesterBadge: {
+    backgroundColor: '#E0E7FF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  semesterBadgeText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#4F46E5',
+  },
 });
