@@ -6,26 +6,63 @@ import { ActivityIndicator, Alert, FlatList, Modal, StyleSheet, Text, TextInput,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { API_URL } from '../../config/api';
 
+// Interfaces giống trang mng_frameworkprogram
+interface Faculty {
+  _id: string;
+  name: string;
+  code: string;
+}
+
+interface Department {
+  _id: string;
+  name: string;
+  code: string;
+  facultyId: string;
+}
+
+interface Semester {
+  _id: string;
+  semesterNumber: number;
+  academicYear?: string;
+}
+
+interface Student {
+  _id: string;
+  id?: string;
+  fullName: string;
+  studentId: string;
+  class: string;
+  facultyId: string;
+  departmentId?: string;
+  trainingPoint?: number;
+}
+
 export default function AdminTrainingPointsScreen() {
   const router = useRouter();
-  const [students, setStudents] = useState<any[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(false);
   const [submittingId, setSubmittingId] = useState<string | null>(null);
 
   // State quản lý Học kỳ
-  const [semesters, setSemesters] = useState<any[]>([]);
-  const [selectedSemester, setSelectedSemester] = useState<any>(null);
+  const [semesters, setSemesters] = useState<Semester[]>([]);
+  const [selectedSemester, setSelectedSemester] = useState<Semester | null>(null);
   const [showSemesterModal, setShowSemesterModal] = useState(false);
 
-  // State quản lý Khoa và Lớp (Đã bỏ ALL, dùng null làm mặc định)
-  const [faculties, setFaculties] = useState<any[]>([]);
+  // State quản lý Khoa - Lấy từ API giống trang framework
+  const [faculties, setFaculties] = useState<Faculty[]>([]);
   const [selectedFacultyId, setSelectedFacultyId] = useState<string | null>(null);
   const [showFacultyModal, setShowFacultyModal] = useState(false);
 
+  // State quản lý Ngành - Lấy từ API giống trang framework
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string | null>(null);
+  const [showDepartmentModal, setShowDepartmentModal] = useState(false);
+
+  // State quản lý Lớp
   const [selectedClassStr, setSelectedClassStr] = useState<string | null>(null);
   const [showClassModal, setShowClassModal] = useState(false);
 
-  // 1. GỌI API LẤY DANH SÁCH HỌC KỲ
+  // 1. LẤY DANH SÁCH HỌC KỲ - Giống trang framework
   const fetchSemesters = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
@@ -36,83 +73,155 @@ export default function AdminTrainingPointsScreen() {
         }
       });
       
-      const text = await response.text();
-
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        Alert.alert("Lỗi", "Định dạng dữ liệu từ server không hợp lệ!");
-        return;
+      const result = await response.json();
+      
+      let semesterList: Semester[] = [];
+      if (result.success && result.data) {
+        // Lấy danh sách semester từ curriculum data
+        const curriculumData = result.data;
+        if (Array.isArray(curriculumData)) {
+          // Trích xuất semester unique từ curriculum
+          const semesterMap = new Map();
+          curriculumData.forEach((item: any) => {
+            if (item.semester && !semesterMap.has(item.semester)) {
+              semesterMap.set(item.semester, {
+                _id: item._id,
+                semesterNumber: parseInt(item.semester.replace('HK', '')),
+                academicYear: item.academicYear
+              });
+            }
+          });
+          semesterList = Array.from(semesterMap.values());
+        }
       }
-
-      let semesterList = [];
-      if (Array.isArray(data)) semesterList = data;
-      else if (data && data.data && Array.isArray(data.data)) semesterList = data.data;
-      else if (data && data.semesters && Array.isArray(data.semesters)) semesterList = data.semesters;
-      else if (data && data.curriculum && Array.isArray(data.curriculum)) semesterList = data.curriculum;
-
-      if (semesterList.length > 0) {
-        const validSemesters = semesterList.filter((s: any) => s && s.semesterNumber !== undefined);
-        const sortedData = validSemesters.sort((a: any, b: any) => a.semesterNumber - b.semesterNumber);
-        
-        setSemesters(sortedData);
+      
+      // Nếu không có dữ liệu từ curriculum, tạo mặc định
+      if (semesterList.length === 0) {
+        semesterList = [
+          { _id: '1', semesterNumber: 1 },
+          { _id: '2', semesterNumber: 2 },
+          { _id: '3', semesterNumber: 3 }
+        ];
+      }
+      
+      // Sắp xếp theo số học kỳ
+      const sortedData = semesterList.sort((a, b) => a.semesterNumber - b.semesterNumber);
+      setSemesters(sortedData);
+      if (sortedData.length > 0) {
         setSelectedSemester(sortedData[0]);
-      } else {
-        Alert.alert("Thông báo", "Chưa có học kỳ nào trong hệ thống!");
       }
     } catch (error) {
-      Alert.alert("Lỗi", "Không thể kết nối đến máy chủ");
+      console.error('Lỗi tải học kỳ:', error);
+      // Fallback: tạo semester mặc định
+      const defaultSemesters = [
+        { _id: '1', semesterNumber: 1 },
+        { _id: '2', semesterNumber: 2 },
+        { _id: '3', semesterNumber: 3 }
+      ];
+      setSemesters(defaultSemesters);
+      setSelectedSemester(defaultSemesters[0]);
     }
   };
 
-  // 1.5. GỌI API LẤY DANH SÁCH KHOA
+  // 2. LẤY DANH SÁCH KHOA - Giống trang framework
   const fetchFaculties = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
       const response = await fetch(`${API_URL}/faculties`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      const data = await response.json();
+      const result = await response.json();
       
-      let facultyList = [];
-      if (Array.isArray(data)) {
-        facultyList = data;
-      } else if (data && data.data && Array.isArray(data.data)) {
-        facultyList = data.data;
-      } else if (data && data.faculties && Array.isArray(data.faculties)) {
-        facultyList = data.faculties;
+      let facultyList: Faculty[] = [];
+      if (result.success && result.faculties) {
+        facultyList = result.faculties;
+      } else if (Array.isArray(result)) {
+        facultyList = result;
+      } else if (result.data && Array.isArray(result.data)) {
+        facultyList = result.data;
       }
 
       setFaculties(facultyList);
-      // Tự động chọn khoa đầu tiên nếu có
       if (facultyList.length > 0) {
         setSelectedFacultyId(facultyList[0]._id);
       }
     } catch (error) {
-      console.log("Lỗi tải danh sách khoa:", error);
+      console.error('Lỗi tải khoa:', error);
       setFaculties([]);
     }
   };
 
-  // 2. LẤY DANH SÁCH SINH VIÊN THEO HỌC KỲ
-  const fetchStudentsBySemester = async () => {
+  // 3. LẤY DANH SÁCH NGÀNH - Giống trang framework
+  const fetchDepartments = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/departments`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const result = await response.json();
+      
+      let departmentList: Department[] = [];
+      if (result.success && result.departments) {
+        departmentList = result.departments;
+      } else if (Array.isArray(result)) {
+        departmentList = result;
+      } else if (result.data && Array.isArray(result.data)) {
+        departmentList = result.data;
+      }
+
+      setDepartments(departmentList);
+      if (departmentList.length > 0) {
+        setSelectedDepartmentId(departmentList[0]._id);
+      }
+    } catch (error) {
+      console.error('Lỗi tải ngành:', error);
+      setDepartments([]);
+    }
+  };
+
+  // 4. LẤY DANH SÁCH SINH VIÊN - Có filter theo khoa, ngành, học kỳ
+  const fetchStudentsByFilters = async () => {
     if (!selectedSemester) return;
+    
     try {
       setLoading(true);
       const token = await AsyncStorage.getItem('token');
-      const response = await fetch(`${API_URL}/students/all?semesterNumber=${selectedSemester.semesterNumber}`, {
+      
+      // Xây dựng query params
+      const params = new URLSearchParams();
+      params.append('semesterNumber', selectedSemester.semesterNumber.toString());
+      if (selectedFacultyId) params.append('facultyId', selectedFacultyId);
+      if (selectedDepartmentId) params.append('departmentId', selectedDepartmentId);
+      
+      const response = await fetch(`${API_URL}/students/all?${params.toString()}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      const data = await response.json();
       
-      if (data.success || data.students) {
-        setStudents(data.students || data);
+      const result = await response.json();
+      
+      if (result.success || result.students) {
+        const studentList = result.students || result.data || [];
+        setStudents(studentList);
+        
+        // Tự động chọn lớp đầu tiên nếu có
+        if (studentList.length > 0) {
+          const classes = [...new Set(studentList.map((s: any) => s.class).filter((c: string) => c && c.trim() !== ''))];
+          if (classes.length > 0 && !selectedClassStr) {
+            const firstClass = classes[0];
+            if (firstClass && typeof firstClass === 'string') {
+              setSelectedClassStr(firstClass);
+            } else {
+              setSelectedClassStr(String(firstClass ?? ''));
+            }
+          }
+        }
       } else {
-        Alert.alert('Thất bại', data.message || 'Không thể lấy dữ liệu sinh viên');
+        Alert.alert('Thất bại', result.message || 'Không thể lấy dữ liệu sinh viên');
+        setStudents([]);
       }
     } catch (error) {
-      Alert.alert('Lỗi', 'Mất kết nối tới server Backend');
+      Alert.alert('Lỗi', 'Mất kết nối tới server');
+      setStudents([]);
     } finally {
       setLoading(false);
     }
@@ -122,55 +231,73 @@ export default function AdminTrainingPointsScreen() {
   useEffect(() => {
     fetchSemesters();
     fetchFaculties();
+    fetchDepartments();
   }, []);
 
-  // Đổi học kỳ -> Tải lại danh sách sinh viên
+  // Khi học kỳ, khoa, ngành thay đổi -> Tải lại danh sách sinh viên
   useEffect(() => {
-    fetchStudentsBySemester();
-  }, [selectedSemester]);
+    if (selectedSemester) {
+      fetchStudentsByFilters();
+    }
+  }, [selectedSemester, selectedFacultyId, selectedDepartmentId]);
 
-  // --- LOGIC LỌC DỮ LIỆU ---
-  // Lấy danh sách Lớp từ những sinh viên thuộc Khoa đang chọn
+  // Lấy danh sách Lớp từ sinh viên đã lọc
   const availableClasses = useMemo(() => {
-    if (!selectedFacultyId) return [];
-    const baseStudents = students.filter(s => s.facultyId === selectedFacultyId);
-    const classSet = new Set(baseStudents.map(s => s.class).filter(c => c && c.trim() !== ''));
+    const classSet = new Set(students.map(s => s.class).filter(c => c && c.trim() !== ''));
     return Array.from(classSet).sort();
-  }, [students, selectedFacultyId]);
+  }, [students]);
 
-  // Tự động chọn Lớp đầu tiên khi đổi Khoa hoặc khi danh sách Lớp thay đổi
+  // Tự động chọn Lớp đầu tiên khi danh sách thay đổi
   useEffect(() => {
     if (availableClasses.length > 0) {
-        if (!selectedClassStr || !availableClasses.includes(selectedClassStr)) {
-            setSelectedClassStr(availableClasses[0]); // Chọn lớp đầu tiên
-        }
+      if (!selectedClassStr || !availableClasses.includes(selectedClassStr)) {
+        setSelectedClassStr(availableClasses[0]);
+      }
     } else {
-        setSelectedClassStr(null); // Không có lớp nào
+      setSelectedClassStr(null);
     }
   }, [availableClasses]);
 
-  // Danh sách sinh viên cuối cùng được hiển thị ra màn hình (Lọc khắt khe theo Khoa và Lớp đã chọn)
+  // Danh sách sinh viên cuối cùng - Lọc theo lớp
   const filteredStudents = useMemo(() => {
-    if (!selectedFacultyId || !selectedClassStr) return []; // Ẩn nếu chưa chọn Khoa hoặc Lớp
-    return students.filter(s => s.facultyId === selectedFacultyId && s.class === selectedClassStr);
-  }, [students, selectedFacultyId, selectedClassStr]);
+    if (!selectedClassStr) return students;
+    return students.filter(s => s.class === selectedClassStr);
+  }, [students, selectedClassStr]);
 
   // Xử lý khi đổi Khoa
   const handleSelectFaculty = (facultyId: string) => {
     setSelectedFacultyId(facultyId);
     setShowFacultyModal(false);
-    // Lớp sẽ tự động được set lại nhờ useEffect bên trên
+    // Reset ngành khi đổi khoa
+    const deptInFaculty = departments.filter(d => d.facultyId === facultyId);
+    if (deptInFaculty.length > 0) {
+      setSelectedDepartmentId(deptInFaculty[0]._id);
+    } else {
+      setSelectedDepartmentId(null);
+    }
+  };
+
+  // Xử lý khi đổi Ngành
+  const handleSelectDepartment = (departmentId: string) => {
+    setSelectedDepartmentId(departmentId);
+    setShowDepartmentModal(false);
   };
 
   const changeLocalPoint = (id: string, value: string) => {
     const point = parseInt(value) || 0;
-    setStudents(prev => prev.map(s => (s._id === id || s.id === id) ? { ...s, trainingPoint: point } : s));
+    setStudents(prev => prev.map(s => 
+      (s._id === id || s.id === id) ? { ...s, trainingPoint: point } : s
+    ));
   };
 
-  // 3. LƯU ĐIỂM XUỐNG BACKEND
+  // Lưu điểm xuống backend
   const savePoint = async (id: string, point: number) => {
-    if (!selectedSemester) return Alert.alert('Lỗi', 'Vui lòng chọn học kỳ!');
-    if (point <= 0 || point > 100) return Alert.alert('Cảnh báo', 'Điểm rèn luyện từ 1 đến 100!');
+    if (!selectedSemester) {
+      return Alert.alert('Lỗi', 'Vui lòng chọn học kỳ!');
+    }
+    if (point < 0 || point > 100) {
+      return Alert.alert('Cảnh báo', 'Điểm rèn luyện từ 0 đến 100!');
+    }
 
     try {
       setSubmittingId(id);
@@ -182,8 +309,8 @@ export default function AdminTrainingPointsScreen() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
-            trainingPoint: point,
-            semesterNumber: selectedSemester.semesterNumber 
+          trainingPoint: point,
+          semesterNumber: selectedSemester.semesterNumber 
         })
       });
       const data = await response.json();
@@ -203,43 +330,60 @@ export default function AdminTrainingPointsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => {
-            if(router.canGoBack()) router.replace('/admin/dashboard' as any);
-        }}>
+        <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Chấm Điểm Rèn Luyện</Text>
-        <TouchableOpacity onPress={fetchStudentsBySemester}>
+        <TouchableOpacity onPress={fetchStudentsByFilters}>
           <Ionicons name="refresh" size={24} color="#333" />
         </TouchableOpacity>
       </View>
 
-      {/* COMPONENT CHỌN HỌC KỲ */}
+      {/* Chọn Học Kỳ */}
       <View style={styles.semesterContainer}>
         <Text style={styles.semesterLabel}>Học kỳ:</Text>
         <TouchableOpacity style={styles.semesterSelector} onPress={() => setShowSemesterModal(true)}>
-            <Text style={styles.semesterSelectorText}>
-                {selectedSemester ? `Học kỳ ${selectedSemester.semesterNumber}` : "Đang tải..."}
-            </Text>
-            <Ionicons name="chevron-down" size={20} color="#555" />
+          <Text style={styles.semesterSelectorText}>
+            {selectedSemester ? `Học kỳ ${selectedSemester.semesterNumber}` : "Đang tải..."}
+          </Text>
+          <Ionicons name="chevron-down" size={20} color="#555" />
         </TouchableOpacity>
       </View>
 
-      {/* BỘ LỌC KHOA & LỚP */}
+      {/* Bộ lọc Khoa, Ngành, Lớp */}
       <View style={styles.filterContainer}>
         {/* Lọc Khoa */}
         <TouchableOpacity style={styles.filterBox} onPress={() => setShowFacultyModal(true)}>
           <Text style={styles.filterLabel}>Khoa:</Text>
           <Text style={styles.filterValue} numberOfLines={1}>
             {selectedFacultyId 
-              ? faculties.find(f => f._id === selectedFacultyId)?.name || 'Đang tải...' 
+              ? faculties.find(f => f._id === selectedFacultyId)?.name || 'Chọn Khoa'
               : 'Chọn Khoa'}
           </Text>
           <Ionicons name="chevron-down" size={16} color="#777" />
         </TouchableOpacity>
 
+        {/* Lọc Ngành */}
+        <TouchableOpacity 
+          style={styles.filterBox} 
+          onPress={() => setShowDepartmentModal(true)}
+          disabled={!selectedFacultyId}
+        >
+          <Text style={styles.filterLabel}>Ngành:</Text>
+          <Text style={styles.filterValue} numberOfLines={1}>
+            {selectedDepartmentId 
+              ? departments.find(d => d._id === selectedDepartmentId)?.name || 'Chọn Ngành'
+              : 'Chọn Ngành'}
+          </Text>
+          <Ionicons name="chevron-down" size={16} color="#777" />
+        </TouchableOpacity>
+
         {/* Lọc Lớp */}
-        <TouchableOpacity style={styles.filterBox} onPress={() => setShowClassModal(true)}>
+        <TouchableOpacity 
+          style={styles.filterBox} 
+          onPress={() => setShowClassModal(true)}
+          disabled={availableClasses.length === 0}
+        >
           <Text style={styles.filterLabel}>Lớp:</Text>
           <Text style={styles.filterValue} numberOfLines={1}>
             {selectedClassStr ? selectedClassStr : 'Chọn Lớp'}
@@ -248,13 +392,13 @@ export default function AdminTrainingPointsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* DANH SÁCH SINH VIÊN (ĐÃ LỌC) */}
+      {/* Danh sách sinh viên */}
       {loading ? (
         <ActivityIndicator size="large" color="#4CAF50" style={{ flex: 1 }} />
       ) : (
         <FlatList
           data={filteredStudents}
-          keyExtractor={(item) => item._id || item.id}
+          keyExtractor={(item) => item._id || item.id || ''}
           contentContainerStyle={{ padding: 16 }}
           renderItem={({ item }) => (
             <View style={styles.studentCard}>
@@ -268,12 +412,12 @@ export default function AdminTrainingPointsScreen() {
                   style={styles.inputScore}
                   keyboardType="numeric"
                   value={(item.trainingPoint ?? 0).toString()}
-                  onChangeText={(val) => changeLocalPoint(item._id || item.id, val)}
+                  onChangeText={(val) => changeLocalPoint(item._id || item.id || '', val)}
                   maxLength={3}
                 />
                 <TouchableOpacity 
                   style={styles.btnSave} 
-                  onPress={() => savePoint(item._id || item.id, item.trainingPoint || 0)}
+                  onPress={() => savePoint(item._id || item.id || '', item.trainingPoint || 0)}
                   disabled={submittingId === (item._id || item.id)}
                 >
                   {submittingId === (item._id || item.id) ? (
@@ -286,138 +430,326 @@ export default function AdminTrainingPointsScreen() {
             </View>
           )}
           ListEmptyComponent={
-            <Text style={styles.emptyText}>Chưa có dữ liệu sinh viên trong lớp này</Text>
+            <Text style={styles.emptyText}>
+              {students.length === 0 
+                ? 'Chưa có dữ liệu sinh viên với bộ lọc này' 
+                : 'Không có sinh viên trong lớp này'}
+            </Text>
           }
         />
       )}
 
-      {/* ---------------- MODALS ---------------- */}
-      
-      {/* 1. Modal Chọn Học Kỳ */}
+      {/* Modal Chọn Học Kỳ */}
       <Modal visible={showSemesterModal} transparent={true} animationType="fade">
         <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Chọn học kỳ</Text>
-                <FlatList
-                    data={semesters}
-                    keyExtractor={(item) => (item._id || item.id || item.semesterNumber).toString()}
-                    renderItem={({item}) => (
-                        <TouchableOpacity 
-                            style={[styles.modalItem, selectedSemester?.semesterNumber === item.semesterNumber && styles.modalItemSelected]}
-                            onPress={() => {
-                                setSelectedSemester(item);
-                                setShowSemesterModal(false);
-                            }}
-                        >
-                            <Text style={[styles.modalItemText, selectedSemester?.semesterNumber === item.semesterNumber && styles.modalItemTextSelected]}>
-                                Học kỳ {item.semesterNumber}
-                            </Text>
-                            {selectedSemester?.semesterNumber === item.semesterNumber && (
-                                <Ionicons name="checkmark" size={20} color="#4CAF50" />
-                            )}
-                        </TouchableOpacity>
-                    )}
-                />
-                <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setShowSemesterModal(false)}>
-                    <Text style={styles.modalCloseText}>Đóng</Text>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Chọn học kỳ</Text>
+            <FlatList
+              data={semesters}
+              keyExtractor={(item) => item._id || item.semesterNumber.toString()}
+              renderItem={({item}) => (
+                <TouchableOpacity 
+                  style={[styles.modalItem, selectedSemester?.semesterNumber === item.semesterNumber && styles.modalItemSelected]}
+                  onPress={() => {
+                    setSelectedSemester(item);
+                    setShowSemesterModal(false);
+                  }}
+                >
+                  <Text style={[styles.modalItemText, selectedSemester?.semesterNumber === item.semesterNumber && styles.modalItemTextSelected]}>
+                    Học kỳ {item.semesterNumber} {item.academicYear ? `(${item.academicYear})` : ''}
+                  </Text>
+                  {selectedSemester?.semesterNumber === item.semesterNumber && (
+                    <Ionicons name="checkmark" size={20} color="#4CAF50" />
+                  )}
                 </TouchableOpacity>
-            </View>
+              )}
+            />
+            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setShowSemesterModal(false)}>
+              <Text style={styles.modalCloseText}>Đóng</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
 
-      {/* 2. Modal Chọn Khoa (Đã bỏ Tất cả) */}
+      {/* Modal Chọn Khoa */}
       <Modal visible={showFacultyModal} transparent={true} animationType="fade">
         <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Chọn Khoa</Text>
-                    <FlatList
-                        data={Array.isArray(faculties) ? faculties : []}
-                        keyExtractor={(item) => item._id}
-                        renderItem={({ item }) => (
-                        <TouchableOpacity 
-                            style={[styles.modalItem, selectedFacultyId === item._id && styles.modalItemSelected]}
-                            onPress={() => handleSelectFaculty(item._id)}
-                        >
-                            <Text style={[styles.modalItemText, selectedFacultyId === item._id && styles.modalItemTextSelected]}>
-                                {item.name}
-                            </Text>
-                            {selectedFacultyId === item._id && <Ionicons name="checkmark" size={20} color="#4CAF50" />}
-                        </TouchableOpacity>
-                    )}
-                />
-                <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setShowFacultyModal(false)}>
-                    <Text style={styles.modalCloseText}>Đóng</Text>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Chọn Khoa</Text>
+            <FlatList
+              data={faculties}
+              keyExtractor={(item) => item._id}
+              renderItem={({ item }) => (
+                <TouchableOpacity 
+                  style={[styles.modalItem, selectedFacultyId === item._id && styles.modalItemSelected]}
+                  onPress={() => handleSelectFaculty(item._id)}
+                >
+                  <Text style={[styles.modalItemText, selectedFacultyId === item._id && styles.modalItemTextSelected]}>
+                    {item.name} ({item.code})
+                  </Text>
+                  {selectedFacultyId === item._id && (
+                    <Ionicons name="checkmark" size={20} color="#4CAF50" />
+                  )}
                 </TouchableOpacity>
-            </View>
+              )}
+            />
+            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setShowFacultyModal(false)}>
+              <Text style={styles.modalCloseText}>Đóng</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
 
-      {/* 3. Modal Chọn Lớp (Đã bỏ Tất cả) */}
+      {/* Modal Chọn Ngành */}
+      <Modal visible={showDepartmentModal} transparent={true} animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Chọn Ngành</Text>
+            <FlatList
+              data={departments.filter(d => d.facultyId === selectedFacultyId)}
+              keyExtractor={(item) => item._id}
+              renderItem={({ item }) => (
+                <TouchableOpacity 
+                  style={[styles.modalItem, selectedDepartmentId === item._id && styles.modalItemSelected]}
+                  onPress={() => handleSelectDepartment(item._id)}
+                >
+                  <Text style={[styles.modalItemText, selectedDepartmentId === item._id && styles.modalItemTextSelected]}>
+                    {item.name} ({item.code})
+                  </Text>
+                  {selectedDepartmentId === item._id && (
+                    <Ionicons name="checkmark" size={20} color="#4CAF50" />
+                  )}
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <Text style={{textAlign: 'center', marginTop: 10, color: '#888'}}>
+                  {selectedFacultyId ? 'Chưa có ngành nào' : 'Vui lòng chọn khoa trước'}
+                </Text>
+              }
+            />
+            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setShowDepartmentModal(false)}>
+              <Text style={styles.modalCloseText}>Đóng</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal Chọn Lớp */}
       <Modal visible={showClassModal} transparent={true} animationType="fade">
         <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Chọn Lớp</Text>
-                <FlatList
-                    data={availableClasses}
-                    keyExtractor={(item) => item}
-                    renderItem={({item}) => (
-                        <TouchableOpacity 
-                            style={[styles.modalItem, selectedClassStr === item && styles.modalItemSelected]}
-                            onPress={() => {
-                                setSelectedClassStr(item);
-                                setShowClassModal(false);
-                            }}
-                        >
-                            <Text style={[styles.modalItemText, selectedClassStr === item && styles.modalItemTextSelected]}>
-                                {item}
-                            </Text>
-                            {selectedClassStr === item && <Ionicons name="checkmark" size={20} color="#4CAF50" />}
-                        </TouchableOpacity>
-                    )}
-                    ListEmptyComponent={<Text style={{textAlign: 'center', marginTop: 10, color: '#888'}}>Không có lớp nào</Text>}
-                />
-                <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setShowClassModal(false)}>
-                    <Text style={styles.modalCloseText}>Đóng</Text>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Chọn Lớp</Text>
+            <FlatList
+              data={availableClasses}
+              keyExtractor={(item) => item}
+              renderItem={({item}) => (
+                <TouchableOpacity 
+                  style={[styles.modalItem, selectedClassStr === item && styles.modalItemSelected]}
+                  onPress={() => {
+                    setSelectedClassStr(item);
+                    setShowClassModal(false);
+                  }}
+                >
+                  <Text style={[styles.modalItemText, selectedClassStr === item && styles.modalItemTextSelected]}>
+                    {item}
+                  </Text>
+                  {selectedClassStr === item && (
+                    <Ionicons name="checkmark" size={20} color="#4CAF50" />
+                  )}
                 </TouchableOpacity>
-            </View>
+              )}
+              ListEmptyComponent={
+                <Text style={{textAlign: 'center', marginTop: 10, color: '#888'}}>
+                  Không có lớp nào
+                </Text>
+              }
+            />
+            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setShowClassModal(false)}>
+              <Text style={styles.modalCloseText}>Đóng</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
-
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f9fa' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', padding: 16, backgroundColor: '#fff', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#eee' },
+  header: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    padding: 16, 
+    backgroundColor: '#fff', 
+    alignItems: 'center', 
+    borderBottomWidth: 1, 
+    borderBottomColor: '#eee' 
+  },
   headerTitle: { fontSize: 18, fontWeight: 'bold' },
   
-  semesterContainer: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6, backgroundColor: '#fff', alignItems: 'center'},
-  semesterLabel: { fontSize: 14, color: '#555', marginRight: 10, fontWeight: '500', width: 55 },
-  semesterSelector: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f0f4f8', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: '#d0d7de' },
-  semesterSelectorText: { fontSize: 15, fontWeight: '600', color: '#333' },
+  semesterContainer: { 
+    flexDirection: 'row', 
+    paddingHorizontal: 16, 
+    paddingTop: 12, 
+    paddingBottom: 6, 
+    backgroundColor: '#fff', 
+    alignItems: 'center'
+  },
+  semesterLabel: { 
+    fontSize: 14, 
+    color: '#555', 
+    marginRight: 10, 
+    fontWeight: '500', 
+    width: 55 
+  },
+  semesterSelector: { 
+    flex: 1, 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    backgroundColor: '#f0f4f8', 
+    paddingHorizontal: 12, 
+    paddingVertical: 8, 
+    borderRadius: 8, 
+    borderWidth: 1, 
+    borderColor: '#d0d7de' 
+  },
+  semesterSelectorText: { 
+    fontSize: 15, 
+    fontWeight: '600', 
+    color: '#333' 
+  },
 
-  // Giao diện Bộ lọc mới
-  filterContainer: { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 12, backgroundColor: '#fff', gap: 10, borderBottomWidth: 1, borderBottomColor: '#eee'},
-  filterBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9f9f9', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 6, borderWidth: 1, borderColor: '#e0e0e0' },
-  filterLabel: { fontSize: 13, color: '#666', marginRight: 4 },
-  filterValue: { flex: 1, fontSize: 13, fontWeight: '600', color: '#333' },
+  filterContainer: { 
+    flexDirection: 'row', 
+    paddingHorizontal: 16, 
+    paddingBottom: 12, 
+    backgroundColor: '#fff', 
+    gap: 8, 
+    borderBottomWidth: 1, 
+    borderBottomColor: '#eee',
+    flexWrap: 'wrap'
+  },
+  filterBox: { 
+    flex: 1, 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#f9f9f9', 
+    paddingHorizontal: 10, 
+    paddingVertical: 8, 
+    borderRadius: 6, 
+    borderWidth: 1, 
+    borderColor: '#e0e0e0',
+    minWidth: 100
+  },
+  filterLabel: { 
+    fontSize: 12, 
+    color: '#666', 
+    marginRight: 4,
+    fontWeight: '500'
+  },
+  filterValue: { 
+    flex: 1, 
+    fontSize: 12, 
+    fontWeight: '600', 
+    color: '#333' 
+  },
   
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { width: '80%', backgroundColor: '#fff', borderRadius: 12, padding: 20, maxHeight: '60%' },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, textAlign: 'center' },
-  modalItem: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  modalItemSelected: { backgroundColor: '#e8f5e9' },
-  modalItemText: { fontSize: 16, color: '#333' },
-  modalItemTextSelected: { color: '#4CAF50', fontWeight: 'bold' },
-  modalCloseBtn: { marginTop: 20, padding: 12, backgroundColor: '#f0f0f0', borderRadius: 8, alignItems: 'center' },
-  modalCloseText: { fontSize: 16, fontWeight: '600', color: '#555' },
-  emptyText: { textAlign: 'center', marginTop: 30, color: '#888', fontSize: 15 },
+  modalOverlay: { 
+    flex: 1, 
+    backgroundColor: 'rgba(0,0,0,0.5)', 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  modalContent: { 
+    width: '85%', 
+    backgroundColor: '#fff', 
+    borderRadius: 12, 
+    padding: 20, 
+    maxHeight: '60%' 
+  },
+  modalTitle: { 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    marginBottom: 15, 
+    textAlign: 'center' 
+  },
+  modalItem: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    paddingVertical: 12, 
+    borderBottomWidth: 1, 
+    borderBottomColor: '#eee' 
+  },
+  modalItemSelected: { 
+    backgroundColor: '#e8f5e9', 
+    borderRadius: 4 
+  },
+  modalItemText: { 
+    fontSize: 15, 
+    color: '#333' 
+  },
+  modalItemTextSelected: { 
+    color: '#4CAF50', 
+    fontWeight: 'bold' 
+  },
+  modalCloseBtn: { 
+    marginTop: 16, 
+    padding: 12, 
+    backgroundColor: '#f0f0f0', 
+    borderRadius: 8, 
+    alignItems: 'center' 
+  },
+  modalCloseText: { 
+    fontSize: 16, 
+    fontWeight: '600', 
+    color: '#555' 
+  },
 
-  studentCard: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#fff', padding: 16, borderRadius: 8, marginBottom: 12, alignItems: 'center', borderWidth: 1, borderColor: '#eee' },
-  nameText: { fontSize: 16, fontWeight: '600', color: '#333' },
-  subText: { fontSize: 13, color: '#777', marginTop: 2 },
-  scoreAction: { flexDirection: 'row', alignItems: 'center' },
-  inputScore: { borderBottomWidth: 1, borderColor: '#4CAF50', width: 50, textAlign: 'center', fontSize: 18, fontWeight: 'bold', marginRight: 12, paddingVertical: 2 },
-  btnSave: { backgroundColor: '#4CAF50', padding: 8, borderRadius: 6 }
+  studentCard: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    backgroundColor: '#fff', 
+    padding: 16, 
+    borderRadius: 8, 
+    marginBottom: 12, 
+    alignItems: 'center', 
+    borderWidth: 1, 
+    borderColor: '#eee' 
+  },
+  nameText: { 
+    fontSize: 16, 
+    fontWeight: '600', 
+    color: '#333' 
+  },
+  subText: { 
+    fontSize: 13, 
+    color: '#777', 
+    marginTop: 2 
+  },
+  scoreAction: { 
+    flexDirection: 'row', 
+    alignItems: 'center' 
+  },
+  inputScore: { 
+    borderBottomWidth: 1, 
+    borderColor: '#4CAF50', 
+    width: 50, 
+    textAlign: 'center', 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    marginRight: 12, 
+    paddingVertical: 2 
+  },
+  btnSave: { 
+    backgroundColor: '#4CAF50', 
+    padding: 8, 
+    borderRadius: 6 
+  },
+  emptyText: { 
+    textAlign: 'center', 
+    marginTop: 30, 
+    color: '#888', 
+    fontSize: 15 
+  }
 });
