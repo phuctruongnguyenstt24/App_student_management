@@ -69,7 +69,7 @@ const CurriculumStudentScreen = () => {
     setRefreshing(true);
     fetchCurriculum();
   };
-
+//
   const handleBack = () => {
     if (router.canGoBack()) {
       

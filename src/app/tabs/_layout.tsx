@@ -114,6 +114,8 @@ export default function TabLayout() {
           href: null,
         }}
       />
+
+      
       // app/tabs/_layout.tsx
       <Tabs.Screen
         name="my-achievements"
@@ -122,6 +124,6 @@ export default function TabLayout() {
           headerShown: false
         }}
       />
-    </Tabs>   
+    </Tabs>
   );
 }

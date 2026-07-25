@@ -13,7 +13,7 @@ export default function MyAchievementsScreen() {
     const [currentSemester, setCurrentSemester] = useState('HK1-2026');
     const [showSemesterList, setShowSemesterList] = useState(false);
 
-    const semesterOptions = ['HK1-2026', 'HK2-2026'];
+    const semesterOptions = ['HK1-2026', 'HK2-2026', "HK3"];
 
     useEffect(() => {
         fetchMyGrades();

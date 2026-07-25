@@ -27,7 +27,7 @@ export default function AllFeaturesScreen() {
     title: "Lịch học/\nlịch thi",
     icon: "calendar-outline",
     color: "#F28C45",
-    href: "Schedule",
+    href: "ScheduleSreen",
   },
   {
     title: "Thanh toán\nhọc phí",
@@ -39,7 +39,7 @@ export default function AllFeaturesScreen() {
     title: "Thành tích",
     icon: "star",
     color: "#F27C63",
-    href: "Achievement",
+    href: "../tabs/my-achievements",
   },
   {
     title: "Phiếu thu\n tổng hợp",

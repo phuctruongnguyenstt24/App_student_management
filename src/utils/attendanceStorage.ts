@@ -13,6 +13,7 @@ export interface AttendanceSession {
   courseCode: string;
   courseName: string;
   department?: string;
+  
   requestedAt: string;
   requestedBy: string;
   status: 'active' | 'closed';
@@ -65,7 +66,7 @@ export const getAttendanceSessions = async (): Promise<AttendanceSession[]> => {
         const json = await res.json();
         if (json.success) {
           const sessions = (json.data || []).map(mapServerSession);
-          console.log(`[Attendance] Fetched ${sessions.length} sessions from server (active: ${sessions.filter((s) => s.status === 'active').length})`);
+          console.log(`[Attendance] Fetched ${sessions.length} sessions from server (active: ${sessions.filter((s: AttendanceSession) => s.status === 'active').length})`);
           // Đồng bộ cache cục bộ
           await AsyncStorage.setItem(ATTENDANCE_SESSIONS_KEY, JSON.stringify(sessions));
           return sessions;

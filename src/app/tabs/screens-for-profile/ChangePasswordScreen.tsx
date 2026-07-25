@@ -21,10 +21,21 @@ export default function ChangePasswordScreen() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isChanging, setIsChanging] = useState(false);
+  
+  // State cho hiện/ẩn mật khẩu
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChangePassword = async () => {
+    // Validation đầy đủ
     if (!oldPassword || !newPassword || !confirmPassword) {
       Alert.alert('Thông báo', 'Vui lòng nhập đầy đủ thông tin!');
+      return;
+    }
+
+    if (newPassword.length < 5) {
+      Alert.alert('Lỗi', 'Mật khẩu mới phải có ít nhất 5 ký tự!');
       return;
     }
 
@@ -33,12 +44,18 @@ export default function ChangePasswordScreen() {
       return;
     }
 
+    if (oldPassword === newPassword) {
+      Alert.alert('Lỗi', 'Mật khẩu mới phải khác mật khẩu cũ!');
+      return;
+    }
+
     try {
       setIsChanging(true);
       const token = await AsyncStorage.getItem('token');
 
+      // Đổi từ POST thành PUT
       const response = await fetch(`${API_URL}/auth/change-password`, {
-        method: 'POST',
+        method: 'PUT', // 👈 Đã đổi thành PUT
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -51,14 +68,24 @@ export default function ChangePasswordScreen() {
 
       const data = await response.json();
 
-      if (response.ok && (data.success || data.message === 'Thành công')) {
+      // Xử lý response giống bên admin
+      if (data.success) {
         Alert.alert('Thành công', 'Đổi mật khẩu thành công!', [
-          { text: 'OK', onPress: () => router.back() }
+          { 
+            text: 'OK', 
+            onPress: () => {
+              setOldPassword('');
+              setNewPassword('');
+              setConfirmPassword('');
+              router.back();
+            }
+          }
         ]);
       } else {
         Alert.alert('Lỗi', data.message || 'Mật khẩu cũ không chính xác hoặc có lỗi xảy ra.');
       }
     } catch (error) {
+      console.error('Change password error:', error);
       Alert.alert('Lỗi', 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
     } finally {
       setIsChanging(false);
@@ -87,10 +114,21 @@ export default function ChangePasswordScreen() {
             <TextInput 
               style={styles.input} 
               placeholder="Nhập mật khẩu hiện tại" 
-              secureTextEntry 
+              secureTextEntry={!showOldPassword} // 👈 Thêm hiện/ẩn
               value={oldPassword} 
               onChangeText={setOldPassword}
+              placeholderTextColor="#999"
             />
+            <TouchableOpacity 
+              onPress={() => setShowOldPassword(!showOldPassword)}
+              style={styles.eyeButton}
+            >
+              <Ionicons 
+                name={showOldPassword ? 'eye-off-outline' : 'eye-outline'} 
+                size={22} 
+                color="#666" 
+              />
+            </TouchableOpacity>
           </View>
 
           <Text style={styles.formLabel}>Mật khẩu mới</Text>
@@ -98,11 +136,22 @@ export default function ChangePasswordScreen() {
             <Ionicons name="key-outline" size={20} color="#666" style={styles.inputIcon} />
             <TextInput 
               style={styles.input} 
-              placeholder="Nhập mật khẩu mới" 
-              secureTextEntry 
+              placeholder="Nhập mật khẩu mới (ít nhất 5 ký tự)" 
+              secureTextEntry={!showNewPassword} // 👈 Thêm hiện/ẩn
               value={newPassword} 
               onChangeText={setNewPassword}
+              placeholderTextColor="#999"
             />
+            <TouchableOpacity 
+              onPress={() => setShowNewPassword(!showNewPassword)}
+              style={styles.eyeButton}
+            >
+              <Ionicons 
+                name={showNewPassword ? 'eye-off-outline' : 'eye-outline'} 
+                size={22} 
+                color="#666" 
+              />
+            </TouchableOpacity>
           </View>
 
           <Text style={styles.formLabel}>Xác nhận mật khẩu mới</Text>
@@ -111,10 +160,29 @@ export default function ChangePasswordScreen() {
             <TextInput 
               style={styles.input} 
               placeholder="Nhập lại mật khẩu mới" 
-              secureTextEntry 
+              secureTextEntry={!showConfirmPassword} // 👈 Thêm hiện/ẩn
               value={confirmPassword} 
               onChangeText={setConfirmPassword}
+              placeholderTextColor="#999"
             />
+            <TouchableOpacity 
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              style={styles.eyeButton}
+            >
+              <Ionicons 
+                name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'} 
+                size={22} 
+                color="#666" 
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Thông tin thêm */}
+          <View style={styles.infoContainer}>
+            <Ionicons name="information-circle-outline" size={18} color="#666" />
+            <Text style={styles.infoText}>
+              Mật khẩu mới phải có ít nhất 5 ký tự
+            </Text>
           </View>
 
           <TouchableOpacity 
@@ -124,7 +192,10 @@ export default function ChangePasswordScreen() {
           >
             {isChanging ? 
               <ActivityIndicator color="#fff" /> : 
-              <Text style={styles.submitButtonText}>Xác nhận đổi mật khẩu</Text>
+              <>
+                <Ionicons name="lock-closed-outline" size={20} color="white" />
+                <Text style={styles.submitButtonText}>Xác nhận đổi mật khẩu</Text>
+              </>
             }
           </TouchableOpacity>
         </View>
@@ -139,16 +210,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   header: {
-   backgroundColor: '#f5f5f5',
-        paddingVertical: 20,
-        paddingHorizontal: 20,
-        paddingTop: 10,
-        marginTop:18,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderBottomWidth: 1,
-        borderBottomColor: '#e8e8e8',
+    backgroundColor: '#f5f5f5',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    marginTop: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e8e8e8',
   },
   headerTitle: {
     fontSize: 18,
@@ -192,18 +263,33 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#333',
   },
+  eyeButton: {
+    padding: 8,
+  },
   submitButton: {
     backgroundColor: '#214D8A',
     borderRadius: 10,
     height: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 30,
+    marginTop: 24,
     marginBottom: 10,
+    flexDirection: 'row',
+    gap: 8,
   },
   submitButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-  }
+  },
+  infoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    gap: 6,
+  },
+  infoText: {
+    fontSize: 12,
+    color: '#666',
+  },
 });

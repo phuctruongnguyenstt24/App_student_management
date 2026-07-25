@@ -10,7 +10,7 @@ import { styles } from '../../a_styles/style_dashboard';
 
 
 export default function AdminDashboard() {
-  const {user} = useAuth();
+  const { user } = useAuth();
   const [userName, setUserName] = useState('');
   const [userRole, setUserRole] = useState('');
   const [currentDate, setCurrentDate] = useState('');
@@ -55,15 +55,15 @@ export default function AdminDashboard() {
         router.replace('/login'); // hoặc dashboard khác
       }
     };
-    
+
     getUserInfo();
     getCurrentDate();
     checkRole();
 
   }, []);
-  
+
   //truy cap avatar 
-  let avatar = user?.avatar || '' ;
+  let avatar = user?.avatar || '';
 
   const handleLogout = async () => {
     await AsyncStorage.removeItem('token');
@@ -92,10 +92,10 @@ export default function AdminDashboard() {
               </View>
             </TouchableOpacity>
             <TouchableOpacity onPress={toggleProfileMenu}>
-                <Image 
-                   source={{ uri: avatar }}
-                   style={styles.avatar}
-                />
+              <Image
+                source={{ uri: avatar }}
+                style={styles.avatar}
+              />
             </TouchableOpacity>
           </View>
         </View>
@@ -110,16 +110,40 @@ export default function AdminDashboard() {
           <View style={styles.menuGrid}>
 
 
-               <TouchableOpacity
+            <TouchableOpacity
               style={styles.menuCard}
               onPress={() => router.push('/admin/admin-management' as any)}
             >
               <View style={styles.menuIconWrapper}>
-                <Ionicons name="person-add-outline" size={32} color="#2fba42" />
+                <Ionicons name="person-outline" size={32} color="#e6250c" />
               </View>
               <Text style={styles.menuTitle}>Quản lí tài khoản Admin</Text>
               <Text style={styles.menuDesc}>Tạo tài khoản Admin</Text>
             </TouchableOpacity>
+
+
+            <TouchableOpacity
+              style={styles.menuCard}
+              onPress={() => router.push('/admin/faculties')}
+            >
+              <View style={styles.menuIconWrapper}>
+                <Ionicons name="school-outline" size={32} color="#0a3ee8" />
+              </View>
+              <Text style={styles.menuTitle}>Quản lý Khoa và Ngành</Text>
+              <Text style={styles.menuDesc}>Thêm, sửa, xóa khoa và ngành</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuCard}
+              onPress={() => router.push('/admin/courses')}
+            >
+              <View style={styles.menuIconWrapper}>
+                <Ionicons name="book-outline" size={32} color="#f92408" />
+              </View>
+              <Text style={styles.menuTitle}>Quản lý môn học</Text>
+              <Text style={styles.menuDesc}>Thêm, sửa, xóa môn học</Text>
+            </TouchableOpacity>
+
 
             <TouchableOpacity
               style={styles.menuCard}
@@ -128,10 +152,19 @@ export default function AdminDashboard() {
               <View style={styles.menuIconWrapper}>
                 <Ionicons name="person-add-outline" size={32} color="#2fba42" />
               </View>
-              <Text style={styles.menuTitle}>Tạo tài khoản</Text>
+              <Text style={styles.menuTitle}>Tạo tài khoản sinh viên</Text>
               <Text style={styles.menuDesc}>Tạo tài khoản mới cho sinh viên</Text>
             </TouchableOpacity>
-
+            <TouchableOpacity
+              style={styles.menuCard}
+              onPress={() => router.push('/admin/attendance-history')}
+            >
+              <View style={styles.menuIconWrapper}>
+                <Ionicons name="checkmark-done-circle" size={32} color="#24cd37" />
+              </View>
+              <Text style={styles.menuTitle}>Điểm danh môn học</Text>
+              <Text style={styles.menuDesc}>Xem lịch sử điểm danh môn học</Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={styles.menuCard}
               onPress={() => router.push('/admin/student-management')}
@@ -153,23 +186,14 @@ export default function AdminDashboard() {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.menuCard}
-              onPress={() => router.push('/admin/courses')}
-            >
-              <View style={styles.menuIconWrapper}>
-                <Ionicons name="book-outline" size={32} color="#c92e19" />
-              </View>
-              <Text style={styles.menuTitle}>Quản lý môn học</Text>
-              <Text style={styles.menuDesc}>Thêm, sửa, xóa môn học</Text>
-            </TouchableOpacity>
+
 
             <TouchableOpacity
               style={styles.menuCard}
               onPress={() => router.push('/admin/schedule')}
             >
               <View style={styles.menuIconWrapper}>
-                <Ionicons name="calendar-outline" size={32} color="#16d6e0" />
+                <Ionicons name="calendar-outline" size={32} color="#ef6b0c" />
               </View>
               <Text style={styles.menuTitle}>Quản lý lịch học</Text>
               <Text style={styles.menuDesc}>Xếp lịch học cho sinh viên</Text>
@@ -205,12 +229,12 @@ export default function AdminDashboard() {
                 <Ionicons name="ribbon-outline" size={32} color="#9b59b6" />
               </View>
               <Text style={styles.menuTitle}>Điểm rèn luyện</Text>
-              <Text style={styles.menuDesc}>Chấm điểm cho sinh viên</Text>   
+              <Text style={styles.menuDesc}>Chấm điểm cho sinh viên</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.menuCard}
-              onPress={() => router.push({ pathname: '/admin/student-achievements' as any })} 
+              onPress={() => router.push({ pathname: '/admin/student-achievements' as any })}
             >
               <View style={styles.menuIconWrapper}>
                 <Ionicons name="trophy-outline" size={32} color="#f5a623" />
@@ -219,7 +243,7 @@ export default function AdminDashboard() {
               <Text style={styles.menuDesc}>Nhập điểm và xem xếp loại sinh viên</Text>
             </TouchableOpacity>
           </View>
-          
+
         </ScrollView>
 
 
@@ -232,9 +256,9 @@ export default function AdminDashboard() {
           >
             <View style={styles.profileMenu}>
               <View style={styles.profileHeader}>
-                 <Image 
-                   source={{ uri: avatar }}
-                   style={styles.avatar}
+                <Image
+                  source={{ uri: avatar }}
+                  style={styles.avatar}
                 />
                 <View>
                   <Text style={styles.profileName}>{userName}</Text>
@@ -242,12 +266,12 @@ export default function AdminDashboard() {
                 </View>
               </View>
 
-              <TouchableOpacity style={styles.menuItem} onPress={ () => router.push('/admin/AdminProfileScreen'as any)}>
+              <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/admin/AdminProfileScreen' as any)}>
                 <Ionicons name="person-outline" size={22} color="#333" />
                 <Text style={styles.menuItemText}>Thông tin cá nhân</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.menuItem} onPress={ () => router.push('/admin/ChangePasswordScreen' as any)}>
+              <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/admin/AD_ChangePasswordScreen' as any)}>
                 <Ionicons name="lock-closed-outline" size={22} color="#333" />
                 <Text style={styles.menuItemText}>Đổi mật khẩu</Text>
               </TouchableOpacity>

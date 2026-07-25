@@ -1,348 +1,367 @@
+// a_styles/style_mng_framework.tsx
 import { StyleSheet } from "react-native";
-export const styles = StyleSheet.create({
+
+export // Styles
+const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: '#f5f5f5',
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
   },
   header: {
-    backgroundColor: "#4CAF50",
-    padding: 16,
-    paddingTop: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  backButton: {
+    padding: 4,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "white",
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.9)",
-    marginTop: 4,
-  },
-  semesterCard: {
-    backgroundColor: "white",
-    margin: 16,
-    borderRadius: 8,
-    padding: 16,
-    elevation: 2,
-  },
-  subjectCodeContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  subjectCode: {
-    fontSize: 13,
-    color: "#546e7a",
-    fontWeight: "500",
-  },
-
-  syncIcon: {
-    marginLeft: 4,
-  },
-
-  subjectActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  // Button
-  buttonRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 6,
-  },
-  halfButton: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1f2937',
     flex: 1,
+    marginLeft: 12,
   },
-  syncButton: {
-    backgroundColor: "#e3f2fd",
-    borderColor: "#90caf9",
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
-  headerButtons: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 4,
-  },
-
-  syncAllButton: {
-    backgroundColor: "rgba(33, 150, 243, 0.8)",
-  },
-  syncButtonText: {
-    color: "#1565c0",
-  },
-
-  semesterHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    paddingBottom: 12,
-    marginBottom: 12,
-  },
-  semesterHeaderRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  semesterTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  semesterStats: {
-    backgroundColor: "#e8f5e9",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statsText: {
-    color: "#4CAF50",
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  editSemesterButton: {
+  filterButton: {
     padding: 4,
-  },
-  deleteSemesterButton: {
-    padding: 4,
-  },
-  subjectCard: {
-    backgroundColor: "#f9f9f9",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: "#4CAF50",
-  },
-  subjectHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  subjectTitle: {
-    flex: 1,
-  },
-  subjectName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-  },
-  subjectCode: {
-    fontSize: 12,
-    color: "#666",
-    marginTop: 2,
-  },
-  subjectActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  statusButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  completed: {
-    backgroundColor: "#4CAF50",
-  },
-  incomplete: {
-    backgroundColor: "#ff9800",
-  },
-  statusText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  editButton: {
-    padding: 4,
-  },
-  deleteButton: {
-    padding: 4,
-  },
-  subjectDetails: {
-    marginTop: 12,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  detailItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "white",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    marginRight: 8,
-  },
-  detailLabel: {
-    fontSize: 12,
-    color: "#666",
-    marginRight: 4,
-  },
-  detailValue: {
-    fontSize: 12,
-    color: "#333",
-    fontWeight: "500",
-  },
-  requiredText: {
-    color: "#4CAF50",
-  },
-  electiveText: {
-    color: "#2196F3",
   },
   addButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 8,
-    borderWidth: 1,
-    borderColor: "#4CAF50",
-    borderRadius: 8,
-    borderStyle: "dashed",
-    marginTop: 8,
+    padding: 4,
   },
-  addButtonText: {
-    color: "#4CAF50",
+  statsContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    marginHorizontal: 16,
+    marginTop: 12,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1f2937',
+  },
+  statLabel: {
+    fontSize: 10,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: '#e5e7eb',
+  },
+  filterContainer: {
+    backgroundColor: '#fff',
+    padding: 12,
+    marginHorizontal: 16,
+    marginTop: 12,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  filterGroup: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  filterLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#4b5563',
+    marginBottom: 4,
+  },
+  filterInput: {
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     fontSize: 14,
-    marginLeft: 8,
+    backgroundColor: '#f9fafb',
+  },
+  pickerWrapper: {
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    backgroundColor: '#f9fafb',
+    height: 40,
+    justifyContent: 'center',
+  },
+  picker: {
+    height: 40,
+  },
+  filterActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+  },
+  clearFilterButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  clearFilterText: {
+    color: '#4A90E2',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  filterResultText: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  body: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+  },
+  sectionContainer: {
+    paddingBottom: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1f2937',
+  },
+  courseCount: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#6b7280',
+    marginTop: 12,
+  },
+  emptySubText: {
+    fontSize: 14,
+    color: '#9ca3af',
+    marginTop: 4,
+  },
+  frameworkCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  cardHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  programCode: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4A90E2',
+    backgroundColor: '#EBF5FF',
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  cardActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  programName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1f2937',
+    marginBottom: 8,
+  },
+  courseInfo: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 6,
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  infoText: {
+    fontSize: 13,
+    color: '#4b5563',
+  },
+  notesText: {
+    fontSize: 13,
+    color: '#6b7280',
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+  cardFooter: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#f3f4f6',
+  },
+  statusButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: '#f3f4f6',
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  statusButtonCompleted: {
+    backgroundColor: '#dcfce7',
+  },
+  statusButtonText: {
+    fontSize: 13,
+    color: '#6b7280',
+    fontWeight: '500',
+  },
+  statusButtonTextCompleted: {
+    color: '#16a34a',
   },
   modalOverlay: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: 16,
   },
   modalContent: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 24,
-    width: "85%",
-    maxWidth: 400,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1f2937',
+  },
+  modalBody: {
+    padding: 16,
+  },
+  formGroup: {
+    marginBottom: 12,
+  },
+  formLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
     marginBottom: 4,
   },
-  modalSubtitle: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 20,
-  },
-  modalInput: {
+  input: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: '#d1d5db',
     borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    marginBottom: 12,
-  },
-  modalRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  modalInputHalf: {
-    flex: 1,
-  },
-  typeSelector: {
-    flex: 1,
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  typeSelectorActive: {
-    backgroundColor: "#e8f5e9",
-    borderColor: "#4CAF50",
-  },
-  typeSelectorText: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     fontSize: 14,
-    color: "#666",
+    backgroundColor: '#f9fafb',
   },
-  typeSelectorTextActive: {
-    color: "#4CAF50",
-    fontWeight: "600",
+  textArea: {
+    height: 80,
+    textAlignVertical: 'top',
   },
-  modalButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  modalFooter: {
+    flexDirection: 'row',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
     gap: 12,
   },
   modalButton: {
     flex: 1,
-    padding: 12,
+    paddingVertical: 10,
     borderRadius: 8,
-    alignItems: "center",
+    alignItems: 'center',
   },
   cancelButton: {
-    backgroundColor: "#f5f5f5",
+    backgroundColor: '#f3f4f6',
   },
   cancelButtonText: {
-    color: "#666",
+    color: '#6b7280',
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: '500',
   },
-  confirmButton: {
-    backgroundColor: "#4CAF50",
+  saveButton: {
+    backgroundColor: '#4A90E2',
   },
-  confirmButtonText: {
-    color: "white",
+  saveButtonText: {
+    color: '#fff',
     fontSize: 16,
-    fontWeight: "500",
-  },
-  addSemesterButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.2)",
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    marginTop: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.3)",
-  },
-  addSemesterText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 8,
-  },
-  emptyContainer: {
-    padding: 20,
-    alignItems: "center",
-  },
-  emptyText: {
-    fontSize: 14,
-    color: "#999",
-    fontStyle: "italic",
-  },
-
-  backButton: {
-    padding: 4,
-  },
-  // Thêm vào cuối file styles
-  syncBadge: {
-    color: "#4CAF50",
-    fontWeight: "bold",
-    fontSize: 12,
-  },
-  subjectDepartment: {
-    fontSize: 12,
-    color: "#666",
-    marginTop: 4,
-    paddingTop: 4,
-    borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
+    fontWeight: '500',
   },
 });

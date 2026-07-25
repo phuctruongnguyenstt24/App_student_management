@@ -1,361 +1,491 @@
-// a_styles/style_schedule.ts
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
+
+const { width } = Dimensions.get('window');
 
 export const styles = StyleSheet.create({
+  // Main Container & Header
   container: {
     flex: 1,
-    backgroundColor: '#F5F7FA',
+    backgroundColor: '#f5f7fa',
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e8e8e8',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1890ff',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  addButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+
+  // Loading & Empty State
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F7FA',
+    backgroundColor: '#f5f7fa',
   },
   loadingText: {
+    marginTop: 8,
+    color: '#1890ff',
     fontSize: 16,
-    color: '#4A90E2',
-    marginTop: 12,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-     paddingTop: 50,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E8ECF1',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1A2332',
-    flex: 1,
-    textAlign: 'center',
-  },
-  addButton: {
-    padding: 4,
   },
   listContent: {
     padding: 16,
-    paddingBottom: 30,
+    paddingBottom: 32,
   },
   emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 80,
+    justifyContent: 'center',
+    marginTop: 80,
   },
   emptyText: {
     fontSize: 16,
-    color: '#9AA6B5',
+    color: '#999',
     marginTop: 12,
-    fontWeight: '500',
+    marginBottom: 16,
   },
-  // Schedule Card
+  emptyButton: {
+    backgroundColor: '#1890ff',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 6,
+  },
+  emptyButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+
+  // Schedule Card Item
   scheduleCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
-    marginBottom: 12,
-    elevation: 2,
+    marginBottom: 16,
+    elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 10,
-  },
-  courseInfo: {
-    flex: 1,
-    marginRight: 8,
-  },
-  courseCode: {
-    fontSize: 13,
-    color: '#4A90E2',
-    fontWeight: '600',
-    marginBottom: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    paddingBottom: 10,
+    marginBottom: 12,
   },
   courseName: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#1A2332',
-    marginBottom: 4,
-  },
-  typeBadgeContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 2,
+    fontWeight: 'bold',
+    color: '#262626',
+    flex: 1,
+    marginRight: 8,
   },
   typeBadge: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 20,
-    alignSelf: 'flex-start',
+    borderRadius: 4,
   },
   typeText: {
-    fontSize: 11,
+    color: '#fff',
+    fontSize: 12,
     fontWeight: '600',
-    color: '#FFFFFF',
+  },
+  cardBody: {
+    marginBottom: 12,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  infoText: {
+    marginLeft: 8,
+    color: '#555',
+    fontSize: 14,
+    flex: 1,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    paddingTop: 10,
+  },
+  semesterText: {
+    fontSize: 13,
+    color: '#8c8c8c',
+    fontWeight: '500',
   },
   cardActions: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  actionButton: {
+  editButton: {
     padding: 6,
-    marginLeft: 4,
+    marginRight: 12,
+    backgroundColor: '#e6f7ff',
+    borderRadius: 6,
   },
-  scheduleDetails: {
-    borderTopWidth: 1,
-    borderTopColor: '#F0F4F8',
-    paddingTop: 10,
+  deleteButton: {
+    padding: 6,
+    backgroundColor: '#fff1f0',
+    borderRadius: 6,
   },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  detailText: {
-    fontSize: 13,
-    color: '#4A5568',
-    marginLeft: 6,
-    flexShrink: 1,
-  },
-  statusRow: {
-    justifyContent: 'space-between',
-    marginTop: 4,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 6,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  studentCount: {
-    fontSize: 12,
-    color: '#6B7A8F',
-  },
-  // Modal
+
+  // Modal Layout & Overlay
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '90%',
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '85%',
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 20,
+    paddingBottom: 30,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingBottom: 16,
+    marginBottom: 20,
+    paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#E8ECF1',
+    borderBottomColor: '#f0f0f0',
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1A2332',
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
   },
-  modalBody: {
-    paddingTop: 16,
-    paddingBottom: 10,
-  },
-  inputGroup: {
+
+  // Form Controls
+  formGroup: {
     marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1A2332',
-    marginBottom: 6,
-  },
-  required: {
-    color: '#FF3B30',
-  },
-  subLabel: {
-    fontSize: 12,
-    color: '#6B7A8F',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#D1D9E6',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: '#1A2332',
-    backgroundColor: '#FAFBFC',
   },
   rowGroup: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  halfInput: {
-    flex: 1,
-    marginRight: 8,
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#434343',
+    marginBottom: 8,
   },
-  typeToggle: {
-    flexDirection: 'row',
-    backgroundColor: '#F0F4F8',
-    borderRadius: 10,
-    padding: 4,
-  },
-  typeOption: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  typeOptionActive: {
-    backgroundColor: '#4A90E2',
-  },
-  typeOptionText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#6B7A8F',
-  },
-  typeOptionTextActive: {
-    color: '#FFFFFF',
-  },
-  statusToggle: {
-    flexDirection: 'row',
-    backgroundColor: '#F0F4F8',
-    borderRadius: 10,
-    padding: 4,
-  },
-  statusOption: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  statusOptionActive: {
-    backgroundColor: '#4A90E2',
-  },
-  statusOptionText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#6B7A8F',
-  },
-  statusOptionTextActive: {
-    color: '#FFFFFF',
-  },
-  pickerItem: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#F0F4F8',
-    marginRight: 8,
+  input: {
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: '#d9d9d9',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: '#333',
+    backgroundColor: '#fafafa',
   },
-  pickerItemSelected: {
-    backgroundColor: '#4A90E2',
-    borderColor: '#4A90E2',
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#d9d9d9',
+    borderRadius: 8,
+    backgroundColor: '#fafafa',
+    overflow: 'hidden',
   },
-  pickerItemText: {
+  picker: {
+    width: '100%',
+    height: 50,
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 2,
+    borderColor: '#1890ff',
+    borderRadius: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  checkboxChecked: {
+    backgroundColor: '#1890ff',
+  },
+  checkboxLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333',
+  },
+
+  // Filter Section (Inside Modal / Student List)
+  filterContainer: {
+    backgroundColor: '#f0f5ff',
+    borderRadius: 8,
+    padding: 12,
+    marginVertical: 10,
+    borderWidth: 1,
+    borderColor: '#d6e4ff',
+  },
+  filterTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#1d39c4',
+    marginBottom: 8,
+  },
+  filterScroll: {
+    flexDirection: 'row',
+  },
+  filterGroup: {
+    marginRight: 12,
+    width: 130,
+  },
+  filterLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 4,
+  },
+  filterPickerContainer: {
+    borderWidth: 1,
+    borderColor: '#d9d9d9',
+    borderRadius: 6,
+    backgroundColor: '#fff',
+    overflow: 'hidden',
+    height: 40,
+    justifyContent: 'center',
+  },
+  filterPicker: {
+    width: '100%',
+    height: 40,
+  },
+  resetFilterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    height: 40,
+    alignSelf: 'flex-end',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#1890ff',
+    borderRadius: 6,
+  },
+  resetFilterText: {
+    color: '#1890ff',
+    marginLeft: 4,
     fontSize: 13,
-    color: '#4A5568',
+    fontWeight: '600',
   },
-  pickerItemTextSelected: {
-    color: '#FFFFFF',
+
+  // Student Selection List
+  studentList: {
+    maxHeight: 200,
+    borderWidth: 1,
+    borderColor: '#d9d9d9',
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    marginTop: 8,
   },
-  datePicker: {
+  emptyStudentContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  emptyStudentText: {
+    color: '#999',
+    fontSize: 14,
+  },
+  studentItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-  },
-  dateItem: {
-    flex: 1,
     alignItems: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: '#F0F4F8',
-    marginHorizontal: 2,
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
-  dateItemSelected: {
-    backgroundColor: '#4A90E2',
+  studentItemSelected: {
+    backgroundColor: '#e6f7ff',
   },
-  dateItemText: {
-    fontSize: 11,
-    color: '#6B7A8F',
-    fontWeight: '500',
+  studentInfo: {
+    flex: 1,
   },
-  dateItemNumber: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1A2332',
+  studentName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+  },
+  studentId: {
+    fontSize: 12,
+    color: '#666',
     marginTop: 2,
   },
-  dateItemTextSelected: {
-    color: '#FFFFFF',
-  },
-  selectedInfo: {
-    fontSize: 13,
-    color: '#4A90E2',
-    marginTop: 8,
-    fontWeight: '500',
-  },
-  modalFooter: {
+  studentDetails: {
     flexDirection: 'row',
-    gap: 12,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E8ECF1',
-    marginBottom: 10,
+    alignItems: 'center',
   },
-  modalButton: {
+  studentClass: {
+    fontSize: 12,
+    color: '#8c8c8c',
+    marginRight: 8,
+    backgroundColor: '#f5f5f5',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  selectedCount: {
+    fontSize: 13,
+    color: '#555',
+    fontWeight: '600',
+    marginTop: 8,
+    textAlign: 'right',
+  },
+
+  // Form Submit Actions
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 24,
+  },
+  button: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: 12,
+    borderRadius: 8,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   cancelButton: {
-    backgroundColor: '#F0F4F8',
+    backgroundColor: '#f5f5f5',
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#d9d9d9',
   },
-  cancelButtonText: {
-    fontSize: 16,
+  submitButton: {
+    backgroundColor: '#1890ff',
+    marginLeft: 8,
+  },
+  buttonText: {
+    fontSize: 15,
     fontWeight: '600',
-    color: '#6B7A8F',
+    color: '#595959',
   },
-  saveButton: {
-    backgroundColor: '#4A90E2',
+  submitButtonText: {
+    color: '#fff',
   },
-  saveButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
+   filterHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
+  selectAllButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    backgroundColor: '#e6f7ff',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#1890ff',
+  },
+  selectAllText: {
+    color: '#1890ff',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  // a_styles/style_schedule.ts
+// Thêm các style sau vào file style_schedule.ts
+
+dayPickerContainer: {
+  flexDirection: 'row',
+  flexWrap: 'wrap',
+  gap: 8,
+  marginTop: 8,
+},
+dayButton: {
+  paddingHorizontal: 16,
+  paddingVertical: 8,
+  borderRadius: 8,
+  borderWidth: 1,
+  borderColor: '#d9d9d9',
+  backgroundColor: '#fff',
+  marginRight: 8,
+  marginBottom: 8,
+},
+dayButtonSelected: {
+  backgroundColor: '#1890ff',
+  borderColor: '#1890ff',
+},
+dayButtonText: {
+  fontSize: 14,
+  color: '#333',
+  fontWeight: '500',
+},
+dayButtonTextSelected: {
+  color: '#fff',
+},
+selectedDaysText: {
+  fontSize: 13,
+  color: '#666',
+  marginTop: 4,
+  fontStyle: 'italic',
+},
+
+// a_styles/style_schedule.ts
+// Thêm các style sau:
+
+conflictContainer: {
+  padding: 12,
+  borderRadius: 8,
+  marginVertical: 8,
+  borderWidth: 1,
+},
+conflictError: {
+  backgroundColor: '#fff2f0',
+  borderColor: '#ff4d4f',
+},
+conflictSuccess: {
+  backgroundColor: '#f6ffed',
+  borderColor: '#52c41a',
+},
+conflictText: {
+  fontSize: 13,
+  color: '#333',
+  lineHeight: 20,
+  marginBottom: 4,
+},
+submitButtonWarning: {
+  backgroundColor: '#faad14',
+},
 });
+
+export default styles;

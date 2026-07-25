@@ -50,7 +50,7 @@ interface StudentFormData {
     class: string;
     phone: string;
     address: string;
-    year: string;
+    course: string;
     sequenceNumber: string;
     // Thêm mới
     dateOfBirth: string;
@@ -69,7 +69,7 @@ export default function CreateStudentScreen() {
         class: '',
         phone: '',
         address: '',
-        year: new Date().getFullYear().toString(),
+        course: new Date().getFullYear().toString(),
         sequenceNumber: '',
         // Thêm mới
         dateOfBirth: '',
@@ -196,14 +196,14 @@ export default function CreateStudentScreen() {
 
     // Tự động tìm STT khi năm học hoặc ngành thay đổi
     useEffect(() => {
-        if (formData.year && formData.departmentId) {
+        if (formData.course && formData.departmentId) {
             const selectedDept = departments.find(d => d._id === formData.departmentId);
             if (selectedDept) {
-                const newSequence = findNextSequenceNumber(formData.year, selectedDept.code);
+                const newSequence = findNextSequenceNumber(formData.course, selectedDept.code);
                 setFormData(prev => ({ ...prev, sequenceNumber: newSequence }));
             }
         }
-    }, [formData.year, formData.departmentId, departments, existingStudentIds]);
+    }, [formData.course, formData.departmentId, departments, existingStudentIds]);
 
     const generateMSSV = (year: string, departmentCode: string, sequenceNumber: string) => {
         if (!year || !departmentCode || !sequenceNumber) return '';
@@ -282,13 +282,13 @@ export default function CreateStudentScreen() {
             setFormData(prev => ({ ...prev, sequenceNumber: numericText }));
 
             // Chỉ kiểm tra khi đã nhập đủ 3 số
-            if (numericText.length === 3 && formData.year && formData.departmentId) {
+            if (numericText.length === 3 && formData.course && formData.departmentId) {
                 const selectedDept = departments.find(d => d._id === formData.departmentId);
                 if (selectedDept) {
-                    const exists = checkSequenceExists(formData.year, selectedDept.code, numericText);
+                    const exists = checkSequenceExists(formData.course, selectedDept.code, numericText);
                     if (exists) {
                         // Tự động tìm STT tiếp theo
-                        const nextSeq = findNextSequenceNumber(formData.year, selectedDept.code);
+                        const nextSeq = findNextSequenceNumber(formData.course, selectedDept.code);
 
                         Alert.alert(
                             '⚠️ STT đã tồn tại',
@@ -310,19 +310,19 @@ export default function CreateStudentScreen() {
         }
     };
     useEffect(() => {
-        if (formData.fullName && formData.departmentId && formData.year && formData.sequenceNumber) {
+        if (formData.fullName && formData.departmentId && formData.course && formData.sequenceNumber) {
             const selectedDept = departments.find(d => d._id === formData.departmentId);
             if (selectedDept) {
-                const mssv = generateMSSV(formData.year, selectedDept.code, formData.sequenceNumber);
+                const mssv = generateMSSV(formData.course, selectedDept.code, formData.sequenceNumber);
                 const email = generateEmail(formData.fullName, selectedDept.code, mssv);
                 const password = generatePassword(mssv);
                 setFormData(prev => ({ ...prev, studentId: mssv, email, password }));
             }
         }
-    }, [formData.fullName, formData.departmentId, formData.year, formData.sequenceNumber]);
+    }, [formData.fullName, formData.departmentId, formData.course, formData.sequenceNumber]);
 
     const resetForm = (keepYear: boolean = true) => {
-        const year = keepYear ? formData.year : new Date().getFullYear().toString();
+        const year = keepYear ? formData.course : new Date().getFullYear().toString();
         const selectedDept = formData.departmentId ? departments.find(d => d._id === formData.departmentId) : null;
         const newSequence = selectedDept ? findNextSequenceNumber(year, selectedDept.code) : '001';
         setFormData({
@@ -335,7 +335,7 @@ export default function CreateStudentScreen() {
             class: '',
             phone: '',
             address: '',
-            year: year,
+            course: year,
             sequenceNumber: newSequence,
             dateOfBirth: '',
             placeOfBirth: '',
@@ -356,7 +356,7 @@ export default function CreateStudentScreen() {
             Alert.alert('Lỗi', 'Vui lòng chọn ngành');
             return;
         }
-        if (!formData.year) {
+        if (!formData.course) {
             Alert.alert('Lỗi', 'Vui lòng chọn năm học');
             return;
         }
@@ -371,10 +371,10 @@ export default function CreateStudentScreen() {
             return;
         }
 
-        const exists = checkSequenceExists(formData.year, selectedDept.code, formData.sequenceNumber);
+        const exists = checkSequenceExists(formData.course, selectedDept.code, formData.sequenceNumber);
         if (exists) {
             Alert.alert('Lỗi trùng STT', `STT ${formData.sequenceNumber} đã tồn tại.`);
-            const newSeq = findNextSequenceNumber(formData.year, selectedDept.code);
+            const newSeq = findNextSequenceNumber(formData.course, selectedDept.code);
             setFormData(prev => ({ ...prev, sequenceNumber: newSeq }));
             return;
         }
@@ -545,10 +545,10 @@ export default function CreateStudentScreen() {
 
     const isSequenceDuplicate = () => {
         if (!formData.sequenceNumber || formData.sequenceNumber.length < 3) return false;
-        if (!formData.year || !formData.departmentId) return false;
+        if (!formData.course || !formData.departmentId) return false;
         const selectedDept = departments.find(d => d._id === formData.departmentId);
         if (!selectedDept) return false;
-        return checkSequenceExists(formData.year, selectedDept.code, formData.sequenceNumber);
+        return checkSequenceExists(formData.course, selectedDept.code, formData.sequenceNumber);
     };
 
     if (isFetching) {
@@ -598,15 +598,15 @@ export default function CreateStudentScreen() {
                             <View style={styles.pickerWrapper}>
                                 <List.Section>
                                     <List.Accordion
-                                        title={formData.year ? `${formData.year} - ${parseInt(formData.year) + 1}` : 'Chọn năm học'}
+                                        title={formData.course ? `${formData.course} - ${parseInt(formData.course) + 1}` : 'Chọn năm học'}
                                         left={props => <List.Icon {...props} icon="calendar" />}
                                     >
                                         {getYearOptions().map(year => (
                                             <List.Item
                                                 key={year}
                                                 title={`${year} - ${parseInt(year) + 1}`}
-                                                description={`Năm học ${year}`}
-                                                onPress={() => setFormData(prev => ({ ...prev, year: year }))}
+                                                description={`Khóa ${year}`}
+                                                onPress={() => setFormData(prev => ({ ...prev, course: year }))}
                                             />
                                         ))}
                                     </List.Accordion>

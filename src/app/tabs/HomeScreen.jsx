@@ -53,6 +53,14 @@ export default function HomeScreen() {
       color: "#4ECDC4",
       image: "📱",
     },
+        {
+      id: 4,
+      title: "học cùng a hưng",
+      subtitle: "Lập trình di động React Native",
+      buttonText: "Đăng ký",
+      color: "#65c61b",
+      image: "📱",
+    },
   ];
 
   // Lấy tên và MSSV
@@ -72,7 +80,7 @@ export default function HomeScreen() {
       icon: "calendar-outline",
       title: "Lịch học",
       color: "#FF8A4C",
-      href: "/screens/ScheduleScreen",
+      href: "../tabs/ScheduleScreen",
     },
     {
       icon: "cash-outline",

@@ -79,8 +79,8 @@ app.use('/api/departments', departmentRoutes);
 // Các routes khác
 app.use('/api/courses', courseRoutes);
 app.use('/api/attendance', attendanceRoutes);
-app.use('/api', updateRequestRoutes);
-app.use('/api', studentRoutes);
+app.use('/api/students', updateRequestRoutes);
+app.use('/api/students', studentRoutes);
 app.use('/api/schedules', scheduleRoutes);
 app.use("/api/news", newsRoutes);
 app.use('/api/feedback', feedbackRoutes);

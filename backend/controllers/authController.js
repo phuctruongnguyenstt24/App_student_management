@@ -396,7 +396,7 @@ const getAdminProfile = async (req, res) => {
     });
   }
 };
-
+//Lấy all sinh viên
 const getAllStudents = async (req, res) => {
   try {
     if (req.user.role !== 'admin') {

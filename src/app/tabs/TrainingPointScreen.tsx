@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
     padding: 15,
     borderRadius: 10,
-    marginTop: 50,
+    marginTop: 125,
     alignItems: 'center',
   },
   infoText: {
