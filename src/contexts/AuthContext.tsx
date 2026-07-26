@@ -103,6 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Hàm lấy thông tin user đầy đủ từ API - FIXED
+// Hàm lấy thông tin user đầy đủ từ API - ĐÃ SỬA CHUẨN
   const fetchFullUserProfile = async (userId: string): Promise<User | null> => {
     try {
       const token = await AsyncStorage.getItem('token');
@@ -111,65 +112,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return null;
       }
 
-      // Try the correct endpoint - OPTION 1: /users/profile (uses token)
-      try {
-        const response = await fetch(`${API_URL}/users/profile`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
+      // Gọi đúng API lấy thông tin sinh viên bên studentRoutes
+      const response = await fetch(`${API_URL}/students/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Profile fetched successfully via /students/:id');
         
-        if (response.ok) {
-          const data = await response.json();
-          console.log('✅ Profile fetched successfully via /users/profile');
-          return data.user || data;
-        }
-      } catch (error) {
-        console.warn('Fetch via /users/profile failed:', error);
-      }
-
-      // OPTION 2: Try /users/:id (without /profile)
-      try {
-        const response = await fetch(`${API_URL}/users/${userId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log('✅ Profile fetched successfully via /users/:id');
-          return data.user || data;
-        }
-      } catch (error) {
-        console.warn('Fetch via /users/:id failed:', error);
-      }
-
-      // OPTION 3: Try the original endpoint but handle 404 gracefully
-      try {
-        const response = await fetch(`${API_URL}/users/${userId}/profile`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log('✅ Profile fetched successfully via /users/:id/profile');
-          return data.user || data;
-        } else if (response.status === 404) {
-          // Profile not found - this is fine for admin users
-          console.log('ℹ️ Profile not found for user (this is normal for admins)');
-          return null;
-        } else {
-          console.warn(`Profile fetch failed with status: ${response.status}`);
-          return null;
-        }
-      } catch (error) {
-        console.warn('Fetch via /users/:id/profile failed:', error);
+        // Trả về dữ liệu sinh viên (tùy thuộc vào cách Backend của bạn bọc dữ liệu trả về)
+        // Thông thường sẽ là data.data, data.student hoặc chính là data
+        return data.data || data.student || data.user || data;
+      } else if (response.status === 404) {
+        console.log('ℹ️ Profile not found for user');
+        return null;
+      } else {
+        console.warn(`Profile fetch failed with status: ${response.status}`);
         return null;
       }
     } catch (error) {
