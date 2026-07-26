@@ -202,4 +202,23 @@ export const styles = StyleSheet.create({
     color: '#999',
     marginTop: 4,
   },
+
+  sessionSection: {
+    marginTop: 12,
+  },
+  sessionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginLeft: 16,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+  },
+  emptySessionText: {
+    fontSize: 13,
+    color: '#999',
+    fontStyle: 'italic',
+    marginLeft: 16,
+    marginBottom: 12,
+  },
 });

@@ -124,7 +124,7 @@ export default function AdminDashboard() {
 
             <TouchableOpacity
               style={styles.menuCard}
-              onPress={() => router.push('/admin/faculties')}
+              onPress={() => router.push('/admin/faculties' as any)}
             >
               <View style={styles.menuIconWrapper}>
                 <Ionicons name="school-outline" size={32} color="#0a3ee8" />
@@ -157,7 +157,7 @@ export default function AdminDashboard() {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.menuCard}
-              onPress={() => router.push('/admin/attendance-history')}
+              onPress={() => router.push('/admin/attendance-history' as any)}
             >
               <View style={styles.menuIconWrapper}>
                 <Ionicons name="checkmark-done-circle" size={32} color="#24cd37" />

@@ -1,4 +1,4 @@
-import { StyleSheet, Dimensions } from 'react-native';
+import { Dimensions, StyleSheet } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -9,10 +9,10 @@ export const styles = StyleSheet.create({
     backgroundColor: '#f5f7fa',
   },
   header: {
-       flexDirection: 'row',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 50, // Cân đối cho các dòng máy có tai thỏ/notch
+    paddingTop: 50, // Dành cho các dòng máy có notch / tai thỏ
     paddingBottom: 15,
     paddingHorizontal: 16,
     backgroundColor: '#fff',
@@ -81,17 +81,55 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
+  // Accordion (Danh sách theo Lớp)
+  accordionCard: {
+    marginBottom: 15,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    overflow: 'hidden',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  accordionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    backgroundColor: '#f0f5ff',
+  },
+  accordionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1890ff',
+  },
+  accordionRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  accordionSubText: {
+    marginRight: 10,
+    color: '#666',
+  },
+  accordionBody: {
+    padding: 10,
+  },
+
   // Schedule Card Item
   scheduleCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
-    marginBottom: 16,
-    elevation: 3,
+    marginBottom: 10,
+    elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -120,7 +158,7 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
   },
   cardBody: {
-    marginBottom: 12,
+    marginBottom: 8,
   },
   infoRow: {
     flexDirection: 'row',
@@ -251,7 +289,7 @@ export const styles = StyleSheet.create({
     color: '#333',
   },
 
-  // Filter Section (Inside Modal / Student List)
+  // Filter Section
   filterContainer: {
     backgroundColor: '#f0f5ff',
     borderRadius: 8,
@@ -259,6 +297,12 @@ export const styles = StyleSheet.create({
     marginVertical: 10,
     borderWidth: 1,
     borderColor: '#d6e4ff',
+  },
+  filterHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   filterTitle: {
     fontSize: 14,
@@ -271,26 +315,28 @@ export const styles = StyleSheet.create({
   },
   filterGroup: {
     marginRight: 12,
-    width: 130,
+    width: 140,
   },
   filterLabel: {
     fontSize: 12,
     color: '#666',
     marginBottom: 4,
   },
+
   filterPickerContainer: {
     borderWidth: 1,
     borderColor: '#d9d9d9',
     borderRadius: 6,
     backgroundColor: '#fff',
     overflow: 'hidden',
-    height: 40,
+    height: 50, // Tăng từ 40 lên 50 để không bị che chữ
     justifyContent: 'center',
   },
   filterPicker: {
     width: '100%',
-    height: 40,
+    height: 50, // Tăng chiều cao tương ứng với container
   },
+
   resetFilterButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -310,66 +356,80 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Student Selection List
-  studentList: {
-    maxHeight: 200,
+  // Selection & Action Helpers
+  selectAllButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    backgroundColor: '#e6f7ff',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#1890ff',
+  },
+  selectAllText: {
+    color: '#1890ff',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+
+  // Day Picker Styles
+  dayPickerContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  dayButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#d9d9d9',
-    borderRadius: 8,
     backgroundColor: '#fff',
-    marginTop: 8,
-  },
-  emptyStudentContainer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  emptyStudentText: {
-    color: '#999',
-    fontSize: 14,
-  },
-  studentItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  studentItemSelected: {
-    backgroundColor: '#e6f7ff',
-  },
-  studentInfo: {
-    flex: 1,
-  },
-  studentName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  studentId: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
-  },
-  studentDetails: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  studentClass: {
-    fontSize: 12,
-    color: '#8c8c8c',
     marginRight: 8,
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    marginBottom: 8,
   },
-  selectedCount: {
+  dayButtonSelected: {
+    backgroundColor: '#1890ff',
+    borderColor: '#1890ff',
+  },
+  dayButtonText: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+  },
+  dayButtonTextSelected: {
+    color: '#fff',
+  },
+  selectedDaysText: {
     fontSize: 13,
-    color: '#555',
-    fontWeight: '600',
-    marginTop: 8,
-    textAlign: 'right',
+    color: '#666',
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+
+  // Conflict Alert Styles
+  conflictContainer: {
+    padding: 12,
+    borderRadius: 8,
+    marginVertical: 8,
+    borderWidth: 1,
+  },
+  conflictError: {
+    backgroundColor: '#fff2f0',
+    borderColor: '#ff4d4f',
+  },
+  conflictSuccess: {
+    backgroundColor: '#f6ffed',
+    borderColor: '#52c41a',
+  },
+  conflictText: {
+    fontSize: 13,
+    color: '#333',
+    lineHeight: 20,
+    marginBottom: 4,
+  },
+  submitButtonWarning: {
+    backgroundColor: '#faad14',
   },
 
   // Form Submit Actions
@@ -403,89 +463,6 @@ export const styles = StyleSheet.create({
   submitButtonText: {
     color: '#fff',
   },
-   filterHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  selectAllButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    backgroundColor: '#e6f7ff',
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: '#1890ff',
-  },
-  selectAllText: {
-    color: '#1890ff',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  // a_styles/style_schedule.ts
-// Thêm các style sau vào file style_schedule.ts
-
-dayPickerContainer: {
-  flexDirection: 'row',
-  flexWrap: 'wrap',
-  gap: 8,
-  marginTop: 8,
-},
-dayButton: {
-  paddingHorizontal: 16,
-  paddingVertical: 8,
-  borderRadius: 8,
-  borderWidth: 1,
-  borderColor: '#d9d9d9',
-  backgroundColor: '#fff',
-  marginRight: 8,
-  marginBottom: 8,
-},
-dayButtonSelected: {
-  backgroundColor: '#1890ff',
-  borderColor: '#1890ff',
-},
-dayButtonText: {
-  fontSize: 14,
-  color: '#333',
-  fontWeight: '500',
-},
-dayButtonTextSelected: {
-  color: '#fff',
-},
-selectedDaysText: {
-  fontSize: 13,
-  color: '#666',
-  marginTop: 4,
-  fontStyle: 'italic',
-},
-
-// a_styles/style_schedule.ts
-// Thêm các style sau:
-
-conflictContainer: {
-  padding: 12,
-  borderRadius: 8,
-  marginVertical: 8,
-  borderWidth: 1,
-},
-conflictError: {
-  backgroundColor: '#fff2f0',
-  borderColor: '#ff4d4f',
-},
-conflictSuccess: {
-  backgroundColor: '#f6ffed',
-  borderColor: '#52c41a',
-},
-conflictText: {
-  fontSize: 13,
-  color: '#333',
-  lineHeight: 20,
-  marginBottom: 4,
-},
-submitButtonWarning: {
-  backgroundColor: '#faad14',
-},
 });
 
 export default styles;

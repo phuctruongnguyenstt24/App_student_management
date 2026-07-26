@@ -10,7 +10,7 @@ const scheduleSchema = new mongoose.Schema({
   studentId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Student',
-    required: false, // Có thể null cho lịch nhóm
+    required: false,
   },
   studentIds: [{
     type: mongoose.Schema.Types.ObjectId,
@@ -21,7 +21,7 @@ const scheduleSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
-    type: {  
+  type: {  
     type: String,
     enum: ['theory', 'practice', 'exam'],
     required: true,
@@ -32,7 +32,25 @@ const scheduleSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
-   dayOfWeek: [{
+  // BỔ SUNG: Các trường nhận từ Frontend
+  targetClass: {
+    type: String,
+    required: true,
+  },
+  specificDate: {
+    type: String, // Lưu dưới dạng YYYY-MM-DD
+    required: true,
+  },
+  session: {
+    type: String, // morning, afternoon, evening
+    required: true,
+  },
+  targetGroup: {
+    type: String,
+    default: 'all',
+  },
+  // dayOfWeek giữ lại nhưng không bắt buộc (vì dùng specificDate)
+  dayOfWeek: [{
     type: Number,
     enum: [0, 1, 2, 3, 4, 5, 6]
   }],
@@ -90,8 +108,8 @@ const scheduleSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Tạo composite index để tránh trùng lịch
-scheduleSchema.index({ studentId: 1, dayOfWeek: 1, startTime: 1, endTime: 1 });
+// Cập nhật composite index 
+scheduleSchema.index({ specificDate: 1, startTime: 1, endTime: 1 });
 
 // Middleware: tự động cập nhật status dựa trên currentStudents
 scheduleSchema.pre('save', function() {
@@ -100,7 +118,6 @@ scheduleSchema.pre('save', function() {
   } else if (this.status === 'full' && this.currentStudents < this.maxStudents) {
     this.status = 'active';
   }
-
 });
 
 module.exports = mongoose.model('Schedule', scheduleSchema);
