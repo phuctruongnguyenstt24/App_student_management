@@ -9,6 +9,7 @@ dotenv.config();
 
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const userRoutes = require('./routes/userRoutes');
 const facultyRoutes = require('./routes/facultyRoutes');
 const departmentRoutes = require('./routes/departmentRoutes');
 const courseRoutes = require('./routes/courses');
@@ -71,6 +72,8 @@ app.use('/api/auth', authRoutes);
 
 // Admin management (yêu cầu admin)
 app.use('/api/admin', adminRoutes);
+
+app.use('/api/users', userRoutes);
 
 // Faculty, Department (có thể yêu cầu auth tùy theo route)
 app.use('/api/faculties', facultyRoutes);
