@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
     avatarImage: {
         width: '100%',
         height: '100%',
-        resizeMode: 'cover',
+        // resizeMode: 'cover',
     },
     editButton: {
         position: "absolute",

@@ -27,7 +27,7 @@ export default function AllFeaturesScreen() {
     title: "Lịch học/\nlịch thi",
     icon: "calendar-outline",
     color: "#F28C45",
-    href: "ScheduleSreen",
+    href: "../tabs/ScheduleScreen",
   },
   {
     title: "Thanh toán\nhọc phí",

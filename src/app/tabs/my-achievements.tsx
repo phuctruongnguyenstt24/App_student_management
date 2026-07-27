@@ -1,505 +1,565 @@
+// my-chievements.tsx
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View ,Alert} from 'react-native';
+import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { API_URL } from '../../config/api';
 
-// Định nghĩa Interface cho Học kỳ để dễ quản lý Label (hiển thị) và Value (gửi API)
-interface SemesterOption {
-    label: string; // VD: "Học kỳ 1"
-    value: string; // VD: "HK1-2026"
+interface Achievement {
+  _id: string;
+  courseCode: string;
+  courseName: string;
+  credits: number;
+  midtermScore: number | null;
+  finalScore: number | null;
+  averageScore: number; // Điểm tổng của tôi: GK*40% + CK*60%
+  classAverage: number; // Trung bình của cả lớp
+  grade: string;
+  semester: string;
+  status: string;
 }
 
-export default function MyAchievementsScreen() {
-    const router = useRouter();
-    const [grades, setGrades] = useState<any[]>([]);
-    const [loading, setLoading] = useState(false);
+interface Grade {
+  _id: string;
+  course: {
+    courseCode: string;
+    courseName: string;
+    credits: number;
+  };
+  midtermScore: number | null;
+  finalScore: number | null;
+  semester: string;
+}
 
-    // State quản lý Học kỳ (Đã nâng cấp thành Object)
-    const [semesterOptions, setSemesterOptions] = useState<SemesterOption[]>([]);
-    const [currentSemester, setCurrentSemester] = useState<SemesterOption | null>(null);
-    const [showSemesterList, setShowSemesterList] = useState(false);
+export default function MyAchievements() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [selectedSemester, setSelectedSemester] = useState<string>('all');
+  const [semesters, setSemesters] = useState<string[]>([]);
+  const [summary, setSummary] = useState({
+    totalCredits: 0,
+    gpa: 0,
+     classAverageGPA: 0,
+    completedCourses: 0
+  });
 
-    // 1. Tải danh sách Học kỳ từ Chương trình khung ngay khi mở app
-    useEffect(() => {
-        fetchCurriculumSemesters();
-    }, []);
+  useEffect(() => {
+    loadAchievements();
+  }, []);
 
-    // 2. Tự động lấy bảng điểm mỗi khi thay đổi currentSemester
-    useEffect(() => {
-        if (currentSemester) {
-            fetchMyGrades();
+  // Tính điểm tổng: GK*40% + CK*60%
+  const calculateTotalScore = (midterm: number | null, final: number | null) => {
+    if (midterm === null && final === null) return 0;
+    const mid = midterm || 0;
+    const fin = final || 0;
+    return Number(((mid * 0.4) + (fin * 0.6)).toFixed(2));
+  };
+
+  // Tính điểm chữ
+  const calculateGrade = (score: number) => {
+    if (score === 0) return '';
+     if (score >= 9.5) return 'A+';
+    if (score >= 8.5) return 'A';
+    if (score >= 7.0) return 'B+';
+    if (score >= 6.5) return 'B';
+    if (score >= 5.5) return 'C';
+    if (score >= 4.0) return 'D';
+    return 'F';
+  };
+
+  const loadAchievements = async () => {
+    setLoading(true);
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        console.error('No token found');
+        setLoading(false);
+        return;
+      }
+
+      // Fetch grades and class averages
+      const [gradesRes, classAvgRes] = await Promise.all([
+        fetch(`${API_URL}/grades/student/me`, { 
+          headers: { Authorization: `Bearer ${token}` } 
+        }),
+        fetch(`${API_URL}/grades/class/average`, { 
+          headers: { Authorization: `Bearer ${token}` } 
+        })
+      ]);
+
+      // Process grades
+      const gradesData = await gradesRes.json();
+      if (!gradesData.success) {
+        console.error('Failed to fetch grades:', gradesData);
+        setLoading(false);
+        return;
+      }
+
+      // Process class averages
+      let classAvgMap = new Map<string, number>();
+      try {
+        const classAvgData = await classAvgRes.json();
+        if (classAvgData.success) {
+          console.log('RAW CLASS AVG SAMPLE:', JSON.stringify(classAvgData.data?.[0], null, 2));
+          classAvgData.data.forEach((item: any) => {
+            const code = item.courseCode || item.course?.courseCode;
+            if (code) classAvgMap.set(code, item.averageScore);
+          });
         }
-    }, [currentSemester]);
+      } catch (error) {
+        console.log('Could not fetch class averages');
+      }
 
-    // HÀM LẤY CHƯƠNG TRÌNH KHUNG
-    const fetchCurriculumSemesters = async () => {
-        setLoading(true);
-        try {
-            const token = await AsyncStorage.getItem('token');
-            if (!token) {
-                router.replace('/login');
-                return;
-            }
+      // Combine data
+      const grades = gradesData.data || [];
 
-            // Lấy Năm học (Khóa) của sinh viên từ Local Storage
-            const userStr = await AsyncStorage.getItem('user');
-            let courseYear = '2026';
-            if (userStr) {
-                const user = JSON.parse(userStr);
-                courseYear = user.courseYear || user.year || (user.class ? user.class.match(/\d{4}/)?.[0] : '2026') || '2026';
-            }
+      // DEBUG: kiểm tra cấu trúc thật của 1 grade để đối chiếu field course lồng/phẳng
+      if (grades.length > 0) {
+        console.log('RAW GRADE SAMPLE:', JSON.stringify(grades[0], null, 2));
+      }
 
-            const response = await fetch(`${API_URL}/curriculum`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
+      const formattedData: Achievement[] = grades.map((grade: any) => {
+        const midterm = grade.midtermScore ?? null;
+        const final = grade.finalScore ?? null;
 
-            // Xử lý dữ liệu trả về
-            let rawSemesters = [];
-            if (Array.isArray(data)) rawSemesters = data;
-            else if (data && Array.isArray(data.data)) rawSemesters = data.data;
-            else if (data && Array.isArray(data.semesters)) rawSemesters = data.semesters;
-            else if (data && data.curriculum && Array.isArray(data.curriculum)) rawSemesters = data.curriculum;
+        // Fallback: course có thể nằm lồng trong "course" (nested) hoặc nằm
+        // ngay trên grade dạng phẳng (flat), tùy backend trả về kiểu nào.
+        // Áp dụng cùng cách xử lý phòng thủ như bên trang quản lý thành tích.
+        const courseCode = grade.course?.courseCode || grade.courseCode || '';
+        const courseName = grade.course?.courseName || grade.courseName || 'Không xác định';
+        const credits = grade.course?.credits ?? grade.credits ?? 0;
+        
+        // Tính điểm tổng của tôi: GK*40% + CK*60%
+        const myScore = calculateTotalScore(midterm, final);
+        
+        // Lấy điểm trung bình lớp
+        const classAvg = classAvgMap.get(courseCode) || 0;
+        
+        // Tính điểm chữ
+        const gradeLetter = calculateGrade(myScore);
+        
+        return {
+          _id: grade._id,
+          courseCode,
+          courseName,
+          credits,
+          midtermScore: midterm,
+          finalScore: final,
+          averageScore: myScore,
+          classAverage: classAvg,
+          grade: gradeLetter,
+          semester: grade.semester || '',
+          status: myScore > 0 ? 'completed' : 'in-progress'
+        };
+      });
 
-            if (rawSemesters.length > 0) {
-                // Sắp xếp học kỳ tăng dần
-                const sorted = rawSemesters.sort((a: any, b: any) => a.semesterNumber - b.semesterNumber);
+      setAchievements(formattedData);
+      
+      // Get semester list
+      const semList = Array.from(new Set(formattedData.map(item => item.semester))).filter(Boolean) as string[];
+      setSemesters(semList);
+      if (semList.length > 0) setSelectedSemester(semList[0]);
+      
+      calculateSummary(formattedData);
+      
+    } catch (error) {
+      console.error('Error loading achievements:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-                // Format lại mảng Options cho Dropdown
-                const options: SemesterOption[] = sorted.map((sem: any) => ({
-                    label: `Học kỳ ${sem.semesterNumber}`,
-                    value: `HK${sem.semesterNumber}-${courseYear}`
-                }));
+  const calculateSummary = (data: Achievement[]) => {
+    const completed = data.filter(item => item.status === 'completed');
+    const totalCredits = completed.reduce((sum, item) => sum + item.credits, 0);
+    
+    let totalWeightedScore = 0;
+    let totalWeight = 0;
+    let classTotalWeightedScore = 0;
+    
+    completed.forEach(item => {
+      if (item.averageScore > 0) {
+        totalWeightedScore += item.averageScore * item.credits;
+        classTotalWeightedScore += (item.classAverage || 0) * item.credits;
+        totalWeight += item.credits;
+      }
+    });
+    
+    setSummary({
+      totalCredits,
+      gpa: totalWeight > 0 ? Number((totalWeightedScore / totalWeight).toFixed(2)) : 0,
+       classAverageGPA: totalWeight > 0 ? Number((classTotalWeightedScore / totalWeight).toFixed(2)) : 0,
+      completedCourses: completed.length
+    });
+  };
 
-                setSemesterOptions(options);
-                setCurrentSemester(options[0]); // Mặc định chọn học kỳ 1
-            }
-        } catch (error) {
-            console.error("Lỗi tải chương trình khung:", error);
-            Alert.alert("Lỗi", "Không thể tải chương trình khung");
-        } finally {
-            setLoading(false);
-        }
+  // Filter by semester
+  const filteredData = selectedSemester === 'all' 
+    ? achievements 
+    : achievements.filter(item => item.semester === selectedSemester);
+
+  const getScoreColor = (score: number, classAvg: number) => {
+    if (!score && score !== 0) return '#999';
+    if (classAvg === 0) return '#4CAF50';
+    return score >= classAvg ? '#4CAF50' : '#f44336';
+  };
+
+  const getGradeColor = (grade: string) => {
+    const colors: { [key: string]: string } = {
+      'A+': '#ec300f',
+      'A': '#4CAF50',
+      'B+': '#8BC34A',
+      'B': '#FFC107',
+      'C+': '#FF9800',
+      'C': '#FF5722',
+      'D': '#f44336',
+      'F': '#d32f2f'
     };
+    return colors[grade] || '#999';
+  };
 
-    // HÀM LẤY BẢNG ĐIỂM THEO HỌC KỲ
-    const fetchMyGrades = async () => {
-        if (!currentSemester) return;
-        setLoading(true);
-        try {
-            const token = await AsyncStorage.getItem('token');
-            if (!token) {
-                router.replace('/login');
-                return;
-            }
-
-            // Gọi API bằng currentSemester.value (VD: HK1-2026)
-            const res = await fetch(`${API_URL}/grades/student/me?semester=${currentSemester.value}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const data = await res.json();
-
-            if (data.success) {
-                setGrades(data.data || []);
-            } else {
-                setGrades([]);
-            }
-        } catch (error) {
-            console.error("Lỗi fetchMyGrades:", error);
-            setGrades([]);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Tính toán thống kê học kỳ
-    const totalCredits = grades.reduce((sum, item) => sum + (item.course?.credits || 0), 0);
-    const passedCredits = grades.reduce((sum, item) => sum + (item.finalScore >= 5 ? (item.course?.credits || 0) : 0), 0);
-
-    const renderScoreStatus = (score: number | null | undefined) => {
-        if (score === null || score === undefined) {
-            return (
-                <View style={[styles.statusBadge, { backgroundColor: '#F3F4F6' }]}>
-                    <Text style={{ color: '#6B7280', fontSize: 11, fontWeight: '600' }}>Chưa có</Text>
-                </View>
-            );
-        }
-        if (score >= 5) {
-            return (
-                <View style={[styles.statusBadge, { backgroundColor: '#D1FAE5' }]}>
-                    <Text style={{ color: '#065F46', fontSize: 11, fontWeight: '600' }}>Đạt</Text>
-                </View>
-            );
-        }
-        return (
-            <View style={[styles.statusBadge, { backgroundColor: '#FEE2E2' }]}>
-                <Text style={{ color: '#991B1B', fontSize: 11, fontWeight: '600' }}>Chưa đạt</Text>
-            </View>
-        );
-    };
-
+  if (loading) {
     return (
-        <SafeAreaView style={styles.container}>
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="#fff" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Kết quả học tập</Text>
-                <TouchableOpacity onPress={fetchMyGrades} style={styles.refreshButton}>
-                    <Ionicons name="refresh" size={24} color="#fff" />
-                </TouchableOpacity>
-            </View>
-
-            {/* Bộ lọc học kỳ */}
-            <View style={styles.filterSection}>
-                <Text style={styles.sectionLabel}>CHỌN HỌC KỲ</Text>
-                <TouchableOpacity
-                    style={styles.dropdownBox}
-                    onPress={() => setShowSemesterList(!showSemesterList)}
-                    disabled={semesterOptions.length === 0}
-                >
-                    <Ionicons name="calendar-outline" size={20} color="#2563EB" style={styles.icon} />
-                    <Text style={styles.dropdownText}>
-                        {currentSemester ? currentSemester.label : "Đang tải dữ liệu..."}
-                    </Text>
-                    <Ionicons name={showSemesterList ? "chevron-up" : "chevron-down"} size={20} color="#6B7280" />
-                </TouchableOpacity>
-
-                {/* Dropdown list học kỳ */}
-                {showSemesterList && semesterOptions.length > 0 && (
-                    <View style={styles.semesterDropdownList}>
-                        {semesterOptions.map((sem, idx) => (
-                            <TouchableOpacity
-                                key={idx}
-                                style={[styles.semesterItem, currentSemester?.value === sem.value && styles.semesterItemSelected]}
-                                onPress={() => {
-                                    setCurrentSemester(sem);
-                                    setShowSemesterList(false);
-                                }}
-                            >
-                                <Text style={[styles.semesterItemText, currentSemester?.value === sem.value && styles.semesterItemTextSelected]}>
-                                    {sem.label}
-                                </Text>
-                                {currentSemester?.value === sem.value && (
-                                    <Ionicons name="checkmark-circle" size={24} color="#2563EB" />
-                                )}
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                )}
-            </View>
-
-            {/* Thống kê */}
-            <View style={styles.summaryCard}>
-                <View style={styles.summaryItem}>
-                    <Text style={styles.summaryLabel}>Môn đã học</Text>
-                    <Text style={styles.summaryValue}>{grades.length}</Text>
-                </View>
-                <View style={styles.summaryDivider} />
-                <View style={styles.summaryItem}>
-                    <Text style={styles.summaryLabel}>Tổng tín chỉ</Text>
-                    <Text style={styles.summaryValue}>{totalCredits}</Text>
-                </View>
-                <View style={styles.summaryDivider} />
-                <View style={styles.summaryItem}>
-                    <Text style={styles.summaryLabel}>Tín chỉ đạt</Text>
-                    <Text style={[styles.summaryValue, { color: '#059669' }]}>{passedCredits}</Text>
-                </View>
-            </View>
-
-            {/* Danh sách điểm */}
-            <View style={styles.listContainer}>
-                {loading ? (
-                    <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="large" color="#2563EB" />
-                        <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
-                    </View>
-                ) : (
-                    <FlatList
-                        data={grades}
-                        keyExtractor={(item, index) => item._id || index.toString()}
-                        contentContainerStyle={{ paddingBottom: 20 }}
-                        renderItem={({ item }) => (
-                            <View style={styles.gradeCard}>
-                                <View style={styles.gradeHeader}>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={styles.courseName}>{item.course?.courseName || 'Môn học không xác định'}</Text>
-                                        <Text style={styles.courseCode}>
-                                            {item.course?.courseCode} • {item.course?.credits} tín chỉ
-                                        </Text>
-                                    </View>
-                                    {renderScoreStatus(item.finalScore)}
-                                </View>
-
-                                <View style={styles.gradeDivider} />
-
-                                <View style={styles.scoresRow}>
-                                    <View style={styles.scoreBox}>
-                                        <Text style={styles.scoreLabel}>Điểm Giữa kỳ</Text>
-                                        <Text style={[styles.scoreNumber, item.midtermScore !== null && { color: '#2563EB' }]}>
-                                            {item.midtermScore ?? '-'}
-                                        </Text>
-                                    </View>
-                                    <View style={styles.scoreDivider} />
-                                    <View style={styles.scoreBox}>
-                                        <Text style={styles.scoreLabel}>Điểm Cuối kỳ</Text>
-                                        <Text style={[styles.scoreNumber, item.finalScore !== null && { color: '#2563EB' }]}>
-                                            {item.finalScore ?? '-'}
-                                        </Text>
-                                    </View>
-                                </View>
-                            </View>
-                        )}
-                        ListEmptyComponent={
-                            <View style={styles.emptyContainer}>
-                                <Ionicons name="document-text-outline" size={64} color="#D1D5DB" />
-                                <Text style={styles.emptyTitle}>
-                                    Chưa có dữ liệu điểm
-                                </Text>
-                                <Text style={styles.emptySubtitle}>
-                                    cho {currentSemester?.label?.toLowerCase() || 'học kỳ này'}
-                                </Text>
-                            </View>
-                        }
-                    />
-                )}
-            </View>
-        </SafeAreaView>
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" color="#2563EB" style={{ flex: 1 }} />
+      </SafeAreaView>
     );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Thành tích</Text>
+        <TouchableOpacity onPress={loadAchievements}>
+          <Ionicons name="refresh" size={24} color="#333" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Semester selector */}
+      {semesters.length > 0 && (
+        <View style={styles.semesterContainer}>
+          <FlatList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            data={['all', ...semesters]}
+            keyExtractor={(item) => item}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.semesterButton,
+                  selectedSemester === item && styles.semesterButtonActive
+                ]}
+                onPress={() => setSelectedSemester(item)}
+              >
+                <Text style={[
+                  styles.semesterText,
+                  selectedSemester === item && styles.semesterTextActive
+                ]}>
+                  {item === 'all' ? 'Tất cả' : item}
+                </Text>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+      )}
+
+      {/* GPA Overview */}
+      <View style={styles.gpaContainer}>
+        <View style={styles.gpaItem}>
+          <Text style={styles.gpaLabel}>GPA của tôi</Text>
+          <Text style={styles.gpaValue}>{summary.gpa.toFixed(2)}</Text>
+        </View>
+        <View style={styles.gpaDivider} />
+        <View style={styles.gpaItem}>
+          <Text style={styles.gpaLabel}>GPA lớp</Text>
+          <Text style={[styles.gpaValue, styles.classGpa]}>{summary. classAverageGPA.toFixed(2)}</Text>
+        </View>
+      </View>
+
+      {/* Course list */}
+      {filteredData.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="school-outline" size={60} color="#ccc" />
+          <Text style={styles.emptyText}>Chưa có thành tích nào</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredData}
+          keyExtractor={(item) => item._id}
+          contentContainerStyle={styles.listContainer}
+          renderItem={({ item }) => (
+            <View style={styles.achievementCard}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.courseName}>{item.courseName}</Text>
+                <View style={[styles.gradeBadge, { backgroundColor: getGradeColor(item.grade) }]}>
+                  <Text style={styles.gradeText}>{item.grade || '--'}</Text>
+                </View>
+              </View>
+              
+              <Text style={styles.courseCode}>{item.courseCode} • {item.credits} tín chỉ</Text>
+              
+              <View style={styles.scoreContainer}>
+                {/* My score */}
+                <View style={styles.scoreItem}>
+                  <View style={styles.scoreCircle}>
+                    <Text style={[styles.scoreValue, { color: getScoreColor(item.averageScore, item.classAverage || 0) }]}>
+                      {item.averageScore > 0 ? item.averageScore.toFixed(1) : '-'}
+                    </Text>
+                  </View>
+                  <Text style={styles.scoreLabel}>Điểm của tôi</Text>
+                </View>
+
+                {/* Class average */}
+                <View style={styles.scoreItem}>
+                  <View style={[styles.scoreCircle, styles.classScoreCircle]}>
+                    <Text style={styles.classScoreValue}>
+                      {item.classAverage > 0 ? item.classAverage.toFixed(1) : '-'}
+                    </Text>
+                  </View>
+                  <Text style={styles.scoreLabel}>Trung bình lớp</Text>
+                </View>
+
+                {/* Comparison */}
+                <View style={styles.compareItem}>
+                  {item.averageScore > 0 && item.classAverage > 0 ? (
+                    <Text style={[
+                      styles.compareText,
+                      { color: item.averageScore >= item.classAverage ? '#4CAF50' : '#f44336' }
+                    ]}>
+                      {item.averageScore >= item.classAverage ? '▲' : '▼'} 
+                      {Math.abs(item.averageScore - item.classAverage).toFixed(1)}
+                    </Text>
+                  ) : (
+                    <Text style={styles.compareText}>-</Text>
+                  )}
+                  <Text style={styles.compareLabel}>So với lớp</Text>
+                </View>
+              </View>
+
+              {/* Detail scores */}
+              <View style={styles.detailRow}>
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Giữa kỳ (40%)</Text>
+                  <Text style={styles.detailValue}>{item.midtermScore ?? '-'}</Text>
+                </View>
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Cuối kỳ (60%)</Text>
+                  <Text style={styles.detailValue}>{item.finalScore ?? '-'}</Text>
+                </View>
+              </View>
+            </View>
+          )}
+        />
+      )}
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: { 
-        flex: 1, 
-        backgroundColor: '#F3F4F6' 
-    },
-    
-    // Header - giống student-achievements
-    header: { 
-        backgroundColor: '#2563EB', 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        justifyContent: 'space-between', 
-        paddingHorizontal: 16, 
-        paddingTop: 12,
-        paddingBottom: 16,
-    },
-    backButton: { padding: 5 },
-    refreshButton: { padding: 5 },
-    headerTitle: { 
-        color: '#fff', 
-        fontSize: 18, 
-        fontWeight: 'bold' 
-    },
-
-    // Filter Section
-    filterSection: { 
-        padding: 16, 
-        backgroundColor: '#fff', 
-        borderBottomWidth: 1, 
-        borderBottomColor: '#E5E7EB',
-        zIndex: 50,
-    },
-    sectionLabel: { 
-        fontSize: 11, 
-        fontWeight: '700', 
-        color: '#6B7280', 
-        marginBottom: 8, 
-        letterSpacing: 0.5,
-        textTransform: 'uppercase',
-    },
-    dropdownBox: { 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        backgroundColor: '#F9FAFB', 
-        borderRadius: 12, 
-        paddingHorizontal: 12, 
-        height: 48, 
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-    },
-    icon: { marginRight: 10 },
-    dropdownText: { 
-        flex: 1, 
-        fontSize: 15, 
-        color: '#1F2937', 
-        fontWeight: '500' 
-    },
-
-    // Dropdown list
-    semesterDropdownList: { 
-        position: 'absolute', 
-        top: 82, 
-        left: 16, 
-        right: 16, 
-        backgroundColor: '#fff', 
-        borderRadius: 12, 
-        marginTop: 4, 
-        paddingVertical: 8, 
-        shadowColor: "#000", 
-        shadowOffset: { width: 0, height: 4 }, 
-        shadowOpacity: 0.1, 
-        shadowRadius: 6, 
-        elevation: 5, 
-        borderWidth: 1, 
-        borderColor: '#E5E7EB', 
-        zIndex: 1000,
-    },
-    semesterItem: { 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        justifyContent: 'space-between', 
-        paddingHorizontal: 16, 
-        paddingVertical: 12,
-    },
-    semesterItemSelected: { 
-        backgroundColor: '#EFF6FF',
-    },
-    semesterItemText: { 
-        fontSize: 15, 
-        color: '#4B5563' 
-    },
-    semesterItemTextSelected: { 
-        color: '#2563EB', 
-        fontWeight: '700' 
-    },
-
-    // Summary Card
-    summaryCard: { 
-        flexDirection: 'row', 
-        backgroundColor: '#fff', 
-        marginHorizontal: 16, 
-        borderRadius: 16, 
-        paddingVertical: 16, 
-        marginVertical: 16, 
-        shadowColor: "#000", 
-        shadowOffset: { width: 0, height: 2 }, 
-        shadowOpacity: 0.05, 
-        shadowRadius: 4, 
-        elevation: 3,
-    },
-    summaryItem: { 
-        flex: 1, 
-        alignItems: 'center' 
-    },
-    summaryLabel: { 
-        fontSize: 12, 
-        color: '#6B7280', 
-        marginBottom: 4,
-        fontWeight: '600',
-    },
-    summaryValue: { 
-        fontSize: 20, 
-        fontWeight: 'bold', 
-        color: '#1F2937' 
-    },
-    summaryDivider: { 
-        width: 1, 
-        backgroundColor: '#E5E7EB', 
-        marginVertical: 4 
-    },
-
-    // List
-    listContainer: { 
-        flex: 1, 
-        paddingHorizontal: 16 
-    },
-    gradeCard: { 
-        backgroundColor: '#fff', 
-        borderRadius: 16, 
-        padding: 16, 
-        marginBottom: 12, 
-        shadowColor: "#000", 
-        shadowOffset: { width: 0, height: 2 }, 
-        shadowOpacity: 0.05, 
-        shadowRadius: 4, 
-        elevation: 2,
-    },
-    gradeHeader: { 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        alignItems: 'flex-start' 
-    },
-    courseName: { 
-        fontSize: 16, 
-        fontWeight: 'bold', 
-        color: '#1F2937', 
-        marginBottom: 4 
-    },
-    courseCode: { 
-        fontSize: 13, 
-        color: '#6B7280' 
-    },
-    statusBadge: { 
-        paddingHorizontal: 10, 
-        paddingVertical: 4, 
-        borderRadius: 6,
-    },
-
-    gradeDivider: { 
-        height: 1, 
-        backgroundColor: '#F3F4F6', 
-        marginVertical: 12 
-    },
-    scoresRow: { 
-        flexDirection: 'row', 
-        justifyContent: 'space-around' 
-    },
-    scoreBox: { 
-        alignItems: 'center', 
-        flex: 1,
-    },
-    scoreLabel: { 
-        fontSize: 11, 
-        color: '#6B7280', 
-        marginBottom: 4,
-        fontWeight: '600',
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
-    },
-    scoreNumber: { 
-        fontSize: 18, 
-        fontWeight: 'bold', 
-        color: '#6B7280' 
-    },
-    scoreDivider: { 
-        width: 1, 
-        backgroundColor: '#E5E7EB',
-        marginHorizontal: 8,
-    },
-
-    // Empty State
-    emptyContainer: { 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        paddingTop: 80,
-    },
-    emptyTitle: { 
-        marginTop: 16, 
-        fontSize: 16, 
-        fontWeight: '600',
-        color: '#4B5563' 
-    },
-    emptySubtitle: { 
-        marginTop: 4, 
-        fontSize: 14, 
-        color: '#6B7280' 
-    },
-
-    // Loading
-    loadingContainer: { 
-        flex: 1, 
-        justifyContent: 'center', 
-        alignItems: 'center',
-        paddingVertical: 40,
-    },
-    loadingText: { 
-        marginTop: 12, 
-        fontSize: 14, 
-        color: '#6B7280',
-    },
+  container: {
+    flex: 1,
+    backgroundColor: '#f4f6f9'
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 16,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0'
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#111'
+  },
+  semesterContainer: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0'
+  },
+  semesterButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+    backgroundColor: '#f0f0f0'
+  },
+  semesterButtonActive: {
+    backgroundColor: '#2563EB'
+  },
+  semesterText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500'
+  },
+  semesterTextActive: {
+    color: '#fff'
+  },
+  gpaContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    margin: 16,
+    padding: 16,
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4
+  },
+  gpaItem: {
+    flex: 1,
+    alignItems: 'center'
+  },
+  gpaLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 4
+  },
+  gpaValue: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#2563EB'
+  },
+  classGpa: {
+    color: '#999'
+  },
+  gpaDivider: {
+    width: 1,
+    backgroundColor: '#e0e0e0',
+    marginHorizontal: 8
+  },
+  listContainer: {
+    padding: 16,
+    paddingTop: 0
+  },
+  achievementCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4
+  },
+  courseName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#222',
+    flex: 1,
+    marginRight: 8
+  },
+  courseCode: {
+    fontSize: 12,
+    color: '#888',
+    marginBottom: 12
+  },
+  gradeBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    minWidth: 36,
+    alignItems: 'center'
+  },
+  gradeText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold'
+  },
+  scoreContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    marginBottom: 8
+  },
+  scoreItem: {
+    alignItems: 'center'
+  },
+  scoreCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#E8F5E9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 4
+  },
+  classScoreCircle: {
+    backgroundColor: '#F5F5F5'
+  },
+  scoreValue: {
+    fontSize: 20,
+    fontWeight: 'bold'
+  },
+  classScoreValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#999'
+  },
+  scoreLabel: {
+    fontSize: 11,
+    color: '#888'
+  },
+  compareItem: {
+    alignItems: 'center'
+  },
+  compareText: {
+    fontSize: 20,
+    fontWeight: 'bold'
+  },
+  compareLabel: {
+    fontSize: 11,
+    color: '#888'
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    paddingTop: 8
+  },
+  detailItem: {
+    alignItems: 'center'
+  },
+  detailLabel: {
+    fontSize: 11,
+    color: '#888',
+    marginBottom: 2
+  },
+  detailValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333'
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  emptyText: {
+    marginTop: 16,
+    color: '#888',
+    fontSize: 14
+  }
 });

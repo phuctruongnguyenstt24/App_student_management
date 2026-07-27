@@ -115,8 +115,7 @@ export default function TabLayout() {
         }}
       />
 
-      
-      // app/tabs/_layout.tsx
+     
       <Tabs.Screen
         name="my-achievements"
         options={{

@@ -102,7 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Hàm lấy thông tin user đầy đủ từ API - FIXED
+
 // Hàm lấy thông tin user đầy đủ từ API - ĐÃ SỬA CHUẨN
   const fetchFullUserProfile = async (userId: string): Promise<User | null> => {
     try {

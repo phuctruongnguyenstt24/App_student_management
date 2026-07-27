@@ -2,15 +2,26 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { styles } from '../../a_styles/style_STU_achievement';
 import { API_URL } from '../../config/api';
 
 // Interfaces
 interface Faculty { _id: string; name: string; code: string; }
 interface Department { _id: string; name: string; code: string; facultyId: string; }
-interface Semester { _id: string; semesterNumber: number; academicYear?: string; }
-interface Course { _id: string; courseCode: string; courseName: string; credits: number; }
+
+interface Course {
+  _id: string;
+  courseCode: string;
+  courseName: string;
+  credits: number;
+  department: string; // Tên khoa
+  description?: string;
+  semester?: string; // Học kỳ (VD: "HK1", "HK2")
+  course?: string; // Năm học (VD: "2023-2024")
+  departmentIds?: string[]; // Danh sách ID ngành áp dụng
+}
 interface Student {
   _id: string;
   id?: string;
@@ -32,13 +43,12 @@ export default function StudentAchievements() {
   const [allRawStudents, setAllRawStudents] = useState<Student[]>([]);
   const [faculties, setFaculties] = useState<Faculty[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [semesters, setSemesters] = useState<Semester[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
 
   // Bộ lọc
   const [selectedFaculty, setSelectedFaculty] = useState<Faculty | null>(null);
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
-  const [selectedSemester, setSelectedSemester] = useState<Semester | null>(null);
+  const [selectedSemester, setSelectedSemester] = useState<string | null>(null); // Lưu string "HK1", "HK2"
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
@@ -49,7 +59,58 @@ export default function StudentAchievements() {
   const [midtermScore, setMidtermScore] = useState('');
   const [finalScore, setFinalScore] = useState('');
 
-  const yearOptions = ['2023', '2024', '2025', '2026'];
+  // Lấy danh sách năm học từ courses (giống courses.tsx)
+  const getAcademicYearOptions = () => {
+    const yearSet = new Set<string>();
+    courses.forEach(course => {
+      if (course.course) {
+        yearSet.add(course.course);
+      }
+    });
+    // Nếu không có dữ liệu từ courses, dùng mặc định
+    if (yearSet.size === 0) {
+      const currentYear = new Date().getFullYear();
+      const options = [];
+      for (let i = -3; i <= 3; i++) {
+        const year = currentYear + i;
+        options.push(`${year}-${year + 1}`);
+      }
+      return options;
+    }
+    return Array.from(yearSet).sort();
+  };
+
+  // Lấy danh sách học kỳ từ courses (giống courses.tsx)
+  const semesterOptions = ['HK1', 'HK2', 'HK3'];
+
+  const yearOptions = useMemo(() => getAcademicYearOptions(), [courses]);
+
+  // Lọc môn học theo Khoa và học kỳ.
+  // LƯU Ý: API /courses hiện tại trả về:
+  //   - "department" là TÊN KHOA dạng string (vd "Khoa Công nghệ thông tin"),
+  //     KHÔNG phải mảng ID ngành ("departmentIds") như code cũ giả định.
+  //   - KHÔNG có field năm học ("course"), nên tạm thời không thể lọc theo năm học
+  //     cho tới khi backend bổ sung field này.
+  // Nếu code cũ lọc theo departmentIds/năm học, kết quả luôn rỗng vì 2 field
+  // đó không tồn tại trong dữ liệu thật -> đây là nguyên nhân môn học biến mất.
+  const filteredCourses = useMemo(() => {
+    let filtered = courses;
+
+    // Lọc theo Khoa (so khớp tên Khoa, vì API không có ID ngành liên kết với course)
+    if (selectedFaculty) {
+      filtered = filtered.filter(course => course.department === selectedFaculty.name);
+    }
+
+    // Lọc theo học kỳ
+    if (selectedSemester) {
+      filtered = filtered.filter(course => course.semester === selectedSemester);
+    }
+
+    // TODO: khi backend bổ sung field năm học cho course, thêm lại điều kiện:
+    // if (selectedYear) filtered = filtered.filter(course => course.course === selectedYear);
+
+    return filtered;
+  }, [courses, selectedFaculty, selectedSemester]);
 
   // Load dữ liệu ban đầu
   useEffect(() => {
@@ -62,17 +123,16 @@ export default function StudentAchievements() {
       const token = await AsyncStorage.getItem('token');
       if (!token) return;
 
-      const [facultiesRes, studentsRes, curriculumRes, deptRes, coursesRes] = await Promise.all([
+      // Fetch dữ liệu giống courses.tsx
+      const [facultiesRes, studentsRes, deptRes, coursesRes] = await Promise.all([
         fetch(`${API_URL}/faculties`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${API_URL}/students/all`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_URL}/curriculum`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${API_URL}/departments`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${API_URL}/courses`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       const facData = await facultiesRes.json();
       const stdData = await studentsRes.json();
-      const curData = await curriculumRes.json();
       const deptData = await deptRes.json();
       const coursesData = await coursesRes.json();
 
@@ -85,41 +145,33 @@ export default function StudentAchievements() {
       // Xử lý Sinh viên
       if (stdData.success) setAllRawStudents(stdData.students || []);
 
-      // Xử lý Môn học
-      if (coursesData.success) setCourses(coursesData.data || []);
+      // Xử lý Môn học - chuẩn hóa dữ liệu giống courses.tsx
+      if (coursesData.success) {
+        // DEBUG: kiểm tra cấu trúc thật của course trả về từ API
+        // so sánh field departmentIds / semester / course với điều kiện filter bên dưới
+        console.log('coursesData.data.length =', coursesData.data?.length);
+        console.log('RAW COURSE SAMPLE:', JSON.stringify(coursesData.data?.[0], null, 2));
 
-      // Xử lý Học kỳ
-      let semesterList: Semester[] = [];
-      const curriculumData = curData.success ? curData.data : curData;
-      if (Array.isArray(curriculumData)) {
-        const semesterMap = new Map();
-        curriculumData.forEach((item: any) => {
-          if (item.semester && !semesterMap.has(item.semester)) {
-            semesterMap.set(item.semester, {
-              _id: item._id,
-              semesterNumber: parseInt(item.semester.replace('HK', '')),
-              academicYear: item.academicYear
-            });
-          }
-        });
-        semesterList = Array.from(semesterMap.values());
+        const normalizedCourses = coursesData.data.map((course: any) => ({
+          ...course,
+          departmentIds: course.departmentIds || [],
+          semester: course.semester || '',
+          course: course.course || '',
+        }));
+        setCourses(normalizedCourses);
+      } else {
+        console.log('coursesData KHÔNG success:', JSON.stringify(coursesData));
       }
-      
-      if (semesterList.length === 0) {
-        semesterList = [
-          { _id: '1', semesterNumber: 1 },
-          { _id: '2', semesterNumber: 2 },
-          { _id: '3', semesterNumber: 3 }
-        ];
+
+      // Set Khoa mặc định (dùng facData trực tiếp thay vì state "faculties" vì
+      // setFaculties() chưa kịp cập nhật state trong cùng lần chạy hàm này)
+      if (facData.success && facData.faculties?.length > 0) {
+        setSelectedFaculty(facData.faculties[0]);
       }
-      
-      setSemesters(semesterList.sort((a, b) => a.semesterNumber - b.semesterNumber));
-      
-      // Set mặc định
-      if (faculties.length > 0) setSelectedFaculty(faculties[0]);
-      if (semesterList.length > 0) setSelectedSemester(semesterList[0]);
-      if (yearOptions.length > 0) setSelectedYear(yearOptions[0]);
-      if (courses.length > 0) setSelectedCourse(courses[0]);
+
+      // Học kỳ và năm học sẽ được set mặc định bằng các useEffect riêng
+      // (dựa trên filteredCourses/availableClasses) ở dưới, không set ở đây
+      // vì "yearOptions" / "filteredCourses" đọc tại đây vẫn là giá trị cũ (stale).
 
     } catch (error) {
       Alert.alert("Lỗi", "Không thể tải dữ liệu.");
@@ -156,10 +208,20 @@ export default function StudentAchievements() {
     return Array.from(classSet).sort();
   }, [filteredStudentsByFacultyDept]);
 
+  // Cập nhật selectedCourse khi filteredCourses thay đổi
+  useEffect(() => {
+    if (filteredCourses.length > 0) {
+      if (!selectedCourse || !filteredCourses.some(c => c._id === selectedCourse._id)) {
+        setSelectedCourse(filteredCourses[0]);
+      }
+    } else {
+      setSelectedCourse(null);
+    }
+  }, [filteredCourses]);
+
   // Tự động chọn lớp đầu tiên khi có dữ liệu
   useEffect(() => {
     if (availableClasses.length > 0) {
-      // Nếu chưa có lớp hoặc lớp đang chọn không có trong danh sách mới
       if (!selectedClass || !availableClasses.includes(selectedClass)) {
         setSelectedClass(availableClasses[0]);
       }
@@ -188,7 +250,8 @@ export default function StudentAchievements() {
       }
 
       const token = await AsyncStorage.getItem('token');
-      const semesterCode = `HK${selectedSemester?.semesterNumber}-${selectedYear}`;
+      // Sử dụng semester từ Course hoặc tạo từ selectedSemester
+      const semesterCode = selectedCourse?.semester || `${selectedSemester}-${selectedYear}`;
 
       const res = await fetch(`${API_URL}/grades/admin?semester=${semesterCode}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -239,7 +302,8 @@ export default function StudentAchievements() {
     try {
       setSubmittingId(selectedStudent.studentId);
       const token = await AsyncStorage.getItem('token');
-      const semesterCode = `HK${selectedSemester.semesterNumber}-${selectedYear}`;
+      // Sử dụng semester từ Course hoặc tạo từ selectedSemester
+      const semesterCode = selectedCourse?.semester || `${selectedSemester}-${selectedYear}`;
 
       // Optimistic UI
       setStudentsData(prevData => prevData.map(item => {
@@ -265,7 +329,6 @@ export default function StudentAchievements() {
       if (result.success || res.ok) {
         Alert.alert("Thành công", `Đã lưu điểm cho ${selectedStudent.fullName}!`);
         setModalVisible(false);
-        // Load lại dữ liệu để đồng bộ
         loadGradesAndMerge();
       } else {
         Alert.alert("Lỗi", result.message || "Lưu thất bại");
@@ -296,7 +359,8 @@ export default function StudentAchievements() {
         onSelect = (item) => { 
           setSelectedFaculty(item); 
           setSelectedDepartment(null); 
-          setSelectedClass(null); 
+          setSelectedClass(null);
+          setSelectedCourse(null);
         };
         break;
       case 'department':
@@ -306,27 +370,34 @@ export default function StudentAchievements() {
         isSelected = (item) => selectedDepartment?._id === item._id;
         onSelect = (item) => { 
           setSelectedDepartment(item); 
-          setSelectedClass(null); 
+          setSelectedClass(null);
+          setSelectedCourse(null);
         };
         break;
       case 'year':
-        title = 'Chọn Năm';
+        title = 'Chọn Năm học';
         data = yearOptions;
         renderItem = (item) => item;
         isSelected = (item) => selectedYear === item;
-        onSelect = (item) => setSelectedYear(item);
+        onSelect = (item) => {
+          setSelectedYear(item);
+          setSelectedCourse(null); // Reset course khi đổi năm
+        };
         break;
       case 'semester':
         title = 'Chọn Học kỳ';
-        data = semesters;
-        renderItem = (item) => `HK${item.semesterNumber}`;
-        isSelected = (item) => selectedSemester?.semesterNumber === item.semesterNumber;
-        onSelect = (item) => { setSelectedSemester(item); };
+        data = semesterOptions;
+        renderItem = (item) => item;
+        isSelected = (item) => selectedSemester === item;
+        onSelect = (item) => {
+          setSelectedSemester(item);
+          setSelectedCourse(null); // Reset course khi đổi học kỳ
+        };
         break;
       case 'course':
         title = 'Chọn Môn học';
-        data = courses;
-        renderItem = (item) => `${item.courseCode} - ${item.courseName}`;
+        data = filteredCourses;
+        renderItem = (item) => `${item.courseCode} - ${item.courseName} (${item.credits} TC)`;
         isSelected = (item) => selectedCourse?._id === item._id;
         onSelect = (item) => setSelectedCourse(item);
         break;
@@ -404,7 +475,7 @@ export default function StudentAchievements() {
             style={[styles.filterBox, !selectedDepartment && styles.disabledBox]} 
             onPress={() => selectedDepartment && setActiveFilter('year')}
           >
-            <Text style={styles.filterLabel}>Năm</Text>
+            <Text style={styles.filterLabel}>Năm học</Text>
             <Text style={styles.filterValue}>{selectedYear || 'Chọn'}</Text>
           </TouchableOpacity>
           <TouchableOpacity 
@@ -412,7 +483,7 @@ export default function StudentAchievements() {
             onPress={() => selectedYear && setActiveFilter('semester')}
           >
             <Text style={styles.filterLabel}>Học kỳ</Text>
-            <Text style={styles.filterValue}>{selectedSemester ? `HK${selectedSemester.semesterNumber}` : 'Chọn'}</Text>
+            <Text style={styles.filterValue}>{selectedSemester || 'Chọn'}</Text>
           </TouchableOpacity>
         </View>
 
@@ -422,7 +493,9 @@ export default function StudentAchievements() {
             onPress={() => selectedSemester && setActiveFilter('course')}
           >
             <Text style={styles.filterLabel}>Môn học</Text>
-            <Text style={styles.filterValue} numberOfLines={1}>{selectedCourse?.courseName || 'Chọn'}</Text>
+            <Text style={styles.filterValue} numberOfLines={1}>
+              {selectedCourse ? ` ${selectedCourse.courseName}` : 'Chọn'}
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.filterBox, !selectedCourse && styles.disabledBox]} 
@@ -495,6 +568,11 @@ export default function StudentAchievements() {
             <Text style={styles.modalTitleBs}>Nhập điểm</Text>
             <Text style={styles.studentSubtitle}>{selectedStudent?.fullName} - {selectedStudent?.studentId}</Text>
             <Text style={styles.courseText}>{selectedCourse?.courseName}</Text>
+            <Text style={styles.courseText}>
+              Mã môn: {selectedCourse?.courseCode} | {selectedCourse?.credits} tín chỉ
+              {selectedCourse?.semester && ` | HK: ${selectedCourse.semester}`}
+              {selectedCourse?.course && ` | NH: ${selectedCourse.course}`}
+            </Text>
 
             <View style={styles.scoreInputRow}>
               <View style={{ flex: 1 }}>
@@ -540,46 +618,3 @@ export default function StudentAchievements() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f4f6f9' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', padding: 16, backgroundColor: '#fff', alignItems: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#111' },
-
-  filtersContainer: { padding: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e0e0e0' },
-  filterRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  filterBox: { flex: 1, backgroundColor: '#f8f9fa', padding: 10, borderRadius: 8, borderWidth: 1, borderColor: '#dcdfe3', marginHorizontal: 4 },
-  disabledBox: { backgroundColor: '#eef0f2', opacity: 0.6 },
-  filterLabel: { fontSize: 10, color: '#666', fontWeight: 'bold', textTransform: 'uppercase' },
-  filterValue: { fontSize: 13, color: '#333', fontWeight: '600', marginTop: 2 },
-
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { width: '85%', backgroundColor: '#fff', borderRadius: 12, padding: 20, maxHeight: '70%' },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, textAlign: 'center' },
-  modalItem: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  modalItemSelected: { backgroundColor: '#e8f5e9' },
-  modalItemText: { fontSize: 15, color: '#333' },
-  modalItemTextSelected: { color: '#4CAF50', fontWeight: 'bold' },
-  modalCloseBtn: { marginTop: 20, padding: 12, backgroundColor: '#f0f0f0', borderRadius: 8, alignItems: 'center' },
-  modalCloseText: { fontSize: 16, fontWeight: '600', color: '#555' },
-
-  studentCard: { flexDirection: 'row', backgroundColor: '#fff', padding: 16, borderRadius: 12, marginBottom: 12, elevation: 2, alignItems: 'center' },
-  nameText: { fontSize: 16, fontWeight: 'bold', color: '#222' },
-  subText: { fontSize: 13, color: '#666', marginTop: 2 },
-  scoreText: { fontSize: 12, color: '#555', marginTop: 4 },
-  btnInput: { flexDirection: 'row', backgroundColor: '#2563EB', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
-  btnInputText: { color: '#fff', fontWeight: 'bold', marginLeft: 6 },
-  emptyText: { textAlign: 'center', marginTop: 16, color: '#888', fontSize: 14 },
-
-  modalOverlayBs: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-  modalContentBs: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
-  dragHandle: { width: 40, height: 5, backgroundColor: '#ccc', borderRadius: 3, alignSelf: 'center', marginBottom: 20 },
-  modalTitleBs: { fontSize: 20, fontWeight: 'bold', textAlign: 'center' },
-  studentSubtitle: { fontSize: 15, color: '#666', textAlign: 'center', marginBottom: 8 },
-  courseText: { fontSize: 15, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
-  scoreInputRow: { flexDirection: 'row', marginBottom: 24 },
-  labelBs: { fontSize: 12, fontWeight: 'bold', color: '#666', marginBottom: 6 },
-  inputBs: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#ccc', borderRadius: 10, padding: 14, fontSize: 16 },
-  btnSaveBs: { backgroundColor: '#2563EB', paddingVertical: 16, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
-  btnSaveTextBs: { color: '#fff', fontSize: 16, fontWeight: 'bold' }
-});
