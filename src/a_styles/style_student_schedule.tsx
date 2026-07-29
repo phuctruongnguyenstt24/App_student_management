@@ -202,7 +202,6 @@ export const styles = StyleSheet.create({
     color: '#999',
     marginTop: 4,
   },
-
   sessionSection: {
     marginTop: 12,
   },
@@ -220,5 +219,22 @@ export const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginLeft: 16,
     marginBottom: 12,
+  },
+  /* --- CÁC STYLE MỚI THÊM CHO BỘ LỌC TUẦN --- */
+  dayBlock: {
+    marginBottom: 16,
+  },
+  dayHeader: {
+    backgroundColor: '#e6f7ff',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#1890ff',
+    marginVertical: 8,
+  },
+  dayHeaderText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1890ff',
   },
 });

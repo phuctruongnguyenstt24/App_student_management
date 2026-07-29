@@ -34,7 +34,7 @@ const StudentSchedule = () => {
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date('2026-07-29')); // Mặc định hoặc ngày hiện tại
+  const [selectedDate, setSelectedDate] = useState(new Date('2026-07-29'));
   const [viewType, setViewType] = useState<'day' | 'week' | 'month'>('day');
   const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -52,7 +52,6 @@ const StudentSchedule = () => {
     exam: { label: 'Thi', color: '#faad14' }
   };
 
-  // Chuyển Date Object thành chuỗi YYYY-MM-DD theo giờ địa phương
   const formatDateToYYYYMMDD = (d: Date): string => {
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -60,7 +59,6 @@ const StudentSchedule = () => {
     return `${year}-${month}-${day}`;
   };
 
-  // Tách chuỗi YYYY-MM-DD ra Date Object không bị lệch múi giờ
   const parseLocalDate = (dateStr: string): Date => {
     if (!dateStr) return new Date();
     const cleanDateStr = dateStr.substring(0, 10);
@@ -69,6 +67,24 @@ const StudentSchedule = () => {
       return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
     }
     return new Date(dateStr);
+  };
+
+  // Hàm tính toán ra 7 ngày của tuần hiện tại (Từ Thứ 2 đến Chủ nhật)
+  const getDaysOfWeek = (currentDate: Date) => {
+    const targetDate = new Date(currentDate);
+    targetDate.setHours(0, 0, 0, 0);
+    const dayOfWeek = targetDate.getDay();
+    const diffToMonday = targetDate.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    const startOfWeek = new Date(targetDate);
+    startOfWeek.setDate(diffToMonday);
+
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(startOfWeek);
+      day.setDate(startOfWeek.getDate() + i);
+      days.push(day);
+    }
+    return days;
   };
 
   const fetchSchedules = useCallback(async () => {
@@ -85,7 +101,6 @@ const StudentSchedule = () => {
       const userId = user._id || user.id || user.studentId;
 
       if (!userId) {
-        console.error("Không tìm thấy ID trong thông tin người dùng:", user);
         setLoading(false);
         return;
       }
@@ -100,7 +115,6 @@ const StudentSchedule = () => {
         setSchedules([]);
       }
     } catch (error) {
-      console.error("Lỗi API fetchSchedules:", error);
       setSchedules([]);
     }
     setLoading(false);
@@ -115,17 +129,15 @@ const StudentSchedule = () => {
     fetchSchedules();
   }, [fetchSchedules]);
 
-const getFilteredSchedules = () => {
+  const getFilteredSchedules = () => {
     const selectedDateStr = formatDateToYYYYMMDD(selectedDate);
 
-    // Lấy tất cả các dạng ID có thể có của sinh viên
     const possibleUserIds = [
       user?.studentId,
       user?._id,
       user?.id
     ].filter(Boolean).map(id => String(id));
 
-    // Tính khoảng thời gian theo Tuần
     const targetDate = new Date(selectedDate);
     targetDate.setHours(0, 0, 0, 0);
     const dayOfWeek = targetDate.getDay();
@@ -136,10 +148,8 @@ const getFilteredSchedules = () => {
     endOfWeek.setDate(startOfWeek.getDate() + 6);
 
     let filtered = schedules.filter(s => {
-      // Cắt chuỗi lấy 10 ký tự YYYY-MM-DD chuẩn
       const scheduleDateStr = s.specificDate ? s.specificDate.substring(0, 10) : '';
 
-      // 1. Kiểm tra ngày/tuần/tháng
       if (viewType === 'day') {
         if (scheduleDateStr !== selectedDateStr) return false;
       } else {
@@ -154,11 +164,7 @@ const getFilteredSchedules = () => {
         }
       }
 
-      // 2. Kiểm tra điều kiện nhóm thực hành (MỀM DẺO HƠN)
       if (s.type === 'practice' && s.targetGroup !== 'all') {
-        
-        // 💡 CẬP NHẬT: Chỉ kiểm tra thêm nếu Backend thực sự gửi kèm danh sách studentIds. 
-        // Nếu Backend không gửi (để tối ưu), ta mặc định tin tưởng Backend và cho hiển thị.
         if (Array.isArray(s.studentIds) && s.studentIds.length > 0) {
           const isStudentInList = s.studentIds.some(st => {
             const idToCheck = typeof st === 'object' && st !== null ? String(st.studentId || st._id || st.id) : String(st);
@@ -174,11 +180,9 @@ const getFilteredSchedules = () => {
       return true;
     });
 
-    // 3. Lọc theo nút Filter giao diện (Lịch học / Lịch thi)
     if (!filters.hoc) filtered = filtered.filter(s => s.type !== 'theory' && s.type !== 'practice');
     if (!filters.thi) filtered = filtered.filter(s => s.type !== 'exam');
 
-    // 4. Sắp xếp danh sách lịch học theo thời gian
     filtered.sort((a, b) => {
       const dateDiff = parseLocalDate(a.specificDate).getTime() - parseLocalDate(b.specificDate).getTime();
       if (dateDiff === 0) {
@@ -231,7 +235,6 @@ const getFilteredSchedules = () => {
       }
     }
 
-    // Lấy tên môn học linh hoạt dù Backend gửi dạng Object hay String ID
     const courseTitle = typeof item.courseId === 'object' && item.courseId !== null
       ? item.courseId.courseName
       : 'Lịch thực hành';
@@ -252,7 +255,7 @@ const getFilteredSchedules = () => {
             </View>
           </View>
           
-          {viewType !== 'day' && (
+          {viewType === 'month' && (
             <Text style={[styles.infoText, { color: '#d9534f', fontWeight: 'bold' }]}>
               <Ionicons name="calendar-outline" size={12} color="#d9534f" /> {formatFullDateString(item.specificDate)}
             </Text>
@@ -274,10 +277,7 @@ const getFilteredSchedules = () => {
   };
 
   const renderFilterItem = (label: string, key: keyof typeof filters) => (
-    <TouchableOpacity 
-      style={styles.filterChip} 
-      onPress={() => toggleFilter(key)}
-    >
+    <TouchableOpacity style={styles.filterChip} onPress={() => toggleFilter(key)}>
       <View style={[styles.checkbox, filters[key] && styles.checkboxChecked]}>
         {filters[key] && <Ionicons name="checkmark" size={12} color="#fff" />}
       </View>
@@ -316,18 +316,10 @@ const getFilteredSchedules = () => {
             return (
               <TouchableOpacity
                 key={type}
-                style={[
-                  styles.viewTypeButton,
-                  (viewType === mappedType) && styles.viewTypeActive
-                ]}
+                style={[styles.viewTypeButton, (viewType === mappedType) && styles.viewTypeActive]}
                 onPress={() => setViewType(mappedType as any)}
               >
-                <Text style={[
-                  styles.viewTypeText,
-                  (viewType === mappedType) && styles.viewTypeTextActive
-                ]}>
-                  {type}
-                </Text>
+                <Text style={[styles.viewTypeText, (viewType === mappedType) && styles.viewTypeTextActive]}>{type}</Text>
               </TouchableOpacity>
             )
           })}
@@ -350,20 +342,18 @@ const getFilteredSchedules = () => {
     </View>
   );
 
-  const renderDaySections = (filteredData: Schedule[]) => {
-    const morning = filteredData.filter(s => s.session === 'morning');
-    const afternoon = filteredData.filter(s => s.session === 'afternoon');
-    const evening = filteredData.filter(s => s.session === 'evening');
+  // 1. Khối tái sử dụng: Hiển thị 3 buổi Sáng/Chiều/Tối cho một tập dữ liệu (1 ngày)
+  const renderSessionBlocks = (dayData: Schedule[]) => {
+    const morning = dayData.filter(s => s.session === 'morning');
+    const afternoon = dayData.filter(s => s.session === 'afternoon');
+    const evening = dayData.filter(s => s.session === 'evening');
 
     const EmptySession = () => (
         <Text style={styles.emptySessionText}>Không có lịch học</Text>
     );
 
     return (
-      <ScrollView 
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        contentContainerStyle={{ paddingBottom: 20 }}
-      >
+      <View>
         <View style={styles.sessionSection}>
             <Text style={styles.sessionTitle}>Sáng</Text>
             {morning.length > 0 ? morning.map(item => renderScheduleItem({ item })) : <EmptySession />}
@@ -376,6 +366,44 @@ const getFilteredSchedules = () => {
             <Text style={styles.sessionTitle}>Tối</Text>
             {evening.length > 0 ? evening.map(item => renderScheduleItem({ item })) : <EmptySession />}
         </View>
+      </View>
+    );
+  };
+
+  // 2. Chế độ NGÀY: Chỉ gọi hàm renderSessionBlocks 1 lần
+  const renderDaySections = (filteredData: Schedule[]) => {
+    return (
+      <ScrollView 
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        contentContainerStyle={{ paddingBottom: 20 }}
+      >
+        {renderSessionBlocks(filteredData)}
+      </ScrollView>
+    );
+  };
+
+  // 3. Chế độ TUẦN: Lặp qua 7 ngày, in ra tiêu đề ngày và gọi hàm renderSessionBlocks
+  const renderWeekSections = (filteredData: Schedule[]) => {
+    const weekDays = getDaysOfWeek(selectedDate);
+
+    return (
+      <ScrollView 
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        contentContainerStyle={{ paddingBottom: 20 }}
+      >
+        {weekDays.map((day, index) => {
+          const dateStr = formatDateToYYYYMMDD(day);
+          const dayData = filteredData.filter(s => s.specificDate && s.specificDate.substring(0, 10) === dateStr);
+
+          return (
+            <View key={index} style={styles.dayBlock}>
+              <View style={styles.dayHeader}>
+                 <Text style={styles.dayHeaderText}>{formatFullDateString(dateStr)}</Text>
+              </View>
+              {renderSessionBlocks(dayData)}
+            </View>
+          );
+        })}
       </ScrollView>
     );
   };
@@ -406,9 +434,12 @@ const getFilteredSchedules = () => {
         />
       )}
 
-      {viewType === 'day' ? (
-         renderDaySections(filteredSchedules)
-      ) : (
+      {/* Hiển thị tùy theo ViewType */}
+      {viewType === 'day' && renderDaySections(filteredSchedules)}
+      {viewType === 'week' && renderWeekSections(filteredSchedules)}
+      
+      {/* Bộ lọc tháng giữ nguyên dạng danh sách List để tối ưu hiệu suất */}
+      {viewType === 'month' && (
         <FlatList
             data={filteredSchedules}
             renderItem={renderScheduleItem}
