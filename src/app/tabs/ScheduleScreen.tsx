@@ -262,7 +262,7 @@ const StudentSchedule = () => {
           )}
           
           <Text style={styles.infoText}>
-            Phòng: {item.room} | Buổi {item.session === 'morning' ? 'Sáng' : item.session === 'afternoon' ? 'Chiều' : 'Tối'}
+            Phòng: {item.room} 
           </Text>
           <Text style={styles.infoText}>Giảng viên: {item.lecturer}</Text>
           
