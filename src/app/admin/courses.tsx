@@ -352,7 +352,7 @@ export default function CoursesScreen() {
                 <Picker
                   selectedValue={filters.code}
                   onValueChange={(value) => {
-                    setFilters(prev => ({ ...prev, code: value, facultyId: '' }));
+                    setFilters(prev => ({ ...prev, code: value }));
                   }}
                   style={styles.picker}
                 >

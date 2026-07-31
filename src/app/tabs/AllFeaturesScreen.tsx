@@ -73,12 +73,20 @@ export default function AllFeaturesScreen() {
   },
 ];
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      
+    
+      router.replace('/tabs/AllFeaturesScreen');
+    }
+  };
+
  
   return (
 <SafeAreaView style={globalStyles.container}>
   {/* Header */}
   <View style={globalStyles.header}>
-    <TouchableOpacity onPress={() => navigation.goBack()}>
+    <TouchableOpacity onPress={handleBack}>
       <Ionicons name="chevron-back" size={24} color="#fff" />
     </TouchableOpacity>
 
