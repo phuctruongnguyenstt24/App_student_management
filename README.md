@@ -72,7 +72,7 @@ Lưu ý: Nhớ di chuyển vào đúng thư mục dự án trước khi chạy l
 
     Bước 2: Quét mã QR xuất hiện trên terminal sau khi chạy lệnh: npx expo start
 
-   Lưu ý khi demo điện thoại thì pc mà chạy lệnh npx expo start phải tắt firewall ở Control Panel\All Control Panel Items\Windows Defender Firewall
+   Lưu ý khi demo điện thoại thì pc mà chạy lệnh npx expo start phải tắt firewall ở: Control Panel\All Control Panel Items\Windows Defender Firewall
 4. Test trên trình duyệt web
 npm run web
 5. Test trên máy ảo Android (Android Studio Emulator)
