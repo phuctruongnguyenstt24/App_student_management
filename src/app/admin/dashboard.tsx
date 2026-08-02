@@ -1,32 +1,24 @@
 // app/admin/dashboard.tsx
 import { useAuth } from '@/contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from '../../a_styles/style_dashboard';
 
-
 export default function AdminDashboard() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth(); // Lấy hàm logout từ AuthContext
   const [userName, setUserName] = useState('');
   const [userRole, setUserRole] = useState('');
   const [currentDate, setCurrentDate] = useState('');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   useEffect(() => {
-    const getUserInfo = async () => {
-      try {
-        const userData = await AsyncStorage.getItem('user');
-        if (userData) {
-          const user = JSON.parse(userData);
-          setUserName(user.fullName || user.username || 'Admin');
-          setUserRole(user.role);
-        }
-      } catch (error) {
-        console.error('Error getting user info:', error);
+    const getUserInfo = () => {
+      if (user) {
+        setUserName(user.fullName || user.username || 'Admin');
+        setUserRole(user.role || 'admin');
       }
     };
 
@@ -41,39 +33,38 @@ export default function AdminDashboard() {
       setCurrentDate(now.toLocaleDateString('vi-VN', options));
     };
 
-    const checkRole = async () => {
-      const userData = await AsyncStorage.getItem('user');
-
-      if (!userData) {
+    const checkRole = () => {
+      if (!user) {
         router.replace('/login');
         return;
       }
 
-      const user = JSON.parse(userData);
-
       if (user.role !== 'admin') {
-        router.replace('/login'); // hoặc dashboard khác
+        router.replace('/login');
       }
     };
 
     getUserInfo();
     getCurrentDate();
     checkRole();
+  }, [user]); // Thêm user vào dependency
 
-  }, []);
-
-  //truy cap avatar 
-  let avatar = user?.avatar || '';
-
+  // Hàm xử lý đăng xuất
   const handleLogout = async () => {
-    await AsyncStorage.removeItem('token');
-    await AsyncStorage.removeItem('user');
-    router.replace('/login');
+    try {
+      await logout(); // Sử dụng hàm logout từ AuthContext
+      router.replace('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const toggleProfileMenu = () => {
     setShowProfileMenu(!showProfileMenu);
   };
+
+  // Lấy avatar từ user
+  const avatar = user?.avatar || 'https://via.placeholder.com/40';
 
   return (
     <SafeAreaView style={styles.safeContainer} edges={['top', 'right']}>
@@ -81,7 +72,7 @@ export default function AdminDashboard() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.greeting}>{userName.toLocaleUpperCase()} -  {userRole.toUpperCase()}</Text>
+            <Text style={styles.greeting}>{userName.toLocaleUpperCase()} - {userRole.toUpperCase()}</Text>
             <Text style={styles.dateText}>{currentDate}</Text>
           </View>
           <View style={styles.headerRight}>
@@ -108,8 +99,6 @@ export default function AdminDashboard() {
           </View>
 
           <View style={styles.menuGrid}>
-
-
             <TouchableOpacity
               style={styles.menuCard}
               onPress={() => router.push('/admin/admin-management' as any)}
@@ -120,7 +109,6 @@ export default function AdminDashboard() {
               <Text style={styles.menuTitle}>Quản lí tài khoản Admin</Text>
               <Text style={styles.menuDesc}>Tạo tài khoản Admin</Text>
             </TouchableOpacity>
-
 
             <TouchableOpacity
               style={styles.menuCard}
@@ -144,7 +132,6 @@ export default function AdminDashboard() {
               <Text style={styles.menuDesc}>Thêm, sửa, xóa môn học</Text>
             </TouchableOpacity>
 
-
             <TouchableOpacity
               style={styles.menuCard}
               onPress={() => router.push('/admin/create-student')}
@@ -155,6 +142,7 @@ export default function AdminDashboard() {
               <Text style={styles.menuTitle}>Tạo tài khoản sinh viên</Text>
               <Text style={styles.menuDesc}>Tạo tài khoản mới cho sinh viên</Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.menuCard}
               onPress={() => router.push('/admin/attendance-history' as any)}
@@ -165,28 +153,17 @@ export default function AdminDashboard() {
               <Text style={styles.menuTitle}>Điểm danh môn học</Text>
               <Text style={styles.menuDesc}>Xem lịch sử điểm danh môn học</Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               style={styles.menuCard}
               onPress={() => router.push('/admin/student-management')}
             >
               <View style={styles.menuIconWrapper}>
-                <Ionicons
-                  name="list-circle"
-                  size={32}
-                  color="#4A90E2"
-                />
+                <Ionicons name="list-circle" size={32} color="#4A90E2" />
               </View>
-
-              <Text style={styles.menuTitle}>
-                Danh sách tài khoản sinh viên
-              </Text>
-
-              <Text style={styles.menuDesc}>
-                Xem và quản lý tài khoản sinh viên
-              </Text>
+              <Text style={styles.menuTitle}>Danh sách tài khoản sinh viên</Text>
+              <Text style={styles.menuDesc}>Xem và quản lý tài khoản sinh viên</Text>
             </TouchableOpacity>
-
-
 
             <TouchableOpacity
               style={styles.menuCard}
@@ -243,9 +220,7 @@ export default function AdminDashboard() {
               <Text style={styles.menuDesc}>Nhập điểm và xem xếp loại sinh viên</Text>
             </TouchableOpacity>
           </View>
-
         </ScrollView>
-
 
         {/* Profile Menu Popup */}
         {showProfileMenu && (
@@ -266,17 +241,26 @@ export default function AdminDashboard() {
                 </View>
               </View>
 
-              <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/admin/AdminProfileScreen' as any)}>
+              <TouchableOpacity 
+                style={styles.menuItem} 
+                onPress={() => router.push('/admin/AdminProfileScreen' as any)}
+              >
                 <Ionicons name="person-outline" size={22} color="#333" />
                 <Text style={styles.menuItemText}>Thông tin cá nhân</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/admin/AD_ChangePasswordScreen' as any)}>
+              <TouchableOpacity 
+                style={styles.menuItem} 
+                onPress={() => router.push('/admin/AD_ChangePasswordScreen' as any)}
+              >
                 <Ionicons name="lock-closed-outline" size={22} color="#333" />
                 <Text style={styles.menuItemText}>Đổi mật khẩu</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={[styles.menuItem, styles.logoutItem]} onPress={handleLogout}>
+              <TouchableOpacity 
+                style={[styles.menuItem, styles.logoutItem]} 
+                onPress={handleLogout}
+              >
                 <Ionicons name="log-out-outline" size={22} color="#dc3545" />
                 <Text style={[styles.menuItemText, styles.logoutText]}>Đăng xuất</Text>
               </TouchableOpacity>

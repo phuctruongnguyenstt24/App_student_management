@@ -238,7 +238,13 @@ export default function CurriculumFrameworkScreen() {
         <View style={styles.filterContainer}>
           {[
             [
-              { label: 'Mã CT', key: 'programCode' as const },
+              {
+                label: 'Mã CT',
+                key: 'programCode' as const,
+                items: frameworks,
+                labelKey: 'programCode' as const,
+                valueKey: 'programCode' as const
+              },
               { label: 'Khoa', key: 'facultyId' as const, items: faculties, labelKey: 'name' as const, valueKey: '_id' as const }
             ],
             [
