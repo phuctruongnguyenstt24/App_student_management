@@ -121,7 +121,7 @@ export default function NewsScreen() {
 
       <View style={globalStyles.card}>
         <FlatList
-          contentContainerStyle={{ paddingBottom: 20 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
           data={news}
           keyExtractor={(_, index) => index.toString()}
           renderItem={({ item }: any) => (
