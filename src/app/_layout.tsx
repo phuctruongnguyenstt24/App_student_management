@@ -10,10 +10,10 @@ import { AuthProvider } from '../contexts/AuthContext';
 import { ThemeProvider, useTheme } from '../contexts/ThemeContext';
 import { FieldsProvider } from '../contexts/FieldsContext';  
 function RootLayoutNav() {
-  const { theme } = useTheme();
+  const { theme } = useTheme();  
 
   const paperTheme = useMemo(() => {
-    return theme === 'dark'
+    return theme === 'dark'  
       ? {
           ...MD3DarkTheme,
           colors: {
@@ -31,27 +31,33 @@ function RootLayoutNav() {
   }, [theme]);
 
   return (
-    <PaperProvider theme={paperTheme}>
+    <PaperProvider theme={paperTheme}>  
       <Stack
+        initialRouteName="index"  
         screenOptions={{
-          headerShown: false,
+          headerShown: false,  
           headerStyle: {
-            backgroundColor: paperTheme.colors.surface,
+            backgroundColor: paperTheme.colors.surface,  
           },
           headerTitleStyle: {
-            color: paperTheme.colors.onSurface,
+            color: paperTheme.colors.onSurface,  
           },
-          headerTintColor: paperTheme.colors.primary,
+          headerTintColor: paperTheme.colors.primary,  
           contentStyle: {
-            backgroundColor: paperTheme.colors.background,
+            backgroundColor: paperTheme.colors.background,  
           },
         }}
       >
-        <Stack.Screen
-          name="login"
-          options={{ headerShown: false }}
+         
+        <Stack.Screen 
+          name="index" 
+          options={{ headerShown: false }} 
         />
-       
+        
+        <Stack.Screen
+          name="login" 
+          options={{ headerShown: false }}  
+        />
       </Stack>
     </PaperProvider>
   );

@@ -35,6 +35,18 @@ const CourseSchema = new mongoose.Schema({
     trim: true,
     default: '',
   },
+  // ⚠️ THIẾU: Năm học (VD: "2025-2026")
+  course: {
+    type: String,
+    trim: true,
+    default: '',
+  },
+  // ⚠️ THIẾU: Danh sách ID ngành áp dụng
+  departmentIds: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: 'Department',
+    default: [],
+  },
 }, {
   timestamps: true,
 });

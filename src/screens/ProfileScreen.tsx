@@ -34,7 +34,7 @@ export default function ProfileScreen({ navigation } : Props) {
     <ScrollView style={styles.container}>
       <View style={styles.avatarContainer}>
         <Avatar.Text size={100} label={formData.name.charAt(0)} style={styles.avatar} />
-        <IconButton icon="camera" mode="contained" onPress={() => navigation.navigate('Settings')} />
+        {/* <IconButton icon="camera" mode="contained" onPress={() => navigation.navigate('Settings')} /> */}
       </View>
 
       <Card style={styles.card}>

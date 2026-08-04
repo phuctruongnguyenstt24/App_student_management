@@ -52,7 +52,7 @@ router.get('/:id', protect, async (req, res) => {
 // Tạo môn học mới - Yêu cầu admin
 router.post('/', protect, isAdmin, async (req, res) => {
   try {
-    const { courseCode, courseName, credits, department, description, semester } = req.body;
+    const { courseCode, courseName, credits, department, description, semester, course: academicYear, departmentIds } = req.body;
 
     console.log('Creating course:', { courseCode, courseName, credits });
     console.log('User:', req.user?.email);
@@ -84,6 +84,8 @@ router.post('/', protect, isAdmin, async (req, res) => {
       department: department || '',
       description: description || '',
       semester: semester || '',
+      course: academicYear || '',
+      departmentIds: departmentIds || [],
     });
 
     await course.save();
@@ -115,7 +117,7 @@ router.post('/', protect, isAdmin, async (req, res) => {
 // Cập nhật môn học - Yêu cầu admin
 router.put('/:id', protect, isAdmin, async (req, res) => {
   try {
-    const { courseCode, courseName, credits, department, description, semester } = req.body;
+    const { courseCode, courseName, credits, department, description, semester, course: academicYear, departmentIds } = req.body;
 
     console.log('Updating course:', req.params.id);
     console.log('User:', req.user?.email);
@@ -152,6 +154,8 @@ router.put('/:id', protect, isAdmin, async (req, res) => {
         department: department !== undefined ? department : course.department,
         description: description !== undefined ? description : course.description,
         semester: semester !== undefined ? semester : course.semester,
+        course: academicYear !== undefined ? academicYear : course.course,
+        departmentIds: departmentIds !== undefined ? departmentIds : course.departmentIds,
       },
       { new: true, runValidators: true }
     );
