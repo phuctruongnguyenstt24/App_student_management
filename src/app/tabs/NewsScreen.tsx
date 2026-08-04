@@ -15,6 +15,15 @@ import {
 } from "react-native";
 
 import { styles as globalStyles } from '../../a_styles/style_student_info';
+
+/**
+ * Trả về URL API của dịch vụ tin tức.
+ *
+ * Ưu tiên sử dụng biến môi trường, sau đó lấy địa chỉ
+ * từ Expo Development Server và cuối cùng là localhost.
+ *
+ * @returns {string} URL API dùng để lấy danh sách tin tức.
+ */
 const getApiUrl = () => {
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
   if (envUrl) {
@@ -30,6 +39,14 @@ const getApiUrl = () => {
   return "http://localhost:5000/api/news";
 };
 
+/**
+ * Hiển thị màn hình danh sách tin tức của trường.
+ *
+ * Component thực hiện tải dữ liệu từ API và hiển thị
+ * danh sách tin tức bằng FlatList.
+ *
+ * @returns {JSX.Element}
+ */
 export default function NewsScreen() {
   const [news, setNews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,6 +95,12 @@ export default function NewsScreen() {
       </View>
     );
   }
+
+/**
+ * Điều hướng người dùng quay về màn hình chức năng.
+ *
+ * @returns {void}
+ */
   const handleBack = () => {
     if (router.canGoBack()) {
       
@@ -98,7 +121,7 @@ export default function NewsScreen() {
 
       <View style={globalStyles.card}>
         <FlatList
-          contentContainerStyle={{ paddingBottom: 20 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
           data={news}
           keyExtractor={(_, index) => index.toString()}
           renderItem={({ item }: any) => (

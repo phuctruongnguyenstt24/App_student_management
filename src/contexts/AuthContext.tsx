@@ -97,13 +97,25 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * Cung cấp thông tin xác thực và trạng thái đăng nhập
+ * cho toàn bộ ứng dụng.
+ *
+ * @param {{ children: React.ReactNode }} props Thuộc tính của component.
+ * @returns {JSX.Element}
+ */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-
-// Hàm lấy thông tin user đầy đủ từ API - ĐÃ SỬA CHUẨN
+/**
+ * Hàm lấy thông tin user đầy đủ từ API - ĐÃ SỬA CHUẨN HÓA
+ * Lấy đầy đủ thông tin hồ sơ người dùng từ API.
+ *
+ * @param {string} userId Mã người dùng.
+ * @returns {Promise<User | null>}
+ */
   const fetchFullUserProfile = async (userId: string): Promise<User | null> => {
     try {
       const token = await AsyncStorage.getItem('token');
@@ -179,6 +191,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadUser();
   }, []);
 
+  /**
+ * Đăng nhập vào hệ thống.
+ *
+ * Sau khi xác thực thành công, token và thông tin
+ * người dùng sẽ được lưu vào AsyncStorage.
+ *
+ * @param {string} email Email đăng nhập.
+ * @param {string} password Mật khẩu.
+ * @returns {Promise<User>}
+ */
   const login = async (email: string, password: string): Promise<User> => {
     try {
       setIsLoading(true);
@@ -223,6 +245,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  /**
+ * Đăng xuất khỏi hệ thống.
+ *
+ * Xóa thông tin người dùng và token khỏi bộ nhớ cục bộ.
+ *
+ * @returns {Promise<void>}
+ */
   const logout = async () => {
     try {
       setIsLoading(true);
@@ -235,6 +264,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  /**
+ * Cập nhật thông tin người dùng hiện tại.
+ *
+ * @param {Partial<User>} userData Dữ liệu cần cập nhật.
+ * @returns {void}
+ */
   const updateUser = (userData: Partial<User>) => {
     if (user) {
       const updatedUser = { ...user, ...userData };
@@ -245,7 +280,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Hàm refresh để lấy lại thông tin user mới nhất
+  /**
+ * Hàm refresh để lấy lại thông tin user mới nhất.
+ * Đồng bộ lại thông tin người dùng từ server.
+ *
+ * @returns {Promise<void>}
+ */
   const refreshUser = async () => {
     if (!user) return;
     
@@ -277,6 +317,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Hook truy cập AuthContext.
+ *
+ * @returns {AuthContextType}
+ * @throws {Error} Nếu sử dụng ngoài AuthProvider.
+ */
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
@@ -285,6 +331,11 @@ export function useAuth() {
   return context;
 }
 
+/**
+ * Lấy token xác thực từ AsyncStorage.
+ *
+ * @returns {Promise<string | null>}
+ */
 export const getAuthToken = async () => {
   try {
     return await AsyncStorage.getItem('token');

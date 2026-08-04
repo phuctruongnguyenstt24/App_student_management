@@ -12,6 +12,15 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 import { getAttendanceSessions, markAttendanceForStudent, type AttendanceSession } from "../../utils/attendanceStorage";
 
+/**
+ * Hiển thị màn hình điểm danh của sinh viên.
+ *
+ * Component tải danh sách các buổi điểm danh đang hoạt động,
+ * đồng bộ dữ liệu định kỳ và cho phép sinh viên thực hiện điểm danh.
+ *
+ * @returns {JSX.Element}
+ */
+
 export default function AttendanceScreen() {
   const { user } = useAuth();
   // allSessions giữ toàn bộ list (active + closed) từ storage,
@@ -33,6 +42,12 @@ export default function AttendanceScreen() {
     return () => clearInterval(interval);
   }, []);
 
+  /**
+   * Thực hiện điểm danh cho sinh viên ở buổi học được chọn.
+   *
+   * @param {string} sessionId Mã buổi điểm danh.
+   * @returns {Promise<void>}
+   */
   const handleMarkAttendance = async (sessionId: string) => {
     if (!user) return;
 
@@ -58,6 +73,12 @@ export default function AttendanceScreen() {
     }
   };
 
+/**
+ * Kiểm tra sinh viên hiện tại đã điểm danh hay chưa.
+ *
+ * @param {AttendanceSession} session Thông tin buổi điểm danh.
+ * @returns {boolean}
+ */
   const isMarked = (session: AttendanceSession) => {
     const studentId = (user?.studentId || user?.id || '').toString().trim().toLowerCase();
     const name = (user?.fullName || user?.username || '').toString().trim().toLowerCase();
@@ -71,6 +92,11 @@ export default function AttendanceScreen() {
     });
   };
 
+/**
+ * Điều hướng người dùng quay về màn hình chức năng.
+ *
+ * @returns {void}
+ */
   const handleBack = () => {
     if (router.canGoBack()) {
       router.replace("/tabs/AllFeaturesScreen");
@@ -145,6 +171,15 @@ export default function AttendanceScreen() {
     </SafeAreaView>
   );
 }
+
+/**
+ * Hiển thị một dòng thông tin gồm nhãn và giá trị.
+ *
+ * @param {Object} props Thuộc tính của component.
+ * @param {string} props.label Nhãn hiển thị.
+ * @param {string} props.value Giá trị hiển thị.
+ * @returns {JSX.Element}
+ */
 
 const InfoRow = ({
   label,

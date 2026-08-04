@@ -5,20 +5,51 @@ const BASE_URL = "https://ctuet.edu.vn";
 const NEWS_URL = "https://ctuet.edu.vn/?controller=News&action=news&M_Ma=142";
 const PAGINATION_URL = "https://ctuet.edu.vn/API/block_new_pagination.php";
 
+/**
+ * Chuẩn hóa chuỗi văn bản.
+ *
+ * @param {string} value
+ * @returns {string}
+ */
 const cleanText = (value) =>
     (value || "")
         .replace(/\s+/g, " ")
         .replace(/\u00a0/g, " ")
         .trim();
 
+/**
+ * Chuẩn hóa URL về dạng tuyệt đối.
+ *
+ * @param {string} href
+ * @returns {string|null}
+ */
 const normalizeUrl = (href) => {
-    if (!href) return null;
-    if (href.startsWith("mailto:") || href.startsWith("tel:")) return null;
-    if (href.startsWith("http://") || href.startsWith("https://")) return href;
-    if (href.startsWith("/")) return `${BASE_URL}${href}`;
+    if (!href) {
+        return null;
+    }
+
+    if (href.startsWith("mailto:") || href.startsWith("tel:")) {
+        return null;
+    }
+
+    if (href.startsWith("http://") || href.startsWith("https://")) {
+        return href;
+    }
+
+    if (href.startsWith("/")) {
+        return `${BASE_URL}${href}`;
+    }
+
     return new URL(href, BASE_URL).toString();
 };
 
+/**
+ * Kiểm tra liên kết có phải bài viết tin tức hay không.
+ *
+ * @param {string} href
+ * @param {string} title
+ * @returns {boolean}
+ */
 const isLikelyNewsLink = (href, title) => {
     const text = cleanText(title).toLowerCase();
     const lowerHref = (href || "").toLowerCase();
@@ -37,6 +68,11 @@ const isLikelyNewsLink = (href, title) => {
     );
 };
 
+/**
+ * Crawl danh sách tin tức từ website CTUET.
+ *
+ * @returns {Promise<Array>}
+ */
 const crawlNews = async () => {
     try {
         const response = await axios.post(
@@ -62,35 +98,40 @@ const crawlNews = async () => {
         const seen = new Set();
 
         $(".block").each((_, block) => {
-            // Extract the title link, description, and date from the block (lấy link tiêu đề, mô tả và ngày từ block(website gốc))
             const titleLink = $(block).find(".text-left h4 a").first();
             const description = $(block).find(".text-left p").first().text();
             const date = $(block).find(".button .float-right").first().text();
-            // Normalize the URL and clean the title (làm sạch tiêu đề và chuẩn hóa URL)
+
             const href = titleLink.attr("href");
             const title = titleLink.text();
+
             const cleanedTitle = cleanText(title);
             const normalizedUrl = normalizeUrl(href);
-            // Extract the image URL (lấy URL hình ảnh từ block(website gốc))
+
             const image = $(block).find("img").first().attr("src");
-            const normalizedImage = normalizeUrl(image);// chuẩn hóa URL hình ảnh
-            if (!cleanedTitle || !normalizedUrl || !isLikelyNewsLink(href, cleanedTitle)) {
+            const normalizedImage = normalizeUrl(image);
+
+            if (
+                !cleanedTitle ||
+                !normalizedUrl ||
+                !isLikelyNewsLink(href, cleanedTitle)
+            ) {
                 return;
             }
 
+            // Tránh thêm các bài viết trùng lặp.
             if (seen.has(normalizedUrl)) {
                 return;
             }
 
             seen.add(normalizedUrl);
 
-            // push the article to the articles array (đẩy bài viết(gồm các thuộc tính bên dưới) vào mảng articles)
             articles.push({
                 title: cleanedTitle,
                 url: normalizedUrl,
                 description: cleanText(description),
                 publishedAt: cleanText(date),
-                image: normalizedImage,   // chuẩn hóa URL hình ảnh
+                image: normalizedImage,
                 source: BASE_URL
             });
         });
