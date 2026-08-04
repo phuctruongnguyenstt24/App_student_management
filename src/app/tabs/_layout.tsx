@@ -50,13 +50,7 @@ export default function TabLayout() {
         }}
       />
 
-      <Tabs.Screen
-        name="settings"
-        options={{
-          href: null,
-        }}
-      />
-
+    
       {/* href: null, ==> ẩn tab NewsScreen khỏi tabBar */}
       <Tabs.Screen
         name="NewsScreen"

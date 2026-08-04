@@ -1,225 +1,242 @@
-// my-chievements.tsx
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { API_URL } from '../../config/api';
 
-interface Achievement {
+// ============================================================================
+// GHI CHÚ TÍCH HỢP API
+// ----------------------------------------------------------------------------
+// Đã khớp với gradeRoutes.js / gradeController.js thật của backend:
+//   GET /grades/student/me?semester=...   -> gradeController.getMyGrades
+//       trả về mảng grade, MỖI item đã có sẵn totalScore, grade (điểm chữ
+//       A/B/C/D/F) và status ('completed' | 'in-progress') do server tính.
+//   GET /grades/student/gpa?semester=...  -> gradeController.getMyGPA
+//       trả về { gpa, totalCredits, courses } do server tính sẵn
+//       (chỉ tính các môn có totalScore > 0).
+// `semester` là optional ở cả 2 API -> không truyền = lấy tất cả học kỳ.
+//
+// Công thức điểm tổng (đã khớp gradeController.js): GK*40% + CK*60%.
+// Điểm chữ: A(>=8.5) B(>=7.0) C(>=5.5) D(>=4.0) F(<4.0).
+//
+// PHẦN CHƯA XÁC NHẬN: endpoint lấy hồ sơ (họ tên/MSSV/lớp) của sinh viên
+// đang đăng nhập. fetchMyProfile() bên dưới thử GET /students/me, nếu
+// không có thì đọc AsyncStorage key 'user'. Gửi controller liên quan
+// (VD: userController.js / studentController.js) nếu muốn mình chỉnh
+// lại chính xác.
+// ============================================================================
+
+interface Course {
   _id: string;
   courseCode: string;
   courseName: string;
   credits: number;
-  midtermScore: number | null;
-  finalScore: number | null;
-  averageScore: number; // Điểm tổng của tôi: GK*40% + CK*60%
-  classAverage: number; // Trung bình của cả lớp
-  grade: string;
-  semester: string;
-  status: string;
 }
 
 interface Grade {
   _id: string;
-  course: {
-    courseCode: string;
-    courseName: string;
-    credits: number;
-  };
-  midtermScore: number | null;
-  finalScore: number | null;
-  semester: string;
+  course: Course | { courseCode?: string; courseName?: string; credits?: number };
+  semester: string; // VD: "HK1-2024-2025"
+  midtermScore?: number | null;
+  finalScore?: number | null;
+  totalScore?: number; // do server tính: GK*40% + CK*60%
+  grade?: string; // điểm chữ A/B/C/D/F do server tính
+  status?: 'completed' | 'in-progress';
 }
 
-export default function MyAchievements() {
+interface GpaData {
+  gpa: number;
+  totalCredits: number;
+  courses: number;
+}
+
+interface StudentProfile {
+  _id: string;
+  fullName: string;
+  studentId: string;
+  class: string;
+}
+
+// Nhãn xếp loại theo điểm chữ trả về từ server (A/B/C/D/F)
+const GRADE_LETTER_LABEL: Record<string, { label: string; color: string }> = {
+  A: { label: 'Giỏi', color: '#16A34A' },
+  B: { label: 'Khá', color: '#2563EB' },
+  C: { label: 'Trung bình', color: '#0891B2' },
+  D: { label: 'Yếu', color: '#D97706' },
+  F: { label: 'Kém', color: '#DC2626' },
+};
+
+function classifyByLetter(letter?: string): { label: string; color: string } {
+  if (!letter || !GRADE_LETTER_LABEL[letter]) {
+    return { label: 'Chưa có điểm', color: '#9CA3AF' };
+  }
+  return GRADE_LETTER_LABEL[letter];
+}
+
+// Xếp loại chung cho điểm trung bình tích lũy (GPA hệ 10), theo cùng
+// ngưỡng với điểm chữ từng môn để nhất quán.
+function classifyGpa(gpa: number | null): { label: string; color: string } {
+  if (gpa == null) return { label: 'Chưa có điểm', color: '#9CA3AF' };
+  if (gpa >= 8.5) return { label: 'Giỏi', color: '#16A34A' };
+  if (gpa >= 7.0) return { label: 'Khá', color: '#2563EB' };
+  if (gpa >= 5.5) return { label: 'Trung bình', color: '#0891B2' };
+  if (gpa >= 4.0) return { label: 'Yếu', color: '#D97706' };
+  return { label: 'Kém', color: '#DC2626' };
+}
+
+export default function StudentAchievementView() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [selectedSemester, setSelectedSemester] = useState<string>('all');
-  const [semesters, setSemesters] = useState<string[]>([]);
-  const [summary, setSummary] = useState({
-    totalCredits: 0,
-    gpa: 0,
-     classAverageGPA: 0,
-    completedCourses: 0
-  });
+  const [refreshing, setRefreshing] = useState(false);
+  const [profile, setProfile] = useState<StudentProfile | null>(null);
+  const [grades, setGrades] = useState<Grade[]>([]);
+  const [gpaData, setGpaData] = useState<GpaData | null>(null);
+  const [semesterOptions, setSemesterOptions] = useState<string[]>([]);
+  const [selectedSemester, setSelectedSemester] = useState<string | null>(null); // null = Tất cả
 
-  useEffect(() => {
-    loadAchievements();
-  }, []);
-
-  // Tính điểm tổng: GK*40% + CK*60%
-  const calculateTotalScore = (midterm: number | null, final: number | null) => {
-    if (midterm === null && final === null) return 0;
-    const mid = midterm || 0;
-    const fin = final || 0;
-    return Number(((mid * 0.4) + (fin * 0.6)).toFixed(2));
-  };
-
-  // Tính điểm chữ
-  const calculateGrade = (score: number) => {
-    if (score === 0) return '';
-     if (score >= 9.5) return 'A+';
-    if (score >= 8.5) return 'A';
-    if (score >= 7.0) return 'B+';
-    if (score >= 6.5) return 'B';
-    if (score >= 5.5) return 'C';
-    if (score >= 4.0) return 'D';
-    return 'F';
-  };
-
-  const loadAchievements = async () => {
-    setLoading(true);
+  // -------------------------------------------------------------------
+  // Hồ sơ sinh viên hiện tại (xem ghi chú ở đầu file)
+  // -------------------------------------------------------------------
+  const fetchMyProfile = async (token: string): Promise<StudentProfile | null> => {
     try {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        console.error('No token found');
-        setLoading(false);
-        return;
-      }
-
-      // Fetch grades and class averages
-      const [gradesRes, classAvgRes] = await Promise.all([
-        fetch(`${API_URL}/grades/student/me`, { 
-          headers: { Authorization: `Bearer ${token}` } 
-        }),
-        fetch(`${API_URL}/grades/class/average`, { 
-          headers: { Authorization: `Bearer ${token}` } 
-        })
-      ]);
-
-      // Process grades
-      const gradesData = await gradesRes.json();
-      if (!gradesData.success) {
-        console.error('Failed to fetch grades:', gradesData);
-        setLoading(false);
-        return;
-      }
-
-      // Process class averages
-      let classAvgMap = new Map<string, number>();
-      try {
-        const classAvgData = await classAvgRes.json();
-        if (classAvgData.success) {
-          console.log('RAW CLASS AVG SAMPLE:', JSON.stringify(classAvgData.data?.[0], null, 2));
-          classAvgData.data.forEach((item: any) => {
-            const code = item.courseCode || item.course?.courseCode;
-            if (code) classAvgMap.set(code, item.averageScore);
-          });
-        }
-      } catch (error) {
-        console.log('Could not fetch class averages');
-      }
-
-      // Combine data
-      const grades = gradesData.data || [];
-
-      // DEBUG: kiểm tra cấu trúc thật của 1 grade để đối chiếu field course lồng/phẳng
-      if (grades.length > 0) {
-        console.log('RAW GRADE SAMPLE:', JSON.stringify(grades[0], null, 2));
-      }
-
-      const formattedData: Achievement[] = grades.map((grade: any) => {
-        const midterm = grade.midtermScore ?? null;
-        const final = grade.finalScore ?? null;
-
-        // Fallback: course có thể nằm lồng trong "course" (nested) hoặc nằm
-        // ngay trên grade dạng phẳng (flat), tùy backend trả về kiểu nào.
-        // Áp dụng cùng cách xử lý phòng thủ như bên trang quản lý thành tích.
-        const courseCode = grade.course?.courseCode || grade.courseCode || '';
-        const courseName = grade.course?.courseName || grade.courseName || 'Không xác định';
-        const credits = grade.course?.credits ?? grade.credits ?? 0;
-        
-        // Tính điểm tổng của tôi: GK*40% + CK*60%
-        const myScore = calculateTotalScore(midterm, final);
-        
-        // Lấy điểm trung bình lớp
-        const classAvg = classAvgMap.get(courseCode) || 0;
-        
-        // Tính điểm chữ
-        const gradeLetter = calculateGrade(myScore);
-        
-        return {
-          _id: grade._id,
-          courseCode,
-          courseName,
-          credits,
-          midtermScore: midterm,
-          finalScore: final,
-          averageScore: myScore,
-          classAverage: classAvg,
-          grade: gradeLetter,
-          semester: grade.semester || '',
-          status: myScore > 0 ? 'completed' : 'in-progress'
-        };
+      const res = await fetch(`${API_URL}/students/me`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
+      if (res.ok) {
+        const json = await res.json();
+        const s = json.student || json.data || json;
+        if (s && s.studentId) return s;
+      }
+    } catch {
+      // ignore, thử fallback bên dưới
+    }
+    try {
+      const raw = await AsyncStorage.getItem('user');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.studentId) return parsed;
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  };
 
-      setAchievements(formattedData);
-      
-      // Get semester list
-      const semList = Array.from(new Set(formattedData.map(item => item.semester))).filter(Boolean) as string[];
-      setSemesters(semList);
-      if (semList.length > 0) setSelectedSemester(semList[0]);
-      
-      calculateSummary(formattedData);
-      
+  // -------------------------------------------------------------------
+  // Điểm các môn của sinh viên hiện tại — GET /grades/student/me
+  // -------------------------------------------------------------------
+  const fetchMyGrades = async (token: string, semester?: string | null): Promise<Grade[]> => {
+    try {
+      const qs = semester ? `?semester=${encodeURIComponent(semester)}` : '';
+      const res = await fetch(`${API_URL}/grades/student/me${qs}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (json.success) return json.data || [];
+      return [];
     } catch (error) {
-      console.error('Error loading achievements:', error);
-    } finally {
-      setLoading(false);
+      console.error('Lỗi tải điểm:', error);
+      return [];
     }
   };
 
-  const calculateSummary = (data: Achievement[]) => {
-    const completed = data.filter(item => item.status === 'completed');
-    const totalCredits = completed.reduce((sum, item) => sum + item.credits, 0);
-    
-    let totalWeightedScore = 0;
-    let totalWeight = 0;
-    let classTotalWeightedScore = 0;
-    
-    completed.forEach(item => {
-      if (item.averageScore > 0) {
-        totalWeightedScore += item.averageScore * item.credits;
-        classTotalWeightedScore += (item.classAverage || 0) * item.credits;
-        totalWeight += item.credits;
-      }
+  // -------------------------------------------------------------------
+  // GPA + tín chỉ tích lũy — GET /grades/student/gpa
+  // -------------------------------------------------------------------
+  const fetchMyGpa = async (token: string, semester?: string | null): Promise<GpaData | null> => {
+    try {
+      const qs = semester ? `?semester=${encodeURIComponent(semester)}` : '';
+      const res = await fetch(`${API_URL}/grades/student/gpa${qs}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (json.success) return json.data;
+      return null;
+    } catch (error) {
+      console.error('Lỗi tải GPA:', error);
+      return null;
+    }
+  };
+
+  // -------------------------------------------------------------------
+  // Load toàn bộ dữ liệu (không lọc học kỳ) để lấy danh sách học kỳ + điểm
+  // -------------------------------------------------------------------
+  const loadData = useCallback(async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) return;
+
+      const [myProfile, allGrades, gpa] = await Promise.all([
+        fetchMyProfile(token),
+        fetchMyGrades(token, null),
+        fetchMyGpa(token, null),
+      ]);
+
+      setProfile(myProfile);
+      setGrades(allGrades);
+      setGpaData(gpa);
+
+      const sems = Array.from(new Set(allGrades.map((g) => g.semester).filter(Boolean))).sort();
+      setSemesterOptions(sems);
+    } catch (error) {
+      console.error('Lỗi tải thành tích:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Khi đổi bộ lọc học kỳ: gọi lại GPA theo đúng học kỳ đó (server tính),
+  // còn bảng điểm thì lọc ngay trên dữ liệu đã tải (không cần gọi lại API).
+  useEffect(() => {
+    if (loading) return;
+    (async () => {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) return;
+      const gpa = await fetchMyGpa(token, selectedSemester);
+      setGpaData(gpa);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSemester]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadData();
+  };
+
+  // -------------------------------------------------------------------
+  // Lọc + gom nhóm theo học kỳ để hiển thị
+  // -------------------------------------------------------------------
+  const visibleGrades = useMemo(() => {
+    if (!selectedSemester) return grades;
+    return grades.filter((g) => g.semester === selectedSemester);
+  }, [grades, selectedSemester]);
+
+  const groupedBySemester = useMemo(() => {
+    const map = new Map<string, Grade[]>();
+    visibleGrades.forEach((g) => {
+      const key = g.semester || 'Chưa xác định';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(g);
     });
-    
-    setSummary({
-      totalCredits,
-      gpa: totalWeight > 0 ? Number((totalWeightedScore / totalWeight).toFixed(2)) : 0,
-       classAverageGPA: totalWeight > 0 ? Number((classTotalWeightedScore / totalWeight).toFixed(2)) : 0,
-      completedCourses: completed.length
-    });
-  };
+    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
+  }, [visibleGrades]);
 
-  // Filter by semester
-  const filteredData = selectedSemester === 'all' 
-    ? achievements 
-    : achievements.filter(item => item.semester === selectedSemester);
-
-  const getScoreColor = (score: number, classAvg: number) => {
-    if (!score && score !== 0) return '#999';
-    if (classAvg === 0) return '#4CAF50';
-    return score >= classAvg ? '#4CAF50' : '#f44336';
-  };
-
-  const getGradeColor = (grade: string) => {
-    const colors: { [key: string]: string } = {
-      'A+': '#ec300f',
-      'A': '#4CAF50',
-      'B+': '#8BC34A',
-      'B': '#FFC107',
-      'C+': '#FF9800',
-      'C': '#FF5722',
-      'D': '#f44336',
-      'F': '#d32f2f'
-    };
-    return colors[grade] || '#999';
-  };
+  const overallClass = classifyGpa(gpaData?.gpa ?? null);
 
   if (loading) {
     return (
@@ -231,335 +248,197 @@ export default function MyAchievements() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Thành tích</Text>
-        <TouchableOpacity onPress={loadAchievements}>
+        <Text style={styles.headerTitle}>Thành tích học tập</Text>
+        <TouchableOpacity onPress={onRefresh}>
           <Ionicons name="refresh" size={24} color="#333" />
         </TouchableOpacity>
       </View>
 
-      {/* Semester selector */}
-      {semesters.length > 0 && (
-        <View style={styles.semesterContainer}>
-          <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            data={['all', ...semesters]}
-            keyExtractor={(item) => item}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[
-                  styles.semesterButton,
-                  selectedSemester === item && styles.semesterButtonActive
-                ]}
-                onPress={() => setSelectedSemester(item)}
-              >
-                <Text style={[
-                  styles.semesterText,
-                  selectedSemester === item && styles.semesterTextActive
-                ]}>
-                  {item === 'all' ? 'Tất cả' : item}
-                </Text>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
-      )}
-
-      {/* GPA Overview */}
-      <View style={styles.gpaContainer}>
-        <View style={styles.gpaItem}>
-          <Text style={styles.gpaLabel}>GPA của tôi</Text>
-          <Text style={styles.gpaValue}>{summary.gpa.toFixed(2)}</Text>
-        </View>
-        <View style={styles.gpaDivider} />
-        <View style={styles.gpaItem}>
-          <Text style={styles.gpaLabel}>GPA lớp</Text>
-          <Text style={[styles.gpaValue, styles.classGpa]}>{summary. classAverageGPA.toFixed(2)}</Text>
-        </View>
-      </View>
-
-      {/* Course list */}
-      {filteredData.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="school-outline" size={60} color="#ccc" />
-          <Text style={styles.emptyText}>Chưa có thành tích nào</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={filteredData}
-          keyExtractor={(item) => item._id}
-          contentContainerStyle={styles.listContainer}
-          renderItem={({ item }) => (
-            <View style={styles.achievementCard}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.courseName}>{item.courseName}</Text>
-                <View style={[styles.gradeBadge, { backgroundColor: getGradeColor(item.grade) }]}>
-                  <Text style={styles.gradeText}>{item.grade || '--'}</Text>
-                </View>
-              </View>
-              
-              <Text style={styles.courseCode}>{item.courseCode} • {item.credits} tín chỉ</Text>
-              
-              <View style={styles.scoreContainer}>
-                {/* My score */}
-                <View style={styles.scoreItem}>
-                  <View style={styles.scoreCircle}>
-                    <Text style={[styles.scoreValue, { color: getScoreColor(item.averageScore, item.classAverage || 0) }]}>
-                      {item.averageScore > 0 ? item.averageScore.toFixed(1) : '-'}
-                    </Text>
-                  </View>
-                  <Text style={styles.scoreLabel}>Điểm của tôi</Text>
-                </View>
-
-                {/* Class average */}
-                <View style={styles.scoreItem}>
-                  <View style={[styles.scoreCircle, styles.classScoreCircle]}>
-                    <Text style={styles.classScoreValue}>
-                      {item.classAverage > 0 ? item.classAverage.toFixed(1) : '-'}
-                    </Text>
-                  </View>
-                  <Text style={styles.scoreLabel}>Trung bình lớp</Text>
-                </View>
-
-                {/* Comparison */}
-                <View style={styles.compareItem}>
-                  {item.averageScore > 0 && item.classAverage > 0 ? (
-                    <Text style={[
-                      styles.compareText,
-                      { color: item.averageScore >= item.classAverage ? '#4CAF50' : '#f44336' }
-                    ]}>
-                      {item.averageScore >= item.classAverage ? '▲' : '▼'} 
-                      {Math.abs(item.averageScore - item.classAverage).toFixed(1)}
-                    </Text>
-                  ) : (
-                    <Text style={styles.compareText}>-</Text>
-                  )}
-                  <Text style={styles.compareLabel}>So với lớp</Text>
-                </View>
-              </View>
-
-              {/* Detail scores */}
-              <View style={styles.detailRow}>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Giữa kỳ (40%)</Text>
-                  <Text style={styles.detailValue}>{item.midtermScore ?? '-'}</Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Cuối kỳ (60%)</Text>
-                  <Text style={styles.detailValue}>{item.finalScore ?? '-'}</Text>
-                </View>
-              </View>
+      <ScrollView
+        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        {/* Thông tin sinh viên */}
+        {profile && (
+          <View style={styles.profileCard}>
+            <View style={styles.avatarCircle}>
+              <Text style={styles.avatarText}>{profile.fullName?.charAt(0) || '?'}</Text>
             </View>
-          )}
-        />
-      )}
+            <View style={{ flex: 1 }}>
+              <Text style={styles.profileName}>{profile.fullName}</Text>
+              <Text style={styles.profileSub}>MSSV: {profile.studentId} • Lớp: {profile.class}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Tổng quan GPA (từ /grades/student/gpa) */}
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryValue}>{gpaData?.gpa ?? '-'}</Text>
+            <Text style={styles.summaryLabel}>Điểm TB (hệ 10)</Text>
+          </View>
+          <View style={styles.summaryDivider} />
+          <View style={styles.summaryItem}>
+            <Text style={[styles.summaryValue, { color: overallClass.color }]}>{overallClass.label}</Text>
+            <Text style={styles.summaryLabel}>Xếp loại học lực</Text>
+          </View>
+          <View style={styles.summaryDivider} />
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryValue}>{gpaData?.totalCredits ?? 0}</Text>
+            <Text style={styles.summaryLabel}>Tín chỉ tích lũy</Text>
+          </View>
+        </View>
+
+        {/* Bộ lọc học kỳ */}
+        {semesterOptions.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+            <TouchableOpacity
+              style={[styles.chip, !selectedSemester && styles.chipActive]}
+              onPress={() => setSelectedSemester(null)}
+            >
+              <Text style={[styles.chipText, !selectedSemester && styles.chipTextActive]}>Tất cả</Text>
+            </TouchableOpacity>
+            {semesterOptions.map((sem) => (
+              <TouchableOpacity
+                key={sem}
+                style={[styles.chip, selectedSemester === sem && styles.chipActive]}
+                onPress={() => setSelectedSemester(sem)}
+              >
+                <Text style={[styles.chipText, selectedSemester === sem && styles.chipTextActive]}>{sem}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+
+        {/* Bảng điểm theo học kỳ */}
+        {groupedBySemester.length === 0 ? (
+          <View style={{ alignItems: 'center', marginTop: 60 }}>
+            <Ionicons name="school-outline" size={60} color="#ccc" />
+            <Text style={styles.emptyText}>Chưa có dữ liệu điểm</Text>
+          </View>
+        ) : (
+          groupedBySemester.map(([semester, semGrades]) => (
+            <View key={semester} style={styles.semesterBlock}>
+              <Text style={styles.semesterTitle}>{semester}</Text>
+
+              {semGrades.map((g) => {
+                const course = g.course as Course;
+                const c = classifyByLetter(g.grade);
+                const isInProgress = g.status === 'in-progress';
+                return (
+                  <View key={g._id} style={styles.courseRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.courseName}>{course?.courseName || 'Môn học'}</Text>
+                      <Text style={styles.courseSub}>
+                        {course?.courseCode} • {course?.credits ?? '-'} TC
+                      </Text>
+                      <Text style={styles.courseSub}>
+                        GK: {g.midtermScore ?? '-'}  |  CK: {g.finalScore ?? '-'}
+                      </Text>
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={styles.courseTotal}>{isInProgress ? '-' : g.totalScore ?? '-'}</Text>
+                      <Text style={[styles.courseClass, { color: c.color }]}>
+                        {isInProgress ? 'Đang học' : `${c.label}${g.grade ? ` (${g.grade})` : ''}`}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          ))
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f4f6f9'
-  },
+  container: { flex: 1, backgroundColor: '#F5F6FA' },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: '#fff',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0'
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#111'
-  },
-  semesterContainer: {
-    paddingVertical: 12,
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
+    paddingVertical: 14,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0'
+    borderBottomColor: '#EEE',
   },
-  semesterButton: {
-    paddingHorizontal: 20,
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#333' },
+  profileCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+    gap: 12,
+  },
+  avatarCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#2563EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: { color: '#fff', fontSize: 20, fontWeight: '700' },
+  profileName: { fontSize: 16, fontWeight: '700', color: '#222' },
+  profileSub: { fontSize: 13, color: '#777', marginTop: 2 },
+  summaryCard: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    paddingVertical: 16,
+    marginBottom: 16,
+  },
+  summaryItem: { flex: 1, alignItems: 'center' },
+  summaryDivider: { width: 1, backgroundColor: '#EEE' },
+  summaryValue: { fontSize: 18, fontWeight: '700', color: '#222' },
+  summaryLabel: { fontSize: 12, color: '#888', marginTop: 4, textAlign: 'center' },
+  chip: {
+    paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
+    backgroundColor: '#fff',
     marginRight: 8,
-    backgroundColor: '#f0f0f0'
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
-  semesterButtonActive: {
-    backgroundColor: '#2563EB'
-  },
-  semesterText: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '500'
-  },
-  semesterTextActive: {
-    color: '#fff'
-  },
-  gpaContainer: {
-    flexDirection: 'row',
+  chipActive: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
+  chipText: { fontSize: 13, color: '#555' },
+  chipTextActive: { color: '#fff', fontWeight: '600' },
+  semesterBlock: {
     backgroundColor: '#fff',
-    margin: 16,
-    padding: 16,
-    borderRadius: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 14,
   },
-  gpaItem: {
-    flex: 1,
-    alignItems: 'center'
+  semesterTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#2563EB',
+    marginBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+    paddingBottom: 8,
   },
-  gpaLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 4
-  },
-  gpaValue: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#2563EB'
-  },
-  classGpa: {
-    color: '#999'
-  },
-  gpaDivider: {
-    width: 1,
-    backgroundColor: '#e0e0e0',
-    marginHorizontal: 8
-  },
-  listContainer: {
-    padding: 16,
-    paddingTop: 0
-  },
-  achievementCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2
-  },
-  cardHeader: {
+  courseRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5F5F5',
   },
-  courseName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#222',
-    flex: 1,
-    marginRight: 8
-  },
-  courseCode: {
-    fontSize: 12,
-    color: '#888',
-    marginBottom: 12
-  },
-  gradeBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    minWidth: 36,
-    alignItems: 'center'
-  },
-  gradeText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold'
-  },
-  scoreContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    marginBottom: 8
-  },
-  scoreItem: {
-    alignItems: 'center'
-  },
-  scoreCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#E8F5E9',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 4
-  },
-  classScoreCircle: {
-    backgroundColor: '#F5F5F5'
-  },
-  scoreValue: {
-    fontSize: 20,
-    fontWeight: 'bold'
-  },
-  classScoreValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#999'
-  },
-  scoreLabel: {
-    fontSize: 11,
-    color: '#888'
-  },
-  compareItem: {
-    alignItems: 'center'
-  },
-  compareText: {
-    fontSize: 20,
-    fontWeight: 'bold'
-  },
-  compareLabel: {
-    fontSize: 11,
-    color: '#888'
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    paddingTop: 8
-  },
-  detailItem: {
-    alignItems: 'center'
-  },
-  detailLabel: {
-    fontSize: 11,
-    color: '#888',
-    marginBottom: 2
-  },
-  detailValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333'
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  emptyText: {
-    marginTop: 16,
-    color: '#888',
-    fontSize: 14
-  }
+  courseName: { fontSize: 14, fontWeight: '600', color: '#222' },
+  courseSub: { fontSize: 12, color: '#888', marginTop: 2 },
+  courseTotal: { fontSize: 16, fontWeight: '700', color: '#222' },
+  courseClass: { fontSize: 12, fontWeight: '600', marginTop: 2 },
+  emptyText: { marginTop: 12, color: '#999', fontSize: 14 },
 });
