@@ -1,3 +1,7 @@
+/**
+ * Định nghĩa các API liên quan đến tin tức.
+ */
+
 const express = require("express");
 
 const router = express.Router();

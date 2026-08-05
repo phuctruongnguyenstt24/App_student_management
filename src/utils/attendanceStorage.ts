@@ -23,7 +23,13 @@ export interface AttendanceSession {
 const ATTENDANCE_SESSIONS_KEY = 'attendance_sessions';
 const LEGACY_ATTENDANCE_KEY = 'attendance_session';
 
-/** Map một document từ server (dùng _id) sang AttendanceSession cục bộ */
+/**
+ * Map một document từ server (dùng _id) sang AttendanceSession cục bộ 
+ * Chuyển đổi dữ liệu buổi điểm danh từ server sang định dạng AttendanceSession.
+ *
+ * @param {any} s Dữ liệu buổi điểm danh từ server.
+ * @returns {AttendanceSession}
+ */
 const mapServerSession = (s: any): AttendanceSession => ({
   id: s._id,
   // courseId có thể là ObjectId string hoặc object (populated)
@@ -44,6 +50,15 @@ const mapServerSession = (s: any): AttendanceSession => ({
   })),
 });
 
+/**
+ * Lưu danh sách buổi điểm danh vào AsyncStorage.
+ *
+ * Nếu danh sách rỗng hoặc null, dữ liệu cũ sẽ được xóa.
+ *
+ * @param {AttendanceSession[] | null} sessions Danh sách buổi điểm danh.
+ * @returns {Promise<AttendanceSession[]>}
+ */
+
 export const saveAttendanceSessions = async (sessions: AttendanceSession[] | null) => {
   if (!sessions || sessions.length === 0) {
     await AsyncStorage.removeItem(ATTENDANCE_SESSIONS_KEY);
@@ -55,6 +70,14 @@ export const saveAttendanceSessions = async (sessions: AttendanceSession[] | nul
   return sessions;
 };
 
+/**
+ * Lấy danh sách buổi điểm danh.
+ *
+ * Ưu tiên lấy dữ liệu từ API, nếu thất bại sẽ sử dụng
+ * dữ liệu lưu trong AsyncStorage.
+ *
+ * @returns {Promise<AttendanceSession[]>}
+ */
 export const getAttendanceSessions = async (): Promise<AttendanceSession[]> => {
   // Lấy tất cả session (không filter status) để local cache đồng bộ đầy đủ.
   // AttendanceScreen tự filter active khi hiển thị.
@@ -108,6 +131,14 @@ export const getAttendanceSessions = async (): Promise<AttendanceSession[]> => {
   return [];
 };
 
+/**
+ * Lấy danh sách buổi điểm danh.
+ *
+ * Ưu tiên lấy dữ liệu từ API, nếu thất bại sẽ sử dụng
+ * dữ liệu lưu trong AsyncStorage.
+ *
+ * @returns {Promise<AttendanceSession[]>}
+ */
 export const upsertAttendanceSession = async (session: AttendanceSession) => {
   // Try to create session on server (admin)
   try {
@@ -148,6 +179,14 @@ export const upsertAttendanceSession = async (session: AttendanceSession) => {
   return saveAttendanceSessions(sessions);
 };
 
+/**
+ * Đóng một buổi điểm danh.
+ *
+ * Ưu tiên cập nhật trên server, nếu thất bại sẽ cập nhật cục bộ.
+ *
+ * @param {string} sessionId Mã buổi điểm danh.
+ * @returns {Promise<AttendanceSession[]>}
+ */
 export const closeAttendanceSession = async (sessionId: string) => {
   try {
     const token = await AsyncStorage.getItem('token');
@@ -173,6 +212,14 @@ export const closeAttendanceSession = async (sessionId: string) => {
   return saveAttendanceSessions(updatedSessions);
 };
 
+/**
+ * Đóng một buổi điểm danh.
+ *
+ * Ưu tiên cập nhật trên server, nếu thất bại sẽ cập nhật cục bộ.
+ *
+ * @param {string} sessionId Mã buổi điểm danh.
+ * @returns {Promise<AttendanceSession[]>}
+ */
 export const markAttendanceForStudent = async (
   student: { studentId?: string; fullName?: string },
   sessionId?: string
