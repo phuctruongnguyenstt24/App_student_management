@@ -1,5 +1,5 @@
+import { API_URL } from "@/config/api";
 import { Ionicons } from '@expo/vector-icons';
-import Constants from "expo-constants";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -13,31 +13,9 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-
 import { styles as globalStyles } from '../../a_styles/style_student_info';
 
-/**
- * Trả về URL API của dịch vụ tin tức.
- *
- * Ưu tiên sử dụng biến môi trường, sau đó lấy địa chỉ
- * từ Expo Development Server và cuối cùng là localhost.
- *
- * @returns {string} URL API dùng để lấy danh sách tin tức.
- */
-const getApiUrl = () => {
-  const envUrl = process.env.EXPO_PUBLIC_API_URL;
-  if (envUrl) {
-    return envUrl;
-  }
 
-  const hostUri = (Constants.expoConfig?.hostUri as string | undefined) ?? (Constants as any).manifest?.debuggerHost;
-  if (hostUri) {
-    const host = hostUri.split(":")[0];
-    return `http://${host}:5000/api/news`;
-  }
-
-  return "http://localhost:5000/api/news";
-};
 
 /**
  * Hiển thị màn hình danh sách tin tức của trường.
@@ -58,7 +36,8 @@ export default function NewsScreen() {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(getApiUrl());
+        // Gọi API từ API_URL trong file api.ts để lấy danh sách tin tức
+        const response = await fetch(`${API_URL}/news`);
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
