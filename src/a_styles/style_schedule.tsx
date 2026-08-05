@@ -8,26 +8,22 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f7fa',
   },
-  header: {
+ header: {
+      backgroundColor: '#214D8A',
+    padding: 16,
+    paddingTop: 40,
+    paddingBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 50, // Dành cho các dòng máy có notch / tai thỏ
-    paddingBottom: 15,
-    paddingHorizontal: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+     
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#ffffff',
+        flex: 1,
+    textAlign:'center'
   },
   addButton: {
     flexDirection: 'row',

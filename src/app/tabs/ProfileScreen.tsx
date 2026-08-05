@@ -345,6 +345,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#F5F6FA",
+       marginTop:-40,
     },
     loadingContainer: {
         flex: 1,
@@ -363,10 +364,12 @@ const styles = StyleSheet.create({
         alignItems: "center",
         borderBottomLeftRadius: 30,
         borderBottomRightRadius: 30,
+      
     },
     avatarContainer: {
         position: "relative",
         marginBottom: 12,
+            marginTop:30,
     },
     avatar: {
         width: 110,

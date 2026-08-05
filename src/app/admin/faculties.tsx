@@ -216,7 +216,7 @@ export default function FacultiesScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={28} color="#333" />
+          <Ionicons name="arrow-back" size={28} color="#ffffff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Quản lý Khoa & Ngành</Text>
         <TouchableOpacity

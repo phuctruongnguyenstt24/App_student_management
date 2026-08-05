@@ -326,7 +326,7 @@ export default function AdminManagement() {
                 <View style={styles.header}>
                     <View style={styles.headerLeft}>
                         <TouchableOpacity onPress={() => router.back()}>
-                            <Ionicons name="arrow-back" size={28} color="#333" />
+                            <Ionicons name="arrow-back" size={28} color="#ffffff" />
                         </TouchableOpacity>
                         <View style={{ marginLeft: 12 }}>
                             <Text style={styles.greeting}>{userName.toUpperCase()}</Text>
@@ -335,7 +335,7 @@ export default function AdminManagement() {
                     </View>
                     <View style={styles.headerRight}>
                         <TouchableOpacity style={styles.notificationButton}>
-                            <Ionicons name="notifications-outline" size={28} color="#333" />
+                            <Ionicons name="notifications-outline" size={28} color="#ffffff" />
                             <View style={styles.notificationBadge}>
                                 <Text style={styles.badgeText}>3</Text>
                             </View>

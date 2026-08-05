@@ -4,7 +4,7 @@ import { StyleSheet } from "react-native";
 export const styles = StyleSheet.create({
     safeContainer: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+      backgroundColor: '#214D8A',
   },
   container: {
     flex: 1,
@@ -13,15 +13,14 @@ export const styles = StyleSheet.create({
   
   // Header Styles
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
+      backgroundColor: '#214D8A',
+    padding: 16,
     paddingTop: 10,
-    paddingBottom: 15,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    paddingBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+     
   },
   
   headerLeft: {
@@ -38,11 +37,11 @@ export const styles = StyleSheet.create({
   greeting: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#ffffff',
   },
   dateText: {
     fontSize: 13,
-    color: '#888',
+      color: '#ffffff',
     marginTop: 2,
   },
   headerRight: {
@@ -65,9 +64,10 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 4,
+    
   },
   badgeText: {
-    color: '#fff',
+      color: '#ffffff',
     fontSize: 10,
     fontWeight: 'bold',
   },

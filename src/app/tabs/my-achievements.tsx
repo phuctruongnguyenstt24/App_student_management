@@ -69,6 +69,7 @@ interface StudentProfile {
 
 // Nhãn xếp loại theo điểm chữ trả về từ server (A/B/C/D/F)
 const GRADE_LETTER_LABEL: Record<string, { label: string; color: string }> = {
+ "A+":{ label: 'Xuất sắc', color: '#7f09ee' },
   A: { label: 'Giỏi', color: '#16A34A' },
   B: { label: 'Khá', color: '#2563EB' },
   C: { label: 'Trung bình', color: '#0891B2' },
@@ -87,6 +88,7 @@ function classifyByLetter(letter?: string): { label: string; color: string } {
 // ngưỡng với điểm chữ từng môn để nhất quán.
 function classifyGpa(gpa: number | null): { label: string; color: string } {
   if (gpa == null) return { label: 'Chưa có điểm', color: '#9CA3AF' };
+   if (gpa >= 9.5) return { label: 'Xuất sắc', color: '#3718e8' };
   if (gpa >= 8.5) return { label: 'Giỏi', color: '#16A34A' };
   if (gpa >= 7.0) return { label: 'Khá', color: '#2563EB' };
   if (gpa >= 5.5) return { label: 'Trung bình', color: '#0891B2' };
@@ -251,11 +253,11 @@ export default function StudentAchievementView() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color="#fff" marginTop={40} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Thành tích học tập</Text>
         <TouchableOpacity onPress={onRefresh}>
-          <Ionicons name="refresh" size={24} color="#333" />
+          <Ionicons name="refresh" size={24} color="#fff" marginTop={40} />
         </TouchableOpacity>
       </View>
 
@@ -359,18 +361,34 @@ export default function StudentAchievementView() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F6FA' },
+   container: {
+ 
+    backgroundColor: '#f5f6fa',
+    marginTop:-40,
+  
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    backgroundColor: '#214D8A',
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEE',
+    paddingVertical: 16,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    
+     
   },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#333' },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ffffff',
+        marginTop:40,
+   
+  },
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',

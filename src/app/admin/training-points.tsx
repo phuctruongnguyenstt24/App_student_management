@@ -235,11 +235,11 @@ export default function AdminTrainingPointsScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color="#ffffff" marginTop={40} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Chấm Điểm Rèn Luyện</Text>
         <TouchableOpacity onPress={fetchStudentsByFilters}>
-          <Ionicons name="refresh" size={24} color="#333" />
+          <Ionicons name="refresh" size={24} color="#ffff" marginTop={40} />
         </TouchableOpacity>
       </View>
 
@@ -431,31 +431,209 @@ export default function AdminTrainingPointsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', padding: 16, backgroundColor: '#fff', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#eee' },
-  headerTitle: { fontSize: 18, fontWeight: 'bold' },
-  semesterContainer: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6, backgroundColor: '#fff', alignItems: 'center' },
-  semesterLabel: { fontSize: 14, color: '#555', marginRight: 10, fontWeight: '500', width: 55 },
-  semesterSelector: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f0f4f8', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: '#d0d7de' },
-  semesterSelectorText: { fontSize: 15, fontWeight: '600', color: '#333' },
-  filterContainer: { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 12, backgroundColor: '#fff', gap: 8, borderBottomWidth: 1, borderBottomColor: '#eee', flexWrap: 'wrap' },
-  filterBox: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9f9f9', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 6, borderWidth: 1, borderColor: '#e0e0e0', minWidth: 100 },
-  filterLabel: { fontSize: 12, color: '#666', marginRight: 4, fontWeight: '500' },
-  filterValue: { flex: 1, fontSize: 12, fontWeight: '600', color: '#333' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { width: '85%', backgroundColor: '#fff', borderRadius: 12, padding: 20, maxHeight: '60%' },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, textAlign: 'center' },
-  modalItem: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  modalItemSelected: { backgroundColor: '#e8f5e9', borderRadius: 4 },
-  modalItemText: { fontSize: 15, color: '#333' },
-  modalItemTextSelected: { color: '#4CAF50', fontWeight: 'bold' },
-  modalCloseBtn: { marginTop: 16, padding: 12, backgroundColor: '#f0f0f0', borderRadius: 8, alignItems: 'center' },
-  modalCloseText: { fontSize: 16, fontWeight: '600', color: '#555' },
-  studentCard: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#fff', padding: 16, borderRadius: 8, marginBottom: 12, alignItems: 'center', borderWidth: 1, borderColor: '#eee' },
-  nameText: { fontSize: 16, fontWeight: '600', color: '#333' },
-  subText: { fontSize: 13, color: '#777', marginTop: 2 },
-  scoreAction: { flexDirection: 'row', alignItems: 'center' },
-  inputScore: { borderBottomWidth: 1, borderColor: '#4CAF50', width: 50, textAlign: 'center', fontSize: 18, fontWeight: 'bold', marginRight: 12, paddingVertical: 2 },
-  btnSave: { backgroundColor: '#4CAF50', padding: 8, borderRadius: 6 },
-  emptyText: { textAlign: 'center', marginTop: 30, color: '#888', fontSize: 15 }
+  container: {
+ 
+    backgroundColor: '#f5f6fa',
+    marginTop:-40,
+  
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#214D8A',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    
+     
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ffffff',
+        marginTop:40,
+   
+  },
+  semesterContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    
+  },
+  semesterLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginRight: 10,
+  },
+  semesterSelector: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#f9f9f9',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  semesterSelectorText: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    padding: 10,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    justifyContent: 'space-between',
+  },
+  filterBox: {
+    flex: 1,
+    backgroundColor: '#f9f9f9',
+    padding: 8,
+    marginHorizontal: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  filterLabel: {
+    fontSize: 11,
+    color: '#666',
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  filterValue: {
+    fontSize: 13,
+    color: '#333',
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  studentCard: {
+    flexDirection: 'row',
+    backgroundColor: '#ffffff',
+    padding: 14,
+    borderRadius: 8,
+    marginBottom: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#eaeaea',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  nameText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#222',
+    marginBottom: 4,
+  },
+  subText: {
+    fontSize: 13,
+    color: '#666',
+    marginBottom: 2,
+  },
+  scoreAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  inputScore: {
+    width: 50,
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 6,
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: 'bold',
+    backgroundColor: '#fafafa',
+    marginRight: 8,
+  },
+  btnSave: {
+    backgroundColor: '#4CAF50',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 40,
+    height: 40,
+    borderRadius: 6,
+  },
+  emptyText: {
+    textAlign: 'center',
+    marginTop: 40,
+    fontSize: 14,
+    color: '#888',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#ffffff',
+    width: '100%',
+    maxHeight: '70%',
+    borderRadius: 12,
+    padding: 20,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  modalItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  modalItemSelected: {
+    backgroundColor: '#f1f8f5',
+    borderRadius: 6,
+  },
+  modalItemText: {
+    fontSize: 15,
+    color: '#444',
+  },
+  modalItemTextSelected: {
+    color: '#4CAF50',
+    fontWeight: 'bold',
+  },
+  modalCloseBtn: {
+    marginTop: 15,
+    backgroundColor: '#e0e0e0',
+    paddingVertical: 10,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  modalCloseText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#333',
+  },
 });

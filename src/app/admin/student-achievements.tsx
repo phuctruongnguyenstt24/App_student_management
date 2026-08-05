@@ -446,11 +446,11 @@ export default function StudentAchievements() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color="#ffffff" marginTop={40} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Nhập Điểm</Text>
         <TouchableOpacity onPress={loadGradesAndMerge}>
-          <Ionicons name="refresh" size={24} color="#333" />
+          <Ionicons name="refresh" size={24} color="#ffffff" marginTop={40} />
         </TouchableOpacity>
       </View>
 

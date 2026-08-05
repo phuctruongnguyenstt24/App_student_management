@@ -225,34 +225,39 @@ const AdminProfileScreen = () => {
 };
 
 const styles = StyleSheet.create({
-    container: {
+  container: {
         flex: 1,
-        backgroundColor: "#f5f5f5",
+        backgroundColor: '#f5f5f5',
     },
     loadingContainer: {
         flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#f5f5f5",
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#f5f5f5',
     },
     loadingText: {
         marginTop: 10,
         fontSize: 14,
-        color: "#666",
+        color: '#666',
     },
     header: {
-        backgroundColor: "#4CAF50",
+        backgroundColor: '#214D8A',
         padding: 16,
         paddingTop: 40,
         paddingBottom: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
     },
     backButton: {
-        marginBottom: 8,
+        // Removed marginBottom: 8 to keep it vertically aligned with the title in a row layout
     },
     headerTitle: {
-        fontSize: 24,
-        fontWeight: "bold",
-        color: "white",
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#ffffff',
+        textAlign: 'center',
+        flex: 1,
     },
     profileCard: {
         backgroundColor: "white",

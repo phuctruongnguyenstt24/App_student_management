@@ -35,16 +35,14 @@ export const styles = StyleSheet.create({
   // 2. HEADER
   // ==========================================
   header: {
+      backgroundColor: '#214D8A',
+    padding: 16,
+    paddingTop: 40,
+    paddingBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingTop: Platform.OS === 'ios' ? 50 : 30,
-    paddingBottom: 16,
-    backgroundColor: '#FFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E8E8E8',
+     
   },
   backButton: {
     padding: 4,
@@ -52,7 +50,9 @@ export const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1a1a2e',
+    color: '#ffffff',
+        flex: 1,
+    textAlign:'center',
   },
   headerRight: {
     width: 40,

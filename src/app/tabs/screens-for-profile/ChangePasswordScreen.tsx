@@ -210,16 +210,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   header: {
-    backgroundColor: '#f5f5f5',
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    marginTop: 18,
+      backgroundColor: '#214D8A',
+    padding: 16,
+    paddingTop: 40,
+    paddingBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e8e8e8',
+     
   },
   headerTitle: {
     fontSize: 18,

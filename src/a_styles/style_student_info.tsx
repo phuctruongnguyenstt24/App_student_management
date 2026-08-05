@@ -3,22 +3,26 @@ import { StyleSheet } from 'react-native';
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#2f5aa8',
+    backgroundColor: '#214D8A',
+    
   },
 
   header: {
-    height: 60,
+      backgroundColor: '#214D8A',
+    padding: 16,
+    paddingTop: 40,
+    paddingBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop:15,
-    paddingHorizontal: 18,
+     
   },
-
   headerTitle: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 19,
     fontWeight: '700',
+        flex: 1,
+    textAlign:'center',
   },
 
   card: {

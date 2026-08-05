@@ -187,13 +187,11 @@ const CurriculumStudentScreen = () => {
       >
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="white" />
+          <TouchableOpacity onPress={handleBack} >
+            <Ionicons name="arrow-back" size={24} color="white" marginTop={40} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Chương trình học</Text>
-          <Text style={styles.headerSubtitle}>
-            Theo dõi tiến độ học tập của bạn
-          </Text>
+          
         </View>
 
         {/* Thông tin tổng quan */}
@@ -308,12 +306,41 @@ const CurriculumStudentScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f5f5" },
+   container: {
+ 
+    backgroundColor: '#f5f6fa',
+   marginTop:-40,
+  
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#214D8A',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    marginTop:40,
+     
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    textAlign:'center' ,
+    flex:1, 
+        marginTop:40, 
+   
+  },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#f5f5f5" },
   loadingText: { marginTop: 12, fontSize: 16, color: "#666" },
-  header: { backgroundColor: "#1065db", padding: 16, paddingTop: 40, paddingBottom: 20 },
-  backButton: { marginBottom: 12, width: 40, height: 40, justifyContent: "center" },
-  headerTitle: { fontSize: 24, fontWeight: "bold", color: "white" },
+ 
+
+ 
   headerSubtitle: { fontSize: 14, color: "rgba(255,255,255,0.9)", marginTop: 4 },
   summaryContainer: { padding: 16, backgroundColor: "white", marginBottom: 8 },
   summaryCard: { flexDirection: "row", justifyContent: "space-around", alignItems: "center", backgroundColor: "#f9f9f9", borderRadius: 12, padding: 16, marginBottom: 16 },

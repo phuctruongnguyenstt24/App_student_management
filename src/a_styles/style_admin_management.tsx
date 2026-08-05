@@ -5,7 +5,7 @@ const { width } = Dimensions.get('window');
 export const styles = StyleSheet.create({
   safeContainer: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#214D8A',
   },
   container: {
     flex: 1,
@@ -13,14 +13,13 @@ export const styles = StyleSheet.create({
   },
   // Header
   header: {
+      backgroundColor: '#214D8A',
+    padding: 16,
+    paddingTop: 10,
+    paddingBottom: 20,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
+    justifyContent: 'space-between',
   },
   headerLeft: {
     flexDirection: 'row',
@@ -34,11 +33,11 @@ export const styles = StyleSheet.create({
   greeting: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#ffffff',
   },
   dateText: {
     fontSize: 12,
-    color: '#888',
+      color: '#ffffff',
     marginTop: 2,
   },
   notificationButton: {

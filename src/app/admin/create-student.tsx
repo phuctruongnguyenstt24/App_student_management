@@ -573,7 +573,7 @@ export default function CreateStudentScreen() {
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={handleback} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={28} color="#333" />
+                    <Ionicons name="arrow-back" size={28} color="#ffffff" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Tạo tài khoản sinh viên</Text>
                 <View style={styles.headerRight} />

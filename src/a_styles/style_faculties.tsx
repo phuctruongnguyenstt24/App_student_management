@@ -6,15 +6,15 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F7FA',
   },
-  header: {
+ header: {
+      backgroundColor: '#214D8A',
+    padding: 16,
+    paddingTop: 40,
+    paddingBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    paddingTop: 48,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E8ECF4',
+     
   },
   backButton: {
     padding: 4,
@@ -22,9 +22,9 @@ export const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#1A2332',
-    flex: 1,
-    marginLeft: 12,
+    color: '#ffffff',
+        flex: 1,
+    textAlign:'center'
   },
   addFacultyButton: {
     padding: 4,

@@ -262,8 +262,8 @@ export default function FeedbackManagementScreen() {
         <SafeAreaView style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={handleback} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="#0c0707" />
+                <TouchableOpacity onPress={handleback} >
+                    <Ionicons name="arrow-back" size={28} color="#ffffff" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Quản lý góp ý</Text>
                 <View style={{ width: 24 }} />
@@ -393,34 +393,26 @@ const styles = StyleSheet.create({
     loadingText: {
         marginTop: 12,
         fontSize: 14,
-        color: '#666',
+        color: '#ffffff',
         fontWeight: '500',
     },
     
     // Header
     header: {
-          flexDirection: 'row',
+      backgroundColor: '#214D8A',
+    padding: 16,
+    paddingTop: 40,
+    paddingBottom: 20,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 50, // Cân đối cho các dòng máy có tai thỏ/notch
-    paddingBottom: 15,
-    paddingHorizontal: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    },
-    backButton: {
-        padding: 4,
-    },
+     
+  },
+   
     headerTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#1A202C',
+        color: '#ffffff',
     },
 
     // Stats / Thống kê

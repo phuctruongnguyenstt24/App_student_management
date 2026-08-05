@@ -13,6 +13,7 @@ const calculateTotalScore = (midtermScore, finalScore) => {
 // Helper: Tính điểm chữ
 const calculateGrade = (score) => {
   if (score === 0) return '';
+  if (score >= 9.5) return 'A+';
   if (score >= 8.5) return 'A';
   if (score >= 7.0) return 'B';
   if (score >= 5.5) return 'C';

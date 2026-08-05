@@ -22,21 +22,14 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f4f6f9',
   },
-  header: {
+ header: {
+      backgroundColor: '#214D8A',
+    padding: 16,
+    paddingTop: 40,
+    paddingBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 50, // Cân đối cho các dòng máy có tai thỏ/notch
-    paddingBottom: 15,
-    paddingHorizontal: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
   },
   backButton: {
     padding: 4,
@@ -44,7 +37,9 @@ export const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#ffffff',
+        flex: 1,
+    textAlign:'center'
   },
   headerActions: {
     flexDirection: 'row',

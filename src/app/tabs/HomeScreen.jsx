@@ -53,7 +53,7 @@ export default function HomeScreen() {
       color: "#4ECDC4",
       image: "📱",
     },
-        {
+    {
       id: 4,
       title: "học cùng a hưng",
       subtitle: "Lập trình di động React Native",
@@ -349,6 +349,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5F6FA",
+    marginTop: -40,
   },
 
   header: {
@@ -364,6 +365,7 @@ const styles = StyleSheet.create({
   userInfo: {
     flexDirection: "row",
     alignItems: "center",
+    marginTop: 20,
   },
 
   avatar: {

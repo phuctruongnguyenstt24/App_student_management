@@ -390,7 +390,7 @@ const ScheduleManagement = () => {
     <View style={styles.container}>
       <View style={styles.header}>
          <TouchableOpacity onPress={() => router.replace('/admin/dashboard' as any)}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color="#ffffff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Quản lý lịch học</Text>
         

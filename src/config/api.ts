@@ -27,6 +27,14 @@ const getAuthHeaders = async (): Promise<Record<string, string>> => {
 };
 
 /**
+ * 👉 URL server production (deploy thật)
+ * ⚠️ THAY đổi giá trị này thành domain/IP public của backend bạn đã deploy
+ * (ví dụ: Render, Railway, VPS, ...). Đây là URL sẽ được dùng khi build APK
+ * qua EAS (không phải Expo Go), vì lúc đó không còn hostUri của Metro nữa.
+ */
+const PRODUCTION_API_URL = 'http://192.168.31.184:5000/api';
+
+/**
  * 👉 Tự động lấy API URL tùy theo môi trường
  */
 export const getApiUrl = (): string => {
@@ -42,15 +50,22 @@ export const getApiUrl = (): string => {
     return 'http://localhost:5000/api';
   }
 
-  // 📱 EXPO GO - Cách 1: Lấy từ expoConfig
+  // 📦 BUILD PRODUCTION (APK/AAB build bằng EAS, không phải Expo Go)
+  // __DEV__ = false khi chạy bản build thật (APK cài trên máy, TestFlight, v.v.)
+  if (!__DEV__) {
+    console.log('[API] Build production -> dùng PRODUCTION_API_URL:', PRODUCTION_API_URL);
+    return PRODUCTION_API_URL;
+  }
+
+  // 📱 EXPO GO (DEV) - Cách 1: Lấy từ expoConfig
   try {
     const hostUri = Constants.expoConfig?.hostUri;
     console.log('[DEBUG] hostUri từ expoConfig:', hostUri);
-    
+
     if (hostUri) {
       const ip = hostUri.split(':')[0];
       console.log('[DEBUG] IP từ expoConfig:', ip);
-      
+
       if (ip && ip.match(/^(\d{1,3}\.){3}\d{1,3}$/)) {
         const url = `http://${ip}:5000/api`;
         console.log('[DEBUG] URL từ expoConfig:', url);
@@ -61,15 +76,15 @@ export const getApiUrl = (): string => {
     console.error('[DEBUG] Lỗi lấy hostUri từ expoConfig:', error);
   }
 
-  // 📱 EXPO GO - Cách 2: Lấy từ manifest (Expo cũ)
+  // 📱 EXPO GO (DEV) - Cách 2: Lấy từ manifest (Expo cũ)
   try {
     const manifest = Constants.manifest || Constants.__unsafeNoWarnManifest;
     console.log('[DEBUG] manifest:', manifest);
-    
+
     if (manifest?.hostUri) {
       const ip = manifest.hostUri.split(':')[0];
       console.log('[DEBUG] IP từ manifest:', ip);
-      
+
       if (ip && ip.match(/^(\d{1,3}\.){3}\d{1,3}$/)) {
         const url = `http://${ip}:5000/api`;
         console.log('[DEBUG] URL từ manifest:', url);
@@ -80,10 +95,10 @@ export const getApiUrl = (): string => {
     console.error('[DEBUG] Lỗi lấy manifest:', error);
   }
 
-  // ⚠️ IP MẶC ĐỊNH - Cập nhật IP hiện tại của máy tính bạn
-  // Đã giữ lại IP 192.168.1.7 từ nhánh local của bạn
-  const defaultIp = '192.168.1.7'; 
-  console.log('[DEBUG] Dùng IP mặc định:', defaultIp);
+  // ⚠️ IP MẶC ĐỊNH (chỉ dùng khi ở DEV mà không dò được IP)
+  // Cập nhật IP hiện tại của máy tính bạn khi chạy `expo start`
+  const defaultIp = '192.168.1.7';
+  console.log('[DEBUG] Dùng IP mặc định (dev fallback):', defaultIp);
   return `http://${defaultIp}:5000/api`;
 };
 

@@ -204,7 +204,7 @@ export default function CurriculumFrameworkScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.replace('/admin/dashboard')}>
-          <Ionicons name="arrow-back" size={28} color="#1E293B" />
+          <Ionicons name="arrow-back" size={28} color="#ffffff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Chương trình khung</Text>
         <View style={styles.headerActions}>

@@ -222,16 +222,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#ffffff',
   },
-  header: {
+ header: {
+      backgroundColor: '#214D8A',
+    padding: 16,
+    paddingTop: 40,
+    paddingBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-     marginTop:15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e8e8e8',
-    backgroundColor: '#ffffff',
      
   },
   backButton: {

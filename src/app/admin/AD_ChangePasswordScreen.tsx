@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   header: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#214D8A',
     padding: 16,
     paddingTop: 40,
     paddingBottom: 20,
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: 'white',
+    color: '#ffffff',
   },
   card: {
     backgroundColor: 'white',
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#214D8A',
     padding: 14,
     borderRadius: 8,
     marginTop: 8,

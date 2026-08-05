@@ -233,18 +233,112 @@ const fetchSemesters = async () => {
 }
 
 const styles = StyleSheet.create({
-  semesterSelectorContainer: { paddingHorizontal: 20, marginTop: 20, marginBottom: 10, zIndex: 10 },
-  semesterLabel: { fontSize: 14, color: '#666', marginBottom: 8, fontWeight: '600' },
-  dropdownButton: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 15, paddingVertical: 12, borderRadius: 8, borderWidth: 1, borderColor: '#ddd' },
-  dropdownButtonText: { fontSize: 16, color: '#333', fontWeight: '500' },
-  dropdownList: { backgroundColor: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#ddd', marginTop: 5, position: 'absolute', top: 70, left: 20, right: 20, zIndex: 100, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
-  dropdownItem: { paddingVertical: 12, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
-  dropdownItemText: { fontSize: 16, color: '#333' },
-  content: { padding: 20, alignItems: 'center' },
-  title: { fontSize: 18, fontWeight: 'bold', color: '#333', marginTop: 10, marginBottom: 30, textAlign: 'center' },
-  scoreCircle: { width: 200, height: 200, borderRadius: 100, borderWidth: 8, borderColor: '#4F6EF7', justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff', shadowColor: '#4F6EF7', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 10, elevation: 8 },
-  scoreText: { fontSize: 60, fontWeight: 'bold', color: '#333' },
-  classificationText: { fontSize: 20, fontWeight: 'bold', marginTop: 5 },
-  infoBox: { flexDirection: 'row', backgroundColor: '#f8f9fa', padding: 15, borderRadius: 10, marginTop: 125, alignItems: 'center' },
-  infoText: { flex: 1, marginLeft: 10, fontSize: 14, color: '#666', lineHeight: 20 }
+  semesterSelectorContainer: { 
+    zIndex: 10,
+    marginBottom: 20,
+    paddingHorizontal: 20,
+    marginTop: 20
+  },
+  semesterLabel: { 
+    fontSize: 14, 
+    color: '#ffffff', 
+    marginBottom: 8, 
+    fontWeight: '600' 
+  },
+  dropdownButton: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    backgroundColor: '#fff', 
+    paddingHorizontal: 15, 
+    paddingVertical: 12, 
+    borderRadius: 8, 
+    borderWidth: 1, 
+    borderColor: '#ddd' 
+  },
+  dropdownButtonText: { 
+    fontSize: 16, 
+    color: '#333', 
+    fontWeight: '500' 
+  },
+  dropdownList: { 
+    backgroundColor: '#fff', 
+    borderRadius: 8, 
+    borderWidth: 1, 
+    borderColor: '#ddd', 
+    marginTop: 5, 
+    position: 'absolute', 
+    top: 75, 
+    left: 20, 
+    right: 20, 
+    zIndex: 100, 
+    elevation: 5, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 2 }, 
+    shadowOpacity: 0.1, 
+    shadowRadius: 4 
+  },
+  dropdownItem: { 
+    paddingVertical: 12, 
+    paddingHorizontal: 15, 
+    borderBottomWidth: 1, 
+    borderBottomColor: '#f0f0f0' 
+  },
+  dropdownItemText: { 
+    fontSize: 16, 
+    color: '#333' 
+  },
+  content: { 
+    padding: 20, 
+    alignItems: 'center' 
+  },
+  title: { 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    color: '#333', 
+    marginTop: 10, 
+    marginBottom: 30, 
+    textAlign: 'center' 
+  },
+  scoreCircle: { 
+    width: 200, 
+    height: 200, 
+    borderRadius: 100, 
+    borderWidth: 8, 
+    borderColor: '#4F6EF7', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    backgroundColor: '#fff', 
+    shadowColor: '#4F6EF7', 
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: 0.2, 
+    shadowRadius: 10, 
+    elevation: 8 
+  },
+  scoreText: { 
+    fontSize: 60, 
+    fontWeight: 'bold', 
+    color: '#333' 
+  },
+  classificationText: { 
+    fontSize: 20, 
+    fontWeight: 'bold', 
+    marginTop: 5 
+  },
+  infoBox: { 
+    flexDirection: 'row', 
+    backgroundColor: '#f8f9fa', 
+    padding: 15, 
+    borderRadius: 10, 
+    marginTop: 40, // Đã giảm từ 125 xuống 40 để tránh bị trôi quá xa khỏi vòng tròn điểm
+    alignItems: 'center',
+    width: '100%'
+  },
+  infoText: { 
+    flex: 1, 
+    marginLeft: 10, 
+    fontSize: 14, 
+    color: '#666', 
+    lineHeight: 20 
+  }
 });

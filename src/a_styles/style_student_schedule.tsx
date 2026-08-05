@@ -16,19 +16,22 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
-  header: {
+ header: {
+      backgroundColor: '#214D8A',
+    padding: 16,
+    paddingTop: 40,
+    paddingBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+     
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#ffffff',
+        flex: 1,
+    textAlign:'center',
   },
   dateNavigator: {
     flexDirection: 'row',

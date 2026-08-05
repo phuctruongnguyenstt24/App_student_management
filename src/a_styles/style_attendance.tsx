@@ -7,22 +7,25 @@ export const styles = StyleSheet.create({
     backgroundColor: '#F5F7FA',
   },
   header: {
+    backgroundColor: '#214D8A',
+    padding: 16,
+    paddingTop: 40,
+    paddingBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    paddingTop: 48,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E8ECF4',
+    justifyContent: 'space-between',
   },
   backButton: {
     padding: 4,
-    marginRight: 12,
+
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#1A2332',
+    fontWeight: 'bold',
+    color: '#ffffff',
+    
+    textAlign:'center',
+    flex: 1,
   },
   body: {
     flex: 1,

@@ -288,11 +288,11 @@ const StudentSchedule = () => {
   const renderHeader = () => (
     <View style={styles.header}>
       <TouchableOpacity onPress={() => router.back()}>
-        <Ionicons name="arrow-back" size={24} color="#333" />
+        <Ionicons name="arrow-back" size={24} color="#ffffff" />
       </TouchableOpacity>
       <Text style={styles.headerTitle}>Lịch học</Text>
       <TouchableOpacity onPress={onRefresh}>
-        <Ionicons name="refresh-outline" size={24} color="#333" />
+        <Ionicons name="refresh-outline" size={24} color="#ffffff" />
       </TouchableOpacity>
     </View>
   );

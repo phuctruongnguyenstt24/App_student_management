@@ -511,7 +511,7 @@ export default function StudentManagementScreen() {
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={28} color="#333" />
+                    <Ionicons name="arrow-back" size={28} color="#ffffff" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Quản lý sinh viên</Text>
                 <TouchableOpacity onPress={() => router.push('/admin/create-student')}>
