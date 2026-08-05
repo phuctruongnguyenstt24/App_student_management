@@ -81,7 +81,7 @@ export default function NewsScreen() {
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 20 }}>
-        <ActivityIndicator size="large" color="#1E4F9A" />
+        <ActivityIndicator size="large" color="#214D8A" />
         <Text style={{ marginTop: 10, color: "#666" }}>Đang tải tin tức...</Text>
       </View>
     );
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   newsTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#1E4F9A",
+    color: "#214D8A",
   },
   newsDescription: {
     marginTop: 4,
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   newsButton: {
-    backgroundColor: "#1E4F9A",
+    backgroundColor: "#214D8A",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
